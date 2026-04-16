@@ -8,21 +8,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('requests', function (Blueprint $table) {
+        Schema::create('locker_requests', function (Blueprint $table) {
             $table->id('request_id');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->unsignedBigInteger('building_id');
-            $table->enum('status', ['pendiente', 'aprobada', 'rechazada', 'pagada'])->default('pendiente');
-            $table->timestamp('request_date')->useCurrent();
-            $table->timestamp('response_date')->nullable();
-            $table->text('observations')->nullable();
-
-            $table->foreign('building_id')->references('building_id')->on('buildings')->onDelete('cascade');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('locker_id');
+            $table->string('request_status', 20)->default('pending')->comment('pending | approved | rejected');
+            $table->timestamp('requested_at')->useCurrent();
+            $table->unsignedBigInteger('reviewed_by')->nullable()->comment('Admin que procesó');
+            $table->timestamp('reviewed_at')->nullable();
+            
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('locker_id')->references('locker_id')->on('lockers')->onDelete('cascade');
+            $table->foreign('reviewed_by')->references('id')->on('users')->onDelete('set null');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('requests');
+        Schema::dropIfExists('locker_requests');
     }
 };

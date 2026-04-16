@@ -4,27 +4,29 @@ import { Head, router } from '@inertiajs/vue3';
 import Layout from '../Layouts/Layout.vue';
 defineOptions({ layout: Layout });
 
-// Prop que recibirá los datos reales del backend
-const props = defineProps({
-    lockerData: { 
-        type: Object, 
-        default: () => ({
-            id: 142,
-            tamano: 'Mediano',
-            codigo: 'B-142',
-            edificio: 'B - Piso 1'
-        })
+// ─────────────────────────────────────────────
+// DATOS REALES DEL BACKEND
+// Vienen de BuscarLocker cuando el usuario hace clic en "Solicitar"
+// La ruta /solicitud-locker recibe los datos como query params
+// ─────────────────────────────────────────────
+const props = defineProps<{
+    lockerData: {
+        locker_id: number;
+        codigo: string;
+        tamano: string;
+        edificio: string;
     }
-});
+}>();
 
 const confirmado = ref(false);
 
+// Enviamos la solicitud real al backend (POST /solicitud-locker)
+// El controlador LockerRequestController@store lo procesa
 const enviarSolicitud = () => {
     if (!confirmado.value) return;
     
-    // Ruta en Laravel para procesar la solicitud
-    router.post('/solicitud-locker/enviar', {
-        lockerId: props.lockerData.id
+    router.post('/solicitud-locker', {
+        locker_id: props.lockerData.locker_id
     });
 };
 </script>
@@ -40,17 +42,18 @@ const enviarSolicitud = () => {
                 Solicitud del Locker
             </h1>
 
+            <!-- Datos del locker que viene del backend -->
             <div class="w-full text-center sm:text-left mb-10 px-4">
                 <h2 class="text-3xl font-bold text-gray-500 mb-6">Datos del Locker</h2>
                 
                 <div class="bg-white rounded-3xl p-8 shadow-[0px_10px_40px_rgba(0,0,0,0.06)] border border-gray-100 flex flex-col gap-5">
-                    <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">ID:</span> {{ lockerData.id }}</p>
-                    <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Tamaño:</span> {{ lockerData.tamano }}</p>
                     <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Código:</span> {{ lockerData.codigo }}</p>
+                    <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Tamaño:</span> {{ lockerData.tamano }}</p>
                     <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Edificio:</span> {{ lockerData.edificio }}</p>
                 </div>
             </div>
 
+            <!-- Descarga del formulario -->
             <div class="w-full flex flex-col items-center mb-16">
                 <p class="text-2xl font-bold text-gray-600 mb-6 text-center">Descargar Formulario CBE-102</p>
                 
@@ -69,7 +72,7 @@ const enviarSolicitud = () => {
                         href="/docs/Reglamento_CBE_UNET.pdf" 
                         download="Formulario_CBE-102_UNET.pdf"
                         class="bg-transparent border border-gray-300 rounded-full p-2.5 hover:bg-white transition-colors"
-                        aria-label="Descargar Formulario CBE-102 para la solicitud de locker"
+                        aria-label="Descargar Formulario CBE-102"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-gray-700">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 12l4.5 4.5m0 0l4.5-4.5M12 3v13.5" />
@@ -78,6 +81,7 @@ const enviarSolicitud = () => {
                 </div>
             </div>
 
+            <!-- Dirección -->
             <div class="w-full text-center px-4 mb-16">
                 <h3 class="text-4xl font-extrabold text-[#213779] mb-4">Dirección</h3>
                 <hr class="border-gray-200 w-11/12 mx-auto mb-6">
@@ -85,6 +89,7 @@ const enviarSolicitud = () => {
                 <hr class="border-gray-200 w-11/12 mx-auto mt-6">
             </div>
 
+            <!-- Checkbox de confirmación -->
             <div class="flex items-start gap-4 mb-16 w-full px-6">
                 <input 
                     type="checkbox" 
@@ -97,15 +102,27 @@ const enviarSolicitud = () => {
                 </label>
             </div>
 
-            <div class="w-full max-w-sm">
-    <button 
-        @click="router.visit('/')"
-        class="w-full font-bold py-5 rounded-3xl text-3xl transition-all shadow-lg active:scale-[0.98] bg-[#213779] text-white hover:bg-[#1a2b5f]"
-        aria-label="Regresar al menú de inicio"
-    >
-        Volver al Menú
-    </button>
-</div>
+            <!-- Botones -->
+            <div class="w-full max-w-sm flex flex-col gap-4">
+                <!-- Botón Enviar: solo activo si el checkbox está marcado -->
+                <button 
+                    @click="enviarSolicitud"
+                    :disabled="!confirmado"
+                    class="w-full font-bold py-5 rounded-3xl text-2xl transition-all shadow-lg active:scale-[0.98]"
+                    :class="confirmado ? 'bg-[#213779] text-white hover:bg-[#1a2b5f]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
+                    aria-label="Enviar solicitud de locker"
+                >
+                    Enviar Solicitud
+                </button>
+
+                <button 
+                    @click="router.visit('/')"
+                    class="w-full font-bold py-3 rounded-3xl text-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition-all"
+                    aria-label="Regresar al menú de inicio"
+                >
+                    Volver al Menú
+                </button>
+            </div>
 
         </section>
         
