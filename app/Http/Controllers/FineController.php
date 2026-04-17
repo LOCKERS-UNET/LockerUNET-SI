@@ -4,70 +4,114 @@ namespace App\Http\Controllers;
 
 use App\Models\Fine;
 use App\Models\User;
+use App\Models\LockerAssignment;
+use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
-// Este controlador maneja las multas de los estudiantes
 class FineController extends Controller
 {
-    // INDEX (Admin): Lista las multas de un estudiante específico
-    // Ruta: GET /admin/multas/{card_code}
-    public function index(User $user)
+    // ==========================================
+    // USUARIO
+    // ==========================================
+
+    /**
+     * GET /fines/my
+     */
+    public function myFines()
     {
-        // Buscamos las multas del estudiante con el card_code dado en la URL
-        $multas = Fine::with(['assignment.locker', 'admin'])
-            ->where('user_id', $user->id)
+        $fines = Fine::with(['assignment.locker'])
+            ->where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
             ->get();
 
-        return Inertia::render('Admin/VistaUsuario', [
-            'usuario' => $user,
-            'multas'  => $multas,
+        return Inertia::render('User/MultasUser', [
+            'multa' => $fines
         ]);
     }
 
-    // STORE (Admin): El admin crea una multa para un estudiante
-    // Ruta: POST /admin/multas
+    // ==========================================
+    // ADMIN
+    // ==========================================
+
+    /**
+     * GET /admin/users/{userId}/fines
+     * Lista de multas aplicadas a un usuario en específico
+     */
+    public function userFines($userId)
+    {
+        $user = User::findOrFail($userId);
+        
+        $fines = Fine::with(['assignment.locker'])
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Admin/UsuarioMultas', [
+            'user' => $user,
+            'fines' => $fines
+        ]);
+    }
+
+    /**
+     * POST /admin/fines
+     * Crear una sanción pecuniaria
+     */
     public function store(Request $request)
     {
         $request->validate([
-            'assignment_id' => 'required|exists:locker_assignments,assignment_id',
-            'user_id'       => 'required|exists:users,id',
-            'amount'        => 'required|numeric|min:0',
-            'reason'        => 'required|string',
+            'user_id' => 'required|exists:users,id',
+            'amount'  => 'required|numeric|min:0.01',
+            'reason'  => 'required|string|max:500',
         ]);
 
+        // Buscamos la assignment activa del usuario a quien multan
+        $activeAssignment = LockerAssignment::where('user_id', $request->user_id)
+            ->where('assignment_status', 'active')
+            ->first();
+
+        if (!$activeAssignment) {
+            return redirect()->back()->withErrors([
+                'user' => 'El usuario no tiene locker asignado actualmente. Las multas se asocian a un locker activo.'
+            ]);
+        }
+
         Fine::create([
-            'assignment_id' => $request->assignment_id,
+            'assignment_id' => $activeAssignment->assignment_id,
             'user_id'       => $request->user_id,
             'amount'        => $request->amount,
             'reason'        => $request->reason,
-            'created_by'    => Auth::id(), // el admin logueado
+            'created_by'    => Auth::id(),
         ]);
 
-        return redirect()->back()->with('success', 'Multa registrada correctamente.');
+        NotificationHelper::send(
+            $request->user_id, 
+            'fine_added', 
+            'Multa registrada',
+            "Se te ha aplicado una multa de Bs.{$request->amount}. Dirígete al Decanato de Desarrollo Estudiantil."
+        );
+
+        return redirect()->back()->with('success', 'Multa registrada y usuario notificado.');
     }
 
-    // DESTROY (Admin): El admin elimina una multa
-    // Ruta: DELETE /admin/multas/{id}
+    /**
+     * DELETE /admin/fines/{id}
+     */
     public function destroy($id)
     {
-        $multa = Fine::findOrFail($id);
-        $multa->delete();
+        $fine = Fine::findOrFail($id);
+        $userId = $fine->user_id;
 
-        return redirect()->back()->with('success', 'Multa eliminada correctamente.');
-    }
+        $fine->delete();
 
-    // MIS MULTAS: El estudiante ve sus propias multas
-    // Ruta: GET /multas/mis-multas
-    public function misMultas()
-    {
-        $multas = Fine::with(['assignment.locker'])
-            ->where('user_id', Auth::id())
-            ->get();
+        NotificationHelper::send(
+            $userId, 
+            'fine_removed', 
+            'Multa eliminada',
+            'Una multa ha sido eliminada de tu cuenta.'
+        );
 
-        return Inertia::render('User/MisMultas', [
-            'multas' => $multas,
-        ]);
+        return redirect()->back()->with('success', 'Multa eliminada exitosamente.');
     }
 }

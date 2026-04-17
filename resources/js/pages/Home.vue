@@ -26,7 +26,7 @@
             <div class="grid grid-cols-2 gap-10  w-full">
 
                 <Link 
-                    href="/buscar-locker"
+                    href="/lockers"
                     class="flex flex-row items-center justify-center gap-5 bg-[#213779] hover:bg-[#1a2b5f] p-2 sm:p-5 rounded-lg"
                 >
 
@@ -39,7 +39,7 @@
                 </Link>
 
                 <Link 
-                    href="/mi-locker"
+                    href="/assignments/my"
                     class="flex flex-row items-center justify-center gap-5 bg-[#213779] hover:bg-[#1a2b5f] p-2 sm:p-5 rounded-lg"
                 >
 
@@ -53,7 +53,7 @@
                 </Link>
 
                 <Link 
-                    href="/mis-solicitudes"
+                    href="/requests/my"
                     class="flex flex-row items-center justify-center gap-5 bg-[#213779] hover:bg-[#1a2b5f] p-2 sm:p-5 rounded-lg shrink-0"
                 >
 

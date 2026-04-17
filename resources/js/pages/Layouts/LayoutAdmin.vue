@@ -41,14 +41,14 @@
 
                 <div class=" hidden lg:flex lg:flex-row md:text-xs md:gap-5 lg:gap-10  lg:text-base">
                     <Link 
-                        href="/asignaciones-admin"
+                        href="/admin/assignments"
                         class=""
                     >Asignaciones</Link>
-                    <Link href="/gestion-lockers-admin">Gestion Lockers</Link>
-                    <Link href="/usuarios-admin">Usuarios</Link>
-                    <Link href="/incidencias-admin">Incidencias</Link>
+                    <Link href="/admin/lockers">Gestion Lockers</Link>
+                    <Link href="/admin/users">Usuarios</Link>
+                    <Link href="/admin/incidents">Incidencias</Link>
                     <Link href="/estadisticas-lockers">Estadisticas</Link>
-                    <Link href="/aranceles-admin">Aranceles</Link>
+                    <Link href="/fee-rates">Aranceles</Link>
                     
                 </div>
 
@@ -97,7 +97,7 @@
                     </div>
 
                     <nav class="flex flex-col gap-5 text-gray-700 font-medium">
-                        <Link href="/asignaciones-admin" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2">
+                        <Link href="/admin/assignments" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2">
 
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
                                 <path fill-rule="evenodd" d="M7.502 6h7.128A3.375 3.375 0 0 1 18 9.375v9.375a3 3 0 0 0 3-3V6.108c0-1.505-1.125-2.811-2.664-2.94a48.972 48.972 0 0 0-.673-.05A3 3 0 0 0 15 1.5h-1.5a3 3 0 0 0-2.663 1.618c-.225.015-.45.032-.673.05C8.662 3.295 7.554 4.542 7.502 6ZM13.5 3A1.5 1.5 0 0 0 12 4.5h4.5A1.5 1.5 0 0 0 15 3h-1.5Z" clip-rule="evenodd" />
@@ -107,7 +107,7 @@
                             <span class="text-black ">Asignaciones</span>
                         </Link>
 
-                        <Link href="/gestion-lockers-admin" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2">
+                        <Link href="/admin/lockers" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2">
 
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
                                 <path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 0 0-5.25 5.25v3a3 3 0 0 0-3 3v6.75a3 3 0 0 0 3 3h10.5a3 3 0 0 0 3-3v-6.75a3 3 0 0 0-3-3v-3c0-2.9-2.35-5.25-5.25-5.25Zm3.75 8.25v-3a3.75 3.75 0 1 0-7.5 0v3h7.5Z" clip-rule="evenodd" />
@@ -116,14 +116,14 @@
                             <span class="text-black">Gestión Lockers</span>
 
                         </Link>
-                        <Link href="/usuarios-admin" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2"> 
+                        <Link href="/admin/users" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2"> 
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" class="size-8 ">
                                 <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd" />
                             </svg>
 
                             <span class="text-black">Usuarios</span>
                         </Link>
-                        <Link href="/incidencias-admin" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2"> 
+                        <Link href="/admin/incidents" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2"> 
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
                                 <path fill-rule="evenodd" d="M3 2.25a.75.75 0 0 1 .75.75v.54l1.838-.46a9.75 9.75 0 0 1 6.725.738l.108.054A8.25 8.25 0 0 0 18 4.524l3.11-.732a.75.75 0 0 1 .917.81 47.784 47.784 0 0 0 .005 10.337.75.75 0 0 1-.574.812l-3.114.733a9.75 9.75 0 0 1-6.594-.77l-.108-.054a8.25 8.25 0 0 0-5.69-.625l-2.202.55V21a.75.75 0 0 1-1.5 0V3A.75.75 0 0 1 3 2.25Z" clip-rule="evenodd" />
                             </svg>
@@ -140,7 +140,7 @@
                             <span class="text-black">Estadística Lockers</span>
                         </Link>
 
-                        <Link href="/aranceles-admin" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2"> 
+                        <Link href="/fee-rates" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2"> 
 
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
                                 <path d="M10.464 8.746c.227-.18.497-.311.786-.394v2.795a2.252 2.252 0 0 1-.786-.393c-.394-.313-.546-.681-.546-1.004 0-.323.152-.691.546-1.004ZM12.75 15.662v-2.824c.347.085.664.228.921.421.427.32.579.686.579.991 0 .305-.152.671-.579.991a2.534 2.534 0 0 1-.921.42Z" />

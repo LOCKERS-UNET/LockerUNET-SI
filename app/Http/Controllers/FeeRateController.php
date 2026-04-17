@@ -7,50 +7,49 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
-// Este controlador maneja los aranceles (tarifas) según el tipo de locker
 class FeeRateController extends Controller
 {
-    // INDEX (Admin): Lista todas las tarifas
-    // Ruta: GET /admin/aranceles
+    /**
+     * GET /fee-rates
+     * Obtiene los aranceles más recientes para cada tamaño
+     */
     public function index()
     {
-        // Traemos las tarifas ordenadas por fecha (más reciente primero)
-        $tarifas = FeeRate::with('admin')->orderBy('effective_from', 'desc')->get();
+        $types = ['small', 'mid', 'large'];
+        $rates = [];
+
+        foreach ($types as $type) {
+            $rates[$type] = FeeRate::where('locker_type', $type)
+                ->where('effective_from', '<=', today())
+                ->orderBy('effective_from', 'desc')
+                ->first();
+        }
 
         return Inertia::render('Admin/Aranceles', [
-            'tarifas' => $tarifas,
+            'rates' => $rates
         ]);
     }
 
-    // STORE (Admin): El admin crea una nueva tarifa
-    // Ruta: POST /admin/aranceles
+    /**
+     * POST /admin/fee-rates
+     * Registra un nuevo aumento de tarifa en el tiempo (histórico)
+     */
     public function store(Request $request)
     {
         $request->validate([
             'locker_type'    => 'required|in:small,mid,large',
-            'monthly_amount' => 'required|numeric|min:0',
-            'effective_from' => 'required|date',
-            'reason'         => 'nullable|string',
+            'monthly_amount' => 'required|numeric|gt:0',
+            'reason'         => 'required|string|max:500',
         ]);
 
         FeeRate::create([
             'locker_type'    => $request->locker_type,
             'monthly_amount' => $request->monthly_amount,
-            'effective_from' => $request->effective_from,
+            'effective_from' => today(),
             'reason'         => $request->reason,
-            'created_by'     => Auth::id(), // el admin logueado
+            'created_by'     => Auth::id(),
         ]);
 
-        return redirect()->back()->with('success', 'Tarifa registrada correctamente.');
-    }
-
-    // DESTROY (Admin): El admin elimina una tarifa
-    // Ruta: DELETE /admin/aranceles/{id}
-    public function destroy($id)
-    {
-        $tarifa = FeeRate::findOrFail($id);
-        $tarifa->delete();
-
-        return redirect()->back()->with('success', 'Tarifa eliminada correctamente.');
+        return redirect()->back()->with('success', 'Nuevo arancel estipulado correctamente. Empezará a tomar rigor a partir de hoy.');
     }
 }

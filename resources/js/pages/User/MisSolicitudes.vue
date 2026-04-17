@@ -80,7 +80,7 @@ const tipoLabel: Record<string, string> = {
             <template v-else>
                 <div class="text-center py-16 opacity-60">
                     <p class="font-bold text-gray-500 text-lg">No has hecho ninguna solicitud todavía.</p>
-                    <Link href="/buscar-locker" class="mt-6 inline-block bg-[#213779] text-white font-bold py-3 px-8 rounded-xl">
+                    <Link href="/lockers" class="mt-6 inline-block bg-[#213779] text-white font-bold py-3 px-8 rounded-xl">
                         Buscar un Locker
                     </Link>
                 </div>

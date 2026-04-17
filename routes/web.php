@@ -17,6 +17,9 @@ use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\FeeRateController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\BuscarUsuarioController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StatsController;
+use App\Http\Controllers\UserController;
 
 use App\Http\Middleware\IsAdminMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -30,48 +33,39 @@ Route::middleware(['auth'])->group(function () {
     Route::inertia('/', 'Home')->name('home');
 
     // Perfil
-    // Perfil (pasamos la asignación activa del usuario para mostrar info del locker)
-    Route::get('/user-profile', function () {
-        $asignacion = \App\Models\LockerAssignment::with(['locker.sector.building'])
-            ->where('user_id', auth()->id())
-            ->where('assignment_status', 'active')
-            ->first();
-        return inertia('User/Profile', ['asignacion' => $asignacion]);
-    })->name('user-profile');
-    Route::get('/edit-profile', [PerfilController::class, 'index'])->name('editar-perfil');
-    Route::post('/edit-profile', [PerfilController::class, 'store']);
+    Route::get('/profile', [ProfileController::class, 'show'])->name('user-profile');
+    Route::put('/profile', [ProfileController::class, 'update']);
 
     // --------------------------------------------------------
     // RUTAS DEL ESTUDIANTE
     // --------------------------------------------------------
 
     // Buscar lockers disponibles
-    Route::get('/buscar-locker', [LockerController::class, 'disponibles'])->name('buscar-locker');
+    Route::get('/lockers', [LockerController::class, 'index'])->name('buscar-locker');
 
     // Hacer una solicitud de locker
     Route::get('/solicitud-locker', function () {
         return inertia('User/SolicitudLocker', ['lockerData' => request()->all()]);
     })->name('solicitud-locker');
-    Route::post('/solicitud-locker', [LockerRequestController::class, 'store']);
+    Route::post('/requests', [LockerRequestController::class, 'store']);
 
     // Ver mis solicitudes
-    Route::get('/mis-solicitudes', [LockerRequestController::class, 'misSolicitudes'])->name('mis-solicitudes');
+    Route::get('/requests/my', [LockerRequestController::class, 'myRequests'])->name('mis-solicitudes');
 
-    // Ver mi locker activo
-    Route::get('/mi-locker', [LockerAssignmentController::class, 'miLocker'])->name('mi-locker');
+    // Ver mi locker activo (Asignación)
+    Route::get('/assignments/my', [LockerAssignmentController::class, 'myAssignment'])->name('mi-locker');
 
-    // Devolver locker
-    Route::get('/devolucion-locker', [LockerAssignmentController::class, 'devolucion'])->name('devolucion-locker');
-    Route::post('/devolucion-locker/{id}', [LockerAssignmentController::class, 'release']);
+    // Notificaciones (Bandeja, lectura y contador)
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notificaciones');
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::patch('/notifications/read-all', [NotificationController::class, 'readAll']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
 
-    // Notificaciones
-    Route::get('/notificaciones', [NotificationController::class, 'index'])->name('notificaciones');
-    Route::post('/notificaciones/{id}/leer', [NotificationController::class, 'markAsRead']);
+    // Pago de arancel e historial
+    Route::get('/payments/my', [PaymentController::class, 'myPayments'])->name('pago-arancel');
+    Route::get('/payments/my/pending', [PaymentController::class, 'myPending']);
 
-    // Pago de arancel
-    Route::get('/pago-arancel', [PaymentController::class, 'index'])->name('pago-arancel');
-
-    // Reportar incidencia (pasamos la asignación activa del usuario para precargar el locker)
+    // Reportar incidencia
     Route::get('/reportes-user', function () {
         $asignacion = \App\Models\LockerAssignment::with(['locker.sector'])
             ->where('user_id', auth()->id())
@@ -79,10 +73,13 @@ Route::middleware(['auth'])->group(function () {
             ->first();
         return inertia('User/ReporteIncidencia', ['asignacion' => $asignacion]);
     })->name('reportes-user');
-    Route::post('/reportes-user', [IncidentController::class, 'store']);
+    Route::post('/incidents', [IncidentController::class, 'store']);
 
     // Mis multas
-    Route::get('/multas/usuario', [FineController::class, 'misMultas']);
+    Route::get('/fines/my', [FineController::class, 'myFines']);
+
+    // Aranceles (disponibles para lectura)
+    Route::get('/fee-rates', [FeeRateController::class, 'index'])->name('aranceles-admin');
 
     // --------------------------------------------------------
     // RUTAS SOLO PARA EL ADMIN (protegidas con IsAdminMiddleware)
@@ -93,46 +90,51 @@ Route::middleware(['auth'])->group(function () {
         Route::inertia('/inicio-admin', 'Admin/HomeAdmin')->name('home-admin');
 
         // Gestión de Lockers (ver, crear, editar, eliminar)
-        Route::get('/gestion-lockers-admin', [LockerController::class, 'index'])->name('gestion-admin');
+        Route::get('/admin/lockers', [LockerController::class, 'adminIndex'])->name('gestion-admin');
+        Route::get('/admin/lockers/create', [LockerController::class, 'create'])->name('crear-locker-admin');
         Route::post('/admin/lockers', [LockerController::class, 'store']);
+        Route::get('/admin/lockers/{id}/edit', [LockerController::class, 'edit'])->name('modificar-locker-admin');
         Route::put('/admin/lockers/{id}', [LockerController::class, 'update']);
         Route::delete('/admin/lockers/{id}', [LockerController::class, 'destroy']);
 
-        // Modificar un locker específico
-        Route::inertia('/modificar-locker', 'Admin/ModificarLocker')->name('modificar-locker');
+        // Solicitudes de lockers (Ver, Aprobar, Rechazar)
+        Route::get('/admin/requests', [LockerRequestController::class, 'index'])->name('peticiones-admin');
+        Route::put('/admin/requests/{id}/approve', [LockerRequestController::class, 'approve']);
+        Route::put('/admin/requests/{id}/reject', [LockerRequestController::class, 'reject']);
 
-        // Solicitudes de lockers (aprobar / rechazar)
-        Route::get('/asignaciones-admin', [LockerRequestController::class, 'index'])->name('asignaciones-admin');
-        Route::post('/admin/solicitudes/{id}/aprobar', [LockerRequestController::class, 'approve']);
-        Route::post('/admin/solicitudes/{id}/rechazar', [LockerRequestController::class, 'reject']);
+        // Asignaciones directas e histórico (Ver, Crear directa, Liberar)
+        Route::get('/admin/assignments', [LockerAssignmentController::class, 'index'])->name('asignaciones-admin');
+        Route::post('/admin/assignments', [LockerAssignmentController::class, 'store']);
+        Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release']);
 
-        // Estadísticas
+        // Estadísticas (Vista)
         Route::inertia('/estadisticas-lockers', 'Admin/EstadisticasLockers')->name('estadisticas-admin');
 
-        // Aranceles (tarifas)
-        Route::get('/aranceles-admin', [FeeRateController::class, 'index'])->name('aranceles-admin');
-        Route::post('/admin/aranceles', [FeeRateController::class, 'store']);
-        Route::delete('/admin/aranceles/{id}', [FeeRateController::class, 'destroy']);
+        // Estadísticas (Endpoints JSON AJAX para Gráficos)
+        Route::get('/admin/stats/summary', [StatsController::class, 'summary']);
+        Route::get('/admin/stats/by-career', [StatsController::class, 'byCareer']);
+        Route::get('/admin/stats/by-semester', [StatsController::class, 'bySemester']);
+        Route::get('/admin/stats/monthly', [StatsController::class, 'monthly']);
+
+        // Aranceles (tarifas) - Registro histórico
+        Route::post('/admin/fee-rates', [FeeRateController::class, 'store']);
 
         // Incidencias
-        Route::get('/incidencias-admin', [IncidentController::class, 'index'])->name('incidencias-admin');
-        Route::post('/admin/incidencias/{id}/revisar', [IncidentController::class, 'review']);
+        Route::get('/admin/incidents', [IncidentController::class, 'index'])->name('incidencias-admin');
+        Route::put('/admin/incidents/{id}/review', [IncidentController::class, 'review']);
 
-        // Buscar usuario por código de carnet
-        Route::get('/admin/buscar', [BuscarUsuarioController::class, 'index']);
-        Route::get('/admin/buscar/{user:card_code}', [BuscarUsuarioController::class, 'mostrar_usuario']);
+        // Usuarios (Listado, Búsqueda y Ver Detalle)
+        Route::get('/admin/users', [UserController::class, 'index'])->name('usuarios-admin');
+        Route::get('/admin/users/{id}', [UserController::class, 'show'])->name('admin-ver-usuario');
 
-        // Usuarios
-        Route::inertia('/usuarios-admin', 'Admin/Usuarios')->name('usuarios-admin');
-
-        // Multas del admin (ver y crear para un usuario)
-        Route::get('/admin/multas/{user:card_code}', [FineController::class, 'index']);
-        Route::post('/admin/multas', [FineController::class, 'store']);
-        Route::delete('/admin/multas/{id}', [FineController::class, 'destroy']);
+        // Multas del admin (ver y crear para un usuario específico)
+        Route::get('/admin/users/{userId}/fines', [FineController::class, 'userFines']);
+        Route::post('/admin/fines', [FineController::class, 'store']);
+        Route::delete('/admin/fines/{id}', [FineController::class, 'destroy']);
 
         // Pagos
-        Route::post('/admin/pagos', [PaymentController::class, 'store']);
-        Route::post('/admin/pagos/{id}/pagar', [PaymentController::class, 'markAsPaid']);
+        Route::get('/admin/payments', [PaymentController::class, 'index']);
+        Route::patch('/admin/payments/{id}/paid', [PaymentController::class, 'markPaid']);
     });
 });
 

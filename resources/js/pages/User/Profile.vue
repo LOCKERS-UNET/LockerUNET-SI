@@ -110,7 +110,7 @@ const user = usePage().props.auth.user as any;
                     <!-- Si el usuario NO tiene locker asignado -->
                     <div v-else class="shadow-[0px_4px_23px_0px_rgba(0,_0,_0,_0.1)] p-6 rounded-md bg-white text-center">
                         <p class="text-gray-400 font-bold text-sm">Sin locker asignado actualmente.</p>
-                        <Link href="/buscar-locker" class="inline-block mt-3 text-[#22397A] font-bold text-sm underline hover:text-blue-800 transition-colors">
+                        <Link href="/lockers" class="inline-block mt-3 text-[#22397A] font-bold text-sm underline hover:text-blue-800 transition-colors">
                             Buscar un locker disponible →
                         </Link>
                     </div>

@@ -41,7 +41,7 @@
 
             <div class="grid grid-cols-2 gap-4 lg:gap-6 w-full lg:w-10/12">
 
-                <Link href="/asignaciones-admin" 
+                <Link href="/admin/assignments" 
                     class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] p-3 lg:p-4 rounded-xl shadow-md transition-colors"
                     aria-label="Ir a la sección de Asignaciones de lockers">
                     <span class="text-white font-bold text-[10px] lg:text-base">Asignaciones</span>
@@ -51,7 +51,7 @@
                     </svg>
                 </Link>
 
-                <Link href="/gestion-lockers-admin" 
+                <Link href="/admin/lockers" 
                     class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] p-3 lg:p-4 rounded-xl shadow-md transition-colors"
                     aria-label="Gestionar inventario de lockers">
                     <span class="text-white font-bold text-[10px] lg:text-base">Gestión Lockers</span>
@@ -60,7 +60,7 @@
                     </svg>
                 </Link>
 
-                <Link href="/usuarios-admin" 
+                <Link href="/admin/users" 
                     class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] p-3 lg:p-4 rounded-xl shadow-md transition-colors"
                     aria-label="Administrar usuarios del sistema">
                     <span class="text-white font-bold text-[10px] lg:text-base">Usuarios</span>
@@ -78,7 +78,7 @@
                     </svg>
                 </Link>
 
-                <Link href="/aranceles-admin" 
+                <Link href="/fee-rates" 
                     class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] p-3 lg:p-4 rounded-xl shadow-md transition-colors"
                     aria-label="Configurar precios y aranceles">
                     <span class="text-white font-bold text-[10px] lg:text-base">Aranceles</span>
@@ -93,7 +93,7 @@
 
                 </Link>
 
-                <Link href="/incidencias-admin" 
+                <Link href="/admin/incidents" 
                     class="flex items-center justify-between bg-[#DC2626] hover:bg-[#b91c1c] p-3 lg:p-4 rounded-xl shadow-md transition-colors"
                     aria-label="Ver y reportar incidencias técnicas">
                     <span class="text-white font-bold text-[10px] lg:text-base">Incidencias</span>

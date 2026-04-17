@@ -3,64 +3,101 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
-use App\Models\FeeRate;
-use App\Models\LockerAssignment;
+use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
-// Este controlador maneja los pagos de aranceles
 class PaymentController extends Controller
 {
-    // INDEX: El estudiante ve sus pagos
-    // Ruta: GET /pago-arancel
-    public function index()
+    // ==========================================
+    // USUARIO
+    // ==========================================
+
+    /**
+     * GET /payments/my
+     * Todos los pagos del usuario (historial)
+     */
+    public function myPayments()
     {
-        // Buscamos los pagos del estudiante logueado
-        $pagos = Payment::with(['assignment.locker'])
+        $payments = Payment::with(['assignment.locker'])
             ->where('user_id', Auth::id())
+            ->orderBy('due_date', 'desc')
             ->get();
 
-        // También traemos las tarifas actuales para mostrarlas
-        $tarifas = FeeRate::orderBy('effective_from', 'desc')->get();
-
-        return Inertia::render('User/PagoArancel', [
-            'pagos'   => $pagos,
-            'tarifas' => $tarifas,
+        return Inertia::render('User/PagoArancel', [ // O la vista en la que confíe el frontend
+            'pagos' => $payments
         ]);
     }
 
-    // STORE (Admin): El admin registra un pago para el estudiante
-    // Ruta: POST /admin/pagos
-    public function store(Request $request)
+    /**
+     * GET /payments/my/pending
+     * Solo los pendientes o vencidos (Para la pantalla de "Pago Arancel" actual)
+     */
+    public function myPending()
     {
-        $request->validate([
-            'assignment_id'  => 'required|exists:locker_assignments,assignment_id',
-            'user_id'        => 'required|exists:users,id',
-            'amount'         => 'required|numeric|min:0',
-            'due_date'       => 'required|date',
-            'semester'       => 'nullable|string',
-        ]);
+        $payments = Payment::with(['assignment.locker'])
+            ->where('user_id', Auth::id())
+            ->whereIn('payment_status', ['pending', 'overdue'])
+            ->orderBy('due_date', 'asc')
+            ->get();
 
-        Payment::create([
-            'assignment_id'  => $request->assignment_id,
-            'user_id'        => $request->user_id,
-            'amount'         => $request->amount,
-            'due_date'       => $request->due_date,
-            'payment_status' => 'pending',
-            'semester'       => $request->semester,
+        return Inertia::render('User/PagosPendientes', [
+            'pagos' => $payments
         ]);
-
-        return redirect()->back()->with('success', 'Pago generado correctamente.');
     }
 
-    // MARK AS PAID: El admin marca un pago como pagado
-    // Ruta: POST /admin/pagos/{id}/pagar
-    public function markAsPaid($id)
-    {
-        $pago = Payment::findOrFail($id);
-        $pago->update(['payment_status' => 'paid']);
+    // ==========================================
+    // ADMIN
+    // ==========================================
 
-        return redirect()->back()->with('success', 'Pago marcado como pagado.');
+    /**
+     * GET /admin/payments
+     */
+    public function index(Request $request)
+    {
+        $query = Payment::with(['user', 'assignment.locker']);
+
+        if ($request->has('user_id') && $request->user_id !== null) {
+            $query->where('user_id', $request->user_id);
+        }
+        if ($request->has('payment_status') && $request->payment_status !== null) {
+            $query->where('payment_status', $request->payment_status);
+        }
+        if ($request->has('semester') && $request->semester !== null) {
+            $query->where('semester', $request->semester);
+        }
+
+        $payments = $query->orderBy('created_at', 'desc')->get();
+
+        return Inertia::render('Admin/GestionPagos', [
+            'payments' => $payments
+        ]);
+    }
+
+    /**
+     * PATCH /admin/payments/{id}/paid
+     * Confirma manualmente un pago en la caja del Decanato
+     */
+    public function markPaid($id)
+    {
+        $payment = Payment::findOrFail($id);
+
+        if ($payment->payment_status === 'paid') {
+            return redirect()->back()->withErrors(['payment' => 'Este pago ya fue marcado como pagado anteriormente.']);
+        }
+
+        $payment->update([
+            'payment_status' => 'paid',
+        ]);
+
+        NotificationHelper::send(
+            $payment->user_id, 
+            'payment_confirmed', 
+            'Pago confirmado',
+            "Tu pago de Bs.{$payment->amount} fue registrado exitosamente."
+        );
+
+        return redirect()->back()->with('success', 'El pago ha sido marcado como pagado y el usuario notificado.');
     }
 }

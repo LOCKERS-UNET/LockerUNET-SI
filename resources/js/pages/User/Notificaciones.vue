@@ -35,7 +35,7 @@ const notificacionesFiltradas = computed(() => {
 
 // Marcar una notificación como leída (POST al backend)
 const marcarLeida = (id: number) => {
-    router.post(`/notificaciones/${id}/leer`, {}, {
+    router.patch(`/notifications/${id}/read`, {}, {
         // preserveScroll evita que la página salte hacia arriba al hacer el POST
         preserveScroll: true,
     });

@@ -7,36 +7,71 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
-// Este controlador maneja las notificaciones de los usuarios
 class NotificationController extends Controller
 {
-    // INDEX: El estudiante ve sus notificaciones
-    // Ruta: GET /notificaciones
-    public function index()
+    /**
+     * GET /notifications
+     * Visor de notificaciones in-app
+     */
+    public function index(Request $request)
     {
-        // Traemos las notificaciones del estudiante, más recientes primero
-        $notificaciones = Notification::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = Notification::where('user_id', Auth::id());
 
-        return Inertia::render('User/Notificaciones', [
-            'notificaciones' => $notificaciones,
+        // Búsqueda LIKE opcional
+        if ($request->has('search') && $request->search) {
+            $searchTerm = '%' . $request->search . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'LIKE', $searchTerm)
+                  ->orWhere('message', 'LIKE', $searchTerm);
+            });
+        }
+
+        $notifications = $query->orderBy('created_at', 'desc')->get();
+
+        return Inertia::render('User/Notificaciones', [ // Ajuste de la vista
+            'notificaciones' => $notifications
         ]);
     }
 
-    // MARK AS READ: Marca una notificación como leída
-    // Ruta: POST /notificaciones/{id}/leer
-    public function markAsRead($id)
+    /**
+     * PATCH /notifications/{id}/read
+     */
+    public function markRead($id)
     {
-        $notificacion = Notification::findOrFail($id);
+        $notification = Notification::findOrFail($id);
 
-        // Solo el dueño puede marcar su notificación
-        if ($notificacion->user_id !== Auth::id()) {
-            return redirect()->back()->with('error', 'No tienes permiso.');
+        // Seguridad estricta
+        if ($notification->user_id !== Auth::id()) {
+            abort(403);
         }
 
-        $notificacion->update(['is_read' => true]);
+        $notification->update(['is_read' => true]);
 
-        return redirect()->back()->with('success', 'Notificación leída.');
+        return redirect()->back();
+    }
+
+    /**
+     * PATCH /notifications/read-all
+     */
+    public function readAll()
+    {
+        Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return redirect()->back();
+    }
+
+    /**
+     * GET /notifications/unread-count
+     * Endpoint ligero (Ajax) para la burbuja de la campana en frontend
+     */
+    public function unreadCount()
+    {
+        return response()->json([
+            'count' => Notification::where('user_id', Auth::id())
+                ->where('is_read', false)
+                ->count()
+        ]);
     }
 }

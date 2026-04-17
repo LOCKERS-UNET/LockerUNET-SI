@@ -26,11 +26,11 @@ const form = reactive({
 // Control del estado de envío
 const enviado = ref(false);
 
-// Enviar reporte al backend (POST /reportes-user)
+// Enviar reporte al backend (POST /incidents)
 const submitReport = () => {
     if (!props.asignacion) return;
 
-    router.post('/reportes-user', {
+    router.post('/incidents', {
         locker_id:   props.asignacion.locker_id,
         description: form.descripcion,
     }, {

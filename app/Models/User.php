@@ -39,4 +39,34 @@ class User extends Authenticatable
         'password'
     ];
 
+    // Relaciones
+    public function assignments()
+    {
+        return $this->hasMany(LockerAssignment::class, 'user_id', 'id');
+    }
+
+    public function requests()
+    {
+        return $this->hasMany(LockerRequest::class, 'user_id', 'id');
+    }
+
+    public function incidents()
+    {
+        return $this->hasMany(Incident::class, 'user_id', 'id');
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class, 'user_id', 'id');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'user_id', 'id');
+    }
+
+    public function fines()
+    {
+        return $this->hasMany(Fine::class, 'user_id', 'id');
+    }
 }
