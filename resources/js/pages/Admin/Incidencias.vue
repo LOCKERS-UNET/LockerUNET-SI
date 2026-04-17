@@ -1,71 +1,48 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import ModalComponent from '../Components/ModalComponent.vue';
 import LayoutAdmin from '../Layouts/LayoutAdmin.vue';
 
 defineOptions({ layout: LayoutAdmin });
 
+const props = defineProps<{
+    incidents?: any[];
+}>();
+
 // ── Variables Reactivas ──
 const filtroActual = ref('Pendientes'); // 'Pendientes' | 'Revisadas'
-
-// Mock de incidencias con mas items para probar que se acomodan bien
-const incidenciasBase = ref([
-    {
-        id: 1,
-        usuario: 'Carlos Vivas',
-        locker: '#142',
-        edificio: 'B',
-        piso: 1,
-        fecha: '03/01/2026',
-        motivo: 'Cerradura Atascada',
-        estado: 'Pendientes'
-    },
-    {
-        id: 2,
-        usuario: 'Andrea Gomez',
-        locker: '#105',
-        edificio: 'A',
-        piso: 1,
-        fecha: '02/01/2026',
-        motivo: 'Falla interior, olor desagradable y puerta desencajada',
-        estado: 'Pendientes'
-    },
-    {
-        id: 3,
-        usuario: 'Juan Torres',
-        locker: '#111',
-        edificio: 'C',
-        piso: 2,
-        fecha: '04/01/2026',
-        motivo: 'Perdí mi llave',
-        estado: 'Pendientes'
-    },
-    {
-        id: 4,
-        usuario: 'Maria Lopez',
-        locker: '#204',
-        edificio: 'B',
-        piso: 2,
-        fecha: '01/01/2026',
-        motivo: 'Mantenimiento solicitado',
-        estado: 'Revisadas'
-    }
-]);
+const incidencias = ref<any[]>(props.incidents || []);
 
 // ── Filtro Computado ──
 const incidenciasFiltradas = computed(() => {
-    return incidenciasBase.value.filter(inc => inc.estado === filtroActual.value);
+    return incidencias.value.filter((inc) => {
+        if (filtroActual.value === 'Pendientes') {
+            return inc.status === 'pending';
+        }
+
+        return inc.status === 'reviewed';
+    });
 });
 
 // ── Modal State ──
 const modalAbierto = ref(false);
 const modalMensaje = ref('');
+const formReview = useForm({});
 
 const marcarComoRevisada = (inc: any) => {
-    inc.estado = 'Revisadas';
-    modalMensaje.value = "¡Incidencia marcada como revisada!";
-    modalAbierto.value = true;
+    formReview.put(`/admin/incidents/${inc.incident_id}/review`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            inc.status = 'reviewed';
+            modalMensaje.value = '¡Incidencia marcada como revisada!';
+            modalAbierto.value = true;
+        },
+        onError: () => {
+            modalMensaje.value = 'No se pudo actualizar la incidencia. Intenta de nuevo.';
+            modalAbierto.value = true;
+        }
+    });
 };
 </script>
 
@@ -108,27 +85,26 @@ const marcarComoRevisada = (inc: any) => {
                 
                 <template v-if="incidenciasFiltradas.length > 0">
                     <!-- TARJETA MINIATURIZADA -->
-                    <div v-for="inc in incidenciasFiltradas" :key="inc.id" class="bg-[#e4ebf7] rounded-sm p-3 flex flex-col shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div v-for="inc in incidenciasFiltradas" :key="inc.incident_id" class="bg-[#e4ebf7] rounded-sm p-3 flex flex-col shadow-sm border border-gray-100 hover:shadow-md transition">
                         
                         <!-- Encabezado Tarjeta -->
                         <div class="w-full mb-2">
-                            <h3 class="text-sm font-black text-black">{{ inc.usuario }}</h3>
+                            <h3 class="text-sm font-black text-black">{{ inc.user?.name }} {{ inc.user?.lastname }}</h3>
                             <div class="h-px bg-gray-300 w-full mt-1"></div>
                         </div>
 
                         <!-- Detalles ultra compactos -->
                         <div class="flex flex-col gap-0 mb-3 flex-1">
-                            <p class="text-[11px] text-gray-800"><span class="font-bold text-black">Locker:</span> {{ inc.locker }}</p>
-                            <p class="text-[11px] text-gray-800"><span class="font-bold text-black">Edificio:</span> {{ inc.edificio }} - P.{{ inc.piso }}</p>
-                            <p class="text-[11px] text-gray-800"><span class="font-bold text-black">Fecha:</span> {{ inc.fecha }}</p>
-                            <p class="text-[11px] text-gray-800 mt-[2px] line-clamp-2 leading-tight" :title="inc.motivo">
-                                <span class="font-bold text-black">Motivo:</span> {{ inc.motivo }}
+                            <p class="text-[11px] text-gray-800"><span class="font-bold text-black">Locker:</span> {{ inc.locker?.locker_code || 'N/A' }}</p>
+                            <p class="text-[11px] text-gray-800"><span class="font-bold text-black">Ubicación:</span> {{ inc.locker?.sector?.building?.building_code || 'N/A' }} - {{ inc.locker?.sector?.sector_name || 'N/A' }}</p>
+                            <p class="text-[11px] text-gray-800"><span class="font-bold text-black">Fecha:</span> {{ new Date(inc.created_at).toLocaleDateString('es-ES') }}</p>
+                            <p class="text-[11px] text-gray-800 mt-[2px] line-clamp-2 leading-tight" :title="inc.description">
+                                <span class="font-bold text-black">Motivo:</span> {{ inc.description }}
                             </p>
                         </div>
 
                         <!-- Botón Acción Compacto -->
-                        <div v-if="inc.estado === 'Pendientes'" class="w-full flex justify-center mt-auto">
-                            <!-- Padding ultra reducido y texto pequeñito -->
+                        <div v-if="inc.status === 'pending'" class="w-full flex justify-center mt-auto">
                             <button @click="marcarComoRevisada(inc)" class="w-full bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold py-1.5 px-2 rounded-md shadow-sm transition active:scale-95 text-[10px]">
                                 Revisada
                             </button>

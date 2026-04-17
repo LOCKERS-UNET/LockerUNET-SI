@@ -57,6 +57,53 @@ class UserController extends Controller
     }
 
     /**
+     * GET /admin/users/search
+     * Busca usuarios y devuelve JSON para el panel de asignaciones.
+     */
+    public function searchJson(Request $request)
+    {
+        $searchTerm = trim($request->input('search', ''));
+
+        $users = User::when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $query->where('name', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('lastname', 'LIKE', '%' . $searchTerm . '%')
+                    ->orWhere('card_code', 'LIKE', '%' . $searchTerm . '%');
+            })
+            ->with(['assignments' => function ($q) {
+                $q->where('assignment_status', 'active')
+                  ->with(['locker.sector.building']);
+            }])
+            ->get()
+            ->map(function ($user) {
+                $activeAssignment = $user->assignments->first();
+
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'lastname' => $user->lastname,
+                    'email' => $user->email,
+                    'career' => $user->career,
+                    'card_code' => $user->card_code,
+                    'locker_assignment' => $activeAssignment ? [
+                        'assignment_id' => $activeAssignment->assignment_id,
+                        'start_date' => $activeAssignment->start_date,
+                        'locker' => $activeAssignment->locker ? [
+                            'locker_code' => $activeAssignment->locker->locker_code,
+                            'sector' => $activeAssignment->locker->sector ? [
+                                'sector_name' => $activeAssignment->locker->sector->sector_name,
+                                'building' => [
+                                    'building_code' => $activeAssignment->locker->sector->building->building_code ?? null,
+                                ],
+                            ] : null,
+                        ] : null,
+                    ] : null,
+                ];
+            });
+
+        return response()->json($users);
+    }
+
+    /**
      * GET /admin/users/{id}
      * Muestra todo el perfil, historial y deudas de un usuario en concreto
      */

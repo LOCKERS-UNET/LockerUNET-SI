@@ -62,6 +62,29 @@ class LockerController extends Controller
         ]);
     }
 
+    /**
+     * GET /admin/lockers/available
+     * Devuelve lockers disponibles en formato JSON para el panel de asignaciones.
+     */
+    public function availableJson(Request $request)
+    {
+        $query = Locker::with(['sector.building'])
+            ->where('status', 0);
+
+        if ($request->has('sector_id') && $request->sector_id !== null && $request->sector_id !== '') {
+            $query->where('sector_id', $request->sector_id);
+        }
+        if ($request->has('locker_type') && $request->locker_type !== null && $request->locker_type !== '') {
+            $query->where('locker_type', $request->locker_type);
+        }
+
+        $lockers = $query->get();
+
+        return response()->json([
+            'lockers' => $lockers,
+        ]);
+    }
+
     // =========================================================
     // ADMIN
     // =========================================================

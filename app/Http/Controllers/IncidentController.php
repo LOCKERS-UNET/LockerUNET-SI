@@ -54,7 +54,7 @@ class IncidentController extends Controller
 
         $incidents = $query->orderBy('created_at', 'desc')->get();
 
-        return Inertia::render('Admin/GestionIncidencias', [ // Nombre de vista genérico deducido
+        return Inertia::render('Admin/Incidencias', [
             'incidents' => $incidents
         ]);
     }

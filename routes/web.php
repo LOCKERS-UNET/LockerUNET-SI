@@ -91,6 +91,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Gestión de Lockers (ver, crear, editar, eliminar)
         Route::get('/admin/lockers', [LockerController::class, 'adminIndex'])->name('gestion-admin');
+        Route::get('/admin/lockers/available', [LockerController::class, 'availableJson']);
         Route::get('/admin/lockers/create', [LockerController::class, 'create'])->name('crear-locker-admin');
         Route::post('/admin/lockers', [LockerController::class, 'store']);
         Route::get('/admin/lockers/{id}/edit', [LockerController::class, 'edit'])->name('modificar-locker-admin');
@@ -104,6 +105,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Asignaciones directas e histórico (Ver, Crear directa, Liberar)
         Route::get('/admin/assignments', [LockerAssignmentController::class, 'index'])->name('asignaciones-admin');
+        Route::get('/admin/assignments/list', [LockerAssignmentController::class, 'listJson']);
         Route::post('/admin/assignments', [LockerAssignmentController::class, 'store']);
         Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release']);
 
@@ -124,6 +126,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/admin/incidents/{id}/review', [IncidentController::class, 'review']);
 
         // Usuarios (Listado, Búsqueda y Ver Detalle)
+        Route::get('/admin/users/search', [UserController::class, 'searchJson']);
         Route::get('/admin/users', [UserController::class, 'index'])->name('usuarios-admin');
         Route::get('/admin/users/{id}', [UserController::class, 'show'])->name('admin-ver-usuario');
 

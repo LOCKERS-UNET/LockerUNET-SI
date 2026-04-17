@@ -79,6 +79,34 @@ class LockerAssignmentController extends Controller
     }
 
     /**
+     * GET /admin/assignments/list
+     * Devuelve el listado de asignaciones en JSON.
+     */
+    public function listJson(Request $request)
+    {
+        $query = LockerAssignment::with(['user', 'locker.sector.building']);
+
+        if ($request->has('assignment_status') && $request->assignment_status) {
+            $query->where('assignment_status', $request->assignment_status);
+        }
+
+        if ($request->has('search') && $request->search) {
+            $searchTerm = $request->search;
+            $query->whereHas('user', function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhere('lastname', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhere('card_code', 'LIKE', '%' . $searchTerm . '%');
+            });
+        }
+
+        $assignments = $query->orderBy('start_date', 'desc')->get();
+
+        return response()->json([
+            'asignaciones' => $assignments
+        ]);
+    }
+
+    /**
      * POST /admin/assignments
      * Asignación directa sin solicitud de por medio (request_id=null)
      */

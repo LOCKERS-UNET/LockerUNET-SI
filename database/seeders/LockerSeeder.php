@@ -13,30 +13,45 @@ class LockerSeeder extends Seeder
     {
         // ─── EDIFICIOS ────────────────────────────────────────────────
         // Creamos 3 edificios de prueba como si fuera la UNET
-        $edificioA = Building::create([
-            'building_code' => 'E-A',
-            'building_name' => 'Edificio A',
-        ]);
+        $edificioA = Building::updateOrCreate(
+            ['building_code' => 'E-A'],
+            ['building_name' => 'Edificio A']
+        );
 
-        $edificioB = Building::create([
-            'building_code' => 'E-B',
-            'building_name' => 'Edificio B',
-        ]);
+        $edificioB = Building::updateOrCreate(
+            ['building_code' => 'E-B'],
+            ['building_name' => 'Edificio B']
+        );
 
-        $edificioC = Building::create([
-            'building_code' => 'E-C',
-            'building_name' => 'Edificio C',
-        ]);
+        $edificioC = Building::updateOrCreate(
+            ['building_code' => 'E-C'],
+            ['building_name' => 'Edificio C']
+        );
 
         // ─── SECTORES ─────────────────────────────────────────────────
         // Cada edificio tiene plantas/pisos
-        $pbA = Sector::create(['building_id' => $edificioA->building_id, 'sector_name' => 'Planta Baja']);
-        $p1A = Sector::create(['building_id' => $edificioA->building_id, 'sector_name' => 'Piso 1']);
+        $pbA = Sector::updateOrCreate(
+            ['building_id' => $edificioA->building_id, 'sector_name' => 'Planta Baja'],
+            []
+        );
+        $p1A = Sector::updateOrCreate(
+            ['building_id' => $edificioA->building_id, 'sector_name' => 'Piso 1'],
+            []
+        );
 
-        $pbB = Sector::create(['building_id' => $edificioB->building_id, 'sector_name' => 'Planta Baja']);
-        $p1B = Sector::create(['building_id' => $edificioB->building_id, 'sector_name' => 'Piso 1']);
+        $pbB = Sector::updateOrCreate(
+            ['building_id' => $edificioB->building_id, 'sector_name' => 'Planta Baja'],
+            []
+        );
+        $p1B = Sector::updateOrCreate(
+            ['building_id' => $edificioB->building_id, 'sector_name' => 'Piso 1'],
+            []
+        );
 
-        $pbC = Sector::create(['building_id' => $edificioC->building_id, 'sector_name' => 'Planta Baja']);
+        $pbC = Sector::updateOrCreate(
+            ['building_id' => $edificioC->building_id, 'sector_name' => 'Planta Baja'],
+            []
+        );
 
         // ─── LOCKERS ──────────────────────────────────────────────────
         // status: 0 = disponible, 1 = ocupado, 2 = mantenimiento
@@ -70,7 +85,10 @@ class LockerSeeder extends Seeder
 
         // Insertamos todos los lockers
         foreach ($lockers as $locker) {
-            Locker::create($locker);
+            Locker::updateOrCreate(
+                ['locker_code' => $locker['locker_code']],
+                $locker
+            );
         }
     }
 }
