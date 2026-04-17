@@ -5,44 +5,52 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class PerfilController extends Controller
 {
-    //
-
-    public function index(){
-        
-        // dd("Editando perfil");
+    public function index()
+    {
         return Inertia::render('User/EditProfile');
-
     }
 
-
-    public function store(Request $request){
+    public function store(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
 
         $request->validate([
-
-            'name' => ['max:30'],
-            'lastname'=> ['max:30'],
-            'email'=> ['nullable','email','unique:users','ends_with:@unet.edu.ve'],
-            'card_code'=>['unique:users','max:5']
-            
+            'name' => ['nullable', 'string', 'max:30'],
+            'lastname' => ['nullable', 'string', 'max:30'],
+            // Se ignora el ID del usuario actual para que el 'unique' no falle al no cambiar el correo
+            'email' => ['nullable', 'email', 'unique:users,email,' . $user->id, 'ends_with:@unet.edu.ve'],
+            'card_code' => ['nullable', 'string', 'max:5', 'unique:users,card_code,' . $user->id],
+            'career' => ['nullable', 'string', 'max:50'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'], // Máximo 2MB
         ]);
 
+        // Procesar la imagen de perfil
+        if ($request->hasFile('profile_photo')) {
+            // Si el usuario ya tiene una foto, la eliminamos del disco
+            if ($user->profile_photo) {
+                Storage::disk('public')->delete($user->profile_photo);
+            }
 
-        $user = User::find(Auth::user()->id);
+            // Guardamos la nueva foto en storage/app/public/profile_photos
+            $path = $request->file('profile_photo')->store('profile_photos', 'public');
+            $user->profile_photo = $path;
+        }
 
-        $user->name = $request->name ? $request->name : $user->name;
-        $user->lastname = $request->lastname ? $request->lastname : $user->lastname;
-        $user->email = $request->email ? $request->email : $user->email;
-        $user->card_code = $request->card_code ? $request->card_code : $user->card_code;
-        $user->career = $request->career ? $request->career : $user->career;
+        // Actualizar campos solo si se enviaron en el request
+        $user->name = $request->name ?? $user->name;
+        $user->lastname = $request->lastname ?? $user->lastname;
+        $user->email = $request->email ?? $user->email;
+        $user->card_code = $request->card_code ?? $user->card_code;
+        $user->career = $request->career ?? $user->career;
 
         $user->save();
 
         return redirect()->back();
-
     }
-
 }
