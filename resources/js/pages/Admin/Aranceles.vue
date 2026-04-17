@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
+import { computed } from 'vue';
 import LayoutAdmin from '../Layouts/LayoutAdmin.vue';
 
 defineOptions({ layout: LayoutAdmin });
@@ -8,9 +8,6 @@ defineOptions({ layout: LayoutAdmin });
 const props = defineProps<{
     rates?: Record<string, any>;
 }>();
-
-const aranceles = ref<any[]>([]);
-const loading = ref(true);
 
 const form = useForm({
     locker_type: 'small',
@@ -24,10 +21,10 @@ const tipoLabel = (type: string) => {
     return 'Grande';
 };
 
-const buildAranceles = () => {
+const aranceles = computed(() => {
     const rates = props.rates || {};
 
-    aranceles.value = ['small', 'mid', 'large']
+    return ['small', 'mid', 'large']
         .map((type) => {
             const rate = rates[type];
             if (!rate) return null;
@@ -39,7 +36,7 @@ const buildAranceles = () => {
             };
         })
         .filter((item) => item !== null);
-};
+});
 
 const submitNuevoArancel = () => {
     form.post('/admin/fee-rates', {
@@ -49,11 +46,6 @@ const submitNuevoArancel = () => {
         }
     });
 };
-
-onMounted(() => {
-    buildAranceles();
-    loading.value = false;
-});
 </script>
 
 <template>
@@ -66,11 +58,7 @@ onMounted(() => {
             <h1 class="text-3xl sm:text-4xl font-extrabold text-black mb-8 mt-4">Aranceles</h1>
             <h2 class="text-lg sm:text-xl font-black text-[#4472c4] mb-12">Montos mensuales por tamaño</h2>
 
-            <div v-if="loading" class="text-center py-8">
-                <p class="text-gray-500">Cargando aranceles...</p>
-            </div>
-
-            <div v-else-if="aranceles.length === 0" class="text-center py-8">
+            <div v-if="aranceles.length === 0" class="text-center py-8">
                 <p class="text-gray-500">No hay aranceles disponibles</p>
             </div>
 
@@ -81,7 +69,7 @@ onMounted(() => {
                     <!-- Datos Lado Izquierdo -->
                     <div class="flex flex-col text-center sm:text-left">
                         <p class="font-extrabold text-black text-sm mb-1">{{ tipoLabel(a.locker_type) }}</p>
-                        <p class="text-[#213779] font-black text-xl sm:text-2xl mb-1">Bs. {{ a.monthly_amount }}</p>
+                        <p class="text-[#213779] font-black text-xl sm:text-2xl mb-1">Bs. {{ Number(a.monthly_amount) }}</p>
                         <p class="text-gray-400 text-[11px] font-semibold">Por mes</p>
                     </div>
 
@@ -135,6 +123,6 @@ onMounted(() => {
                 </div>
             </div>
         </div>
-
+        </div>
     </div>
 </template>

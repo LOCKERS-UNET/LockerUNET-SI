@@ -26,7 +26,7 @@ class LockerAssignmentController extends Controller
     {
         $userId = Auth::id();
 
-        $assignment = LockerAssignment::with(['locker.sector.building'])
+        $assignment = LockerAssignment::with(['locker.sector.building', 'payments'])
             ->where('user_id', $userId)
             ->where('assignment_status', 'active')
             ->first();

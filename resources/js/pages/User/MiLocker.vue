@@ -36,7 +36,7 @@ const props = defineProps<{
 // Calculamos el total de pagos pendientes
 const pagoPendiente = props.asignacion?.payments
     .filter(p => p.payment_status === 'pending')
-    .reduce((total, p) => total + p.amount, 0) ?? 0;
+    .reduce((total, p) => total + Number(p.amount), 0) ?? 0;
 </script>
 
 <template>
@@ -65,7 +65,7 @@ const pagoPendiente = props.asignacion?.payments
                 <!-- Botones de acción -->
                 <div class="flex flex-col w-full max-w-sm gap-4">
                     
-                    <Link href="/pago-arancel" class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold py-4 px-6 rounded-xl transition-colors shadow-md">
+                    <Link href="/payments/my" class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold py-4 px-6 rounded-xl transition-colors shadow-md">
                         <span class="ml-2">Pago Arancel</span>
                         <div class="bg-white rounded-full p-[2px]">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#213779" class="w-5 h-5">
@@ -74,7 +74,7 @@ const pagoPendiente = props.asignacion?.payments
                         </div>
                     </Link>
 
-                    <Link href="/multas/usuario" class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold py-4 px-6 rounded-xl transition-colors shadow-md">
+                    <Link href="/fines/my" class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold py-4 px-6 rounded-xl transition-colors shadow-md">
                         <span class="ml-2">Multas</span>
                         <div class="bg-white rounded-full p-[2px]">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#213779" class="w-5 h-5">

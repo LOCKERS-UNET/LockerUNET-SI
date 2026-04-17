@@ -1,14 +1,35 @@
 <script setup lang="ts">
     import { Link } from '@inertiajs/vue3';
-    import { ref } from 'vue';
+    import { ref, onMounted, onUnmounted } from 'vue';
 
     const isMenuOpen = ref(false);
+    
+    // Estado para el menú de perfil (dropdown)
+    const isProfileOpen = ref(false);
 
     const openMenu=()=>{
-
         isMenuOpen.value = !isMenuOpen.value
-
     }
+
+    const toggleProfileMenu = () => {
+        isProfileOpen.value = !isProfileOpen.value;
+    }
+
+    // Cerrar el dropdown si se hace clic fuera del área del perfil
+    const closeProfileOnClickOutside = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.profile-dropdown-container')) {
+            isProfileOpen.value = false;
+        }
+    };
+
+    onMounted(() => {
+        window.addEventListener('click', closeProfileOnClickOutside);
+    });
+
+    onUnmounted(() => {
+        window.removeEventListener('click', closeProfileOnClickOutside);
+    });
 
 </script>
 
@@ -59,11 +80,30 @@
                     </p>
 
                     
-                    <Link href="/user-profile">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="sm:size-8 size-5">
-                            <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd" />
-                        </svg>
-                    </Link>
+                    <div class="relative profile-dropdown-container">
+                        <button @click="toggleProfileMenu" 
+                                class="flex items-center cursor-pointer focus:outline-none"
+                                aria-haspopup="true"
+                                :aria-expanded="isProfileOpen"
+                                aria-label="Abrir opciones de perfil">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="sm:size-8 size-5" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+
+                        <div v-if="isProfileOpen" 
+                             class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-2xl py-2 z-50 ring-1 ring-black ring-opacity-10">
+                            <Link href="/inicio-admin" class="block px-4 py-3 text-sm text-gray-800 hover:bg-gray-100 border-b border-gray-50 transition">
+                                <span class="font-medium">Inicio</span>
+                            </Link>
+                            <Link href="/profile" class="block px-4 py-3 text-sm text-gray-800 hover:bg-gray-100 border-b border-gray-50 transition">
+                                <span class="font-medium">Mi Perfil</span>
+                            </Link>
+                            <Link href="/logout" method="post" as="button" class="w-full text-left block px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-bold transition">
+                                Cerrar Sesión
+                            </Link>
+                        </div>
+                    </div>
 
                 </div>
 

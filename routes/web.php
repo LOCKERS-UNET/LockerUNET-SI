@@ -44,9 +44,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/lockers', [LockerController::class, 'index'])->name('buscar-locker');
 
     // Hacer una solicitud de locker
-    Route::get('/solicitud-locker', function () {
+    Route::match(['get', 'head'], '/solicitud-locker', function () {
         return inertia('User/SolicitudLocker', ['lockerData' => request()->all()]);
     })->name('solicitud-locker');
+    Route::match(['post'], '/solicitud-locker', [LockerRequestController::class, 'store'])->name('solicitud-locker.store');
     Route::post('/requests', [LockerRequestController::class, 'store']);
 
     // Ver mis solicitudes
@@ -77,6 +78,16 @@ Route::middleware(['auth'])->group(function () {
 
     // Mis multas
     Route::get('/fines/my', [FineController::class, 'myFines']);
+
+    // Devolución Locker
+    Route::get('/devolucion-locker', function () {
+        $asignacion = \App\Models\LockerAssignment::with(['locker'])
+            ->where('user_id', auth()->id())
+            ->where('assignment_status', 'active')
+            ->first();
+        return inertia('User/DevolucionLocker', ['asignacion' => $asignacion]);
+    })->name('devolucion-locker');
+    Route::post('/devolucion-locker/{id}', [LockerAssignmentController::class, 'release']);
 
     // Aranceles (disponibles para lectura)
     Route::get('/fee-rates', [FeeRateController::class, 'index'])->name('aranceles-admin');

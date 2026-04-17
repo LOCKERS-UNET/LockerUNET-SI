@@ -25,7 +25,7 @@ const confirmado = ref(false);
 const enviarSolicitud = () => {
     if (!confirmado.value) return;
     
-    router.post('/solicitud-locker', {
+    router.post('/requests', {
         locker_id: props.lockerData.locker_id
     });
 };
@@ -90,7 +90,7 @@ const enviarSolicitud = () => {
             </div>
 
             <!-- Checkbox de confirmación -->
-            <div class="flex items-start gap-4 mb-16 w-full px-6">
+            <div class="flex items-start gap-4 mb-10 w-full px-6">
                 <input 
                     type="checkbox" 
                     id="confirm-solicitud" 
@@ -100,6 +100,11 @@ const enviarSolicitud = () => {
                 <label for="confirm-solicitud" class="text-gray-700 text-lg leading-tight cursor-pointer select-none">
                     He descargado el Formulario CBE-102 y acepto consignar los recaudos necesarios para la solicitud del Casillero <span class="font-bold text-black">{{ lockerData.codigo }}</span>.
                 </label>
+            </div>
+
+            <!-- Mostrar Errores del Backend -->
+            <div v-if="Object.keys($page.props.errors).length > 0" class="w-full max-w-sm mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-center font-bold">
+                <p v-for="error in $page.props.errors" :key="error">{{ error }}</p>
             </div>
 
             <!-- Botones -->

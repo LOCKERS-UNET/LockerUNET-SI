@@ -71,7 +71,7 @@ const tipoLabel: Record<string, string> = {
                         </p>
                         <p class="self-center font-bold flex flex-row gap-2 text-xs sm:block sm:text-base">
                             Monto:
-                            <span class="font-normal block text-xs sm:text-base sm:inline">Bs. {{ pago.amount }}</span>
+                            <span class="font-normal block text-xs sm:text-base sm:inline">Bs. {{ Number(pago.amount) }}</span>
                         </p>
                         <p class="self-center font-bold flex flex-row gap-2 text-xs sm:block sm:text-base">
                             Fecha límite:
