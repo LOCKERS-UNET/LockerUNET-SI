@@ -11,84 +11,91 @@ class LockerSeeder extends Seeder
 {
     public function run(): void
     {
-        // ─── EDIFICIOS ────────────────────────────────────────────────
-        // Creamos 3 edificios de prueba como si fuera la UNET
-        $edificioA = Building::updateOrCreate(
-            ['building_code' => 'E-A'],
-            ['building_name' => 'Edificio A']
-        );
+        // Rutas a los archivos CSV
+        $buildingsCsv = database_path('seeders/data/Buildings.csv');
+        $sectorsCsv = database_path('seeders/data/sectors.csv');
+        $lockersCsv = database_path('seeders/data/Lockers.csv');
 
-        $edificioB = Building::updateOrCreate(
-            ['building_code' => 'E-B'],
-            ['building_name' => 'Edificio B']
-        );
+        // 1. CARGAR EDIFICIOS
+        if (file_exists($buildingsCsv)) {
+            $buildingsData = [];
+            $handle = fopen($buildingsCsv, 'r');
+            $header = fgetcsv($handle); // Leer cabecera
+            while (($row = fgetcsv($handle)) !== false) {
+                if (count($row) === 3) {
+                    $buildingsData[] = [
+                        'building_id' => $row[0],
+                        'building_code' => $row[1],
+                        'building_name' => $row[2],
+                    ];
+                }
+            }
+            fclose($handle);
 
-        $edificioC = Building::updateOrCreate(
-            ['building_code' => 'E-C'],
-            ['building_name' => 'Edificio C']
-        );
+            if (!empty($buildingsData)) {
+                \Illuminate\Support\Facades\DB::table('buildings')->upsert(
+                    $buildingsData, 
+                    ['building_id'], 
+                    ['building_code', 'building_name']
+                );
+            }
+        }
 
-        // ─── SECTORES ─────────────────────────────────────────────────
-        // Cada edificio tiene plantas/pisos
-        $pbA = Sector::updateOrCreate(
-            ['building_id' => $edificioA->building_id, 'sector_name' => 'Planta Baja'],
-            []
-        );
-        $p1A = Sector::updateOrCreate(
-            ['building_id' => $edificioA->building_id, 'sector_name' => 'Piso 1'],
-            []
-        );
+        // 2. CARGAR SECTORES
+        if (file_exists($sectorsCsv)) {
+            $sectorsData = [];
+            $handle = fopen($sectorsCsv, 'r');
+            $header = fgetcsv($handle);
+            while (($row = fgetcsv($handle)) !== false) {
+                if (count($row) === 3) {
+                    $sectorsData[] = [
+                        'sector_id' => $row[0],
+                        'building_id' => $row[1],
+                        'sector_name' => $row[2],
+                    ];
+                }
+            }
+            fclose($handle);
 
-        $pbB = Sector::updateOrCreate(
-            ['building_id' => $edificioB->building_id, 'sector_name' => 'Planta Baja'],
-            []
-        );
-        $p1B = Sector::updateOrCreate(
-            ['building_id' => $edificioB->building_id, 'sector_name' => 'Piso 1'],
-            []
-        );
+            if (!empty($sectorsData)) {
+                \Illuminate\Support\Facades\DB::table('sectors')->upsert(
+                    $sectorsData, 
+                    ['sector_id'], 
+                    ['building_id', 'sector_name']
+                );
+            }
+        }
 
-        $pbC = Sector::updateOrCreate(
-            ['building_id' => $edificioC->building_id, 'sector_name' => 'Planta Baja'],
-            []
-        );
+        // 3. CARGAR LOCKERS
+        if (file_exists($lockersCsv)) {
+            $lockersData = [];
+            $handle = fopen($lockersCsv, 'r');
+            $header = fgetcsv($handle);
+            while (($row = fgetcsv($handle)) !== false) {
+                // type, code, status, plate, sector_id
+                if (count($row) >= 5) {
+                    $lockersData[] = [
+                        'locker_type' => $row[0],
+                        'locker_code' => $row[1],
+                        'status' => (int) $row[2],
+                        'plate_number' => $row[3] === 'not' ? null : $row[3],
+                        'sector_id' => $row[4],
+                    ];
+                }
+            }
+            fclose($handle);
 
-        // ─── LOCKERS ──────────────────────────────────────────────────
-        // status: 0 = disponible, 1 = ocupado, 2 = mantenimiento
-        // locker_type: small, mid, large
-
-        $lockers = [
-            // Edificio A - Planta Baja
-            ['locker_code' => 'A-PB-001', 'sector_id' => $pbA->sector_id, 'locker_type' => 'small', 'plate_number' => null, 'status' => 0],
-            ['locker_code' => 'A-PB-002', 'sector_id' => $pbA->sector_id, 'locker_type' => 'mid',   'plate_number' => 'A01', 'status' => 0],
-            ['locker_code' => 'A-PB-003', 'sector_id' => $pbA->sector_id, 'locker_type' => 'large', 'plate_number' => null, 'status' => 1], // ocupado
-
-            // Edificio A - Piso 1
-            ['locker_code' => 'A-P1-001', 'sector_id' => $p1A->sector_id, 'locker_type' => 'small', 'plate_number' => null, 'status' => 0],
-            ['locker_code' => 'A-P1-002', 'sector_id' => $p1A->sector_id, 'locker_type' => 'mid',   'plate_number' => 'B02', 'status' => 0],
-            ['locker_code' => 'A-P1-003', 'sector_id' => $p1A->sector_id, 'locker_type' => 'large', 'plate_number' => null, 'status' => 2], // mantenimiento
-
-            // Edificio B - Planta Baja
-            ['locker_code' => 'B-PB-001', 'sector_id' => $pbB->sector_id, 'locker_type' => 'small', 'plate_number' => null, 'status' => 0],
-            ['locker_code' => 'B-PB-002', 'sector_id' => $pbB->sector_id, 'locker_type' => 'mid',   'plate_number' => null, 'status' => 0],
-            ['locker_code' => 'B-PB-003', 'sector_id' => $pbB->sector_id, 'locker_type' => 'large', 'plate_number' => 'C03','status' => 0],
-
-            // Edificio B - Piso 1
-            ['locker_code' => 'B-P1-001', 'sector_id' => $p1B->sector_id, 'locker_type' => 'small', 'plate_number' => null, 'status' => 0],
-            ['locker_code' => 'B-P1-002', 'sector_id' => $p1B->sector_id, 'locker_type' => 'mid',   'plate_number' => null, 'status' => 1], // ocupado
-
-            // Edificio C - Planta Baja
-            ['locker_code' => 'C-PB-001', 'sector_id' => $pbC->sector_id, 'locker_type' => 'small', 'plate_number' => null, 'status' => 0],
-            ['locker_code' => 'C-PB-002', 'sector_id' => $pbC->sector_id, 'locker_type' => 'mid',   'plate_number' => null, 'status' => 0],
-            ['locker_code' => 'C-PB-003', 'sector_id' => $pbC->sector_id, 'locker_type' => 'large', 'plate_number' => 'D04','status' => 0],
-        ];
-
-        // Insertamos todos los lockers
-        foreach ($lockers as $locker) {
-            Locker::updateOrCreate(
-                ['locker_code' => $locker['locker_code']],
-                $locker
-            );
+            // Insertar en lotes si el archivo es grande
+            if (!empty($lockersData)) {
+                $chunks = array_chunk($lockersData, 500);
+                foreach ($chunks as $chunk) {
+                    \Illuminate\Support\Facades\DB::table('lockers')->upsert(
+                        $chunk, 
+                        ['locker_code'], 
+                        ['locker_type', 'status', 'plate_number', 'sector_id']
+                    );
+                }
+            }
         }
     }
 }

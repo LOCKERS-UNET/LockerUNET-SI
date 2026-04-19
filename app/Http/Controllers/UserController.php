@@ -126,7 +126,7 @@ class UserController extends Controller
             ->orderBy('due_date', 'asc')
             ->get();
 
-        return Inertia::render('Admin/VerUsuario', [
+        return Inertia::render('Admin/VistaUsuario', [
             'user'            => $user,
             'assignment'      => $assignment,
             'fines'           => $fines,

@@ -55,6 +55,17 @@ class FineController extends Controller
     }
 
     /**
+     * GET /admin/multas/{card_code}
+     * Muestra el formulario para crear una multa
+     */
+    public function create(User $user)
+    {
+        return Inertia::render('Admin/CrearMulta', [
+            'user' => $user
+        ]);
+    }
+
+    /**
      * POST /admin/fines
      * Crear una sanción pecuniaria
      */

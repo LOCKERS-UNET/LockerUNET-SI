@@ -143,6 +143,7 @@ Route::middleware(['auth'])->group(function () {
 
         // Multas del admin (ver y crear para un usuario específico)
         Route::get('/admin/users/{userId}/fines', [FineController::class, 'userFines']);
+        Route::get('/admin/multas/{user:card_code}', [FineController::class, 'create'])->name('crear-multa-admin');
         Route::post('/admin/fines', [FineController::class, 'store']);
         Route::delete('/admin/fines/{id}', [FineController::class, 'destroy']);
 

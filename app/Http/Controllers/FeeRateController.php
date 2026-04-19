@@ -22,6 +22,7 @@ class FeeRateController extends Controller
             $rates[$type] = FeeRate::where('locker_type', $type)
                 ->where('effective_from', '<=', today())
                 ->orderBy('effective_from', 'desc')
+                ->orderBy('rate_id', 'desc')
                 ->first();
         }
 
