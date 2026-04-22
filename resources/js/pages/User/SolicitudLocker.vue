@@ -19,6 +19,7 @@ const props = defineProps<{
 }>();
 
 const confirmado = ref(false);
+const urlFormulario = '/docs/Solicitud_de_Locker.pdf';
 
 // Enviamos la solicitud real al backend (POST /solicitud-locker)
 // El controlador LockerRequestController@store lo procesa
@@ -68,16 +69,15 @@ const enviarSolicitud = () => {
                         <span class="text-2xl font-bold text-black">Descargar Archivo</span>
                     </div>
                     
-                    <a 
-                        href="/docs/Reglamento_CBE_UNET.pdf" 
-                        download="Formulario_CBE-102_UNET.pdf"
-                        class="bg-transparent border border-gray-300 rounded-full p-2.5 hover:bg-white transition-colors"
-                        aria-label="Descargar Formulario CBE-102"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-gray-700">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 12l4.5 4.5m0 0l4.5-4.5M12 3v13.5" />
-                        </svg>
-                    </a>
+<a 
+    :href="urlFormulario" 
+    download="Solicitud_Locker_UNET.pdf"
+    class="bg-transparent border border-gray-300 rounded-full p-2.5 hover:bg-white transition-colors"
+>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-gray-700">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 12l4.5 4.5m0 0l4.5-4.5M12 3v13.5" />
+    </svg>
+</a>
                 </div>
             </div>
 

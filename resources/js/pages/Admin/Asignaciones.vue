@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
+import { Head, useForm, router,  } from '@inertiajs/vue3';
+import { ref, onMounted, computed } from 'vue';
 import ModalComponent from '../Components/ModalComponent.vue';
 import LayoutAdmin from '../Layouts/LayoutAdmin.vue';
 
@@ -31,65 +31,131 @@ const formLiberar = useForm({
     assignment_id: null as any
 });
 
-// Buscar usuario
+// 👇🏼 FUNCIÓN PARA MARCAR PAGO COMO PAGADO
+const marcarComoPagado = async (paymentId: number) => {
+    processingPayments.value.push(paymentId);
+    
+    try {
+        await router.patch(`/admin/payments/${paymentId}/paid`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Recargar datos del usuario para actualizar la UI
+                if (searchQuery.value) {
+                    buscarUsuario();
+                }
+                fetchAsignaciones();
+            },
+            onError: (errors: Record<string, string>) => {  // 👈🏼 Tipo explícito
+                console.error('Error al marcar pago:', errors);
+                const errorMsg = Object.values(errors)[0] || 'No se pudo procesar el pago';
+                alert(errorMsg);
+            },
+            onFinish: () => {
+                processingPayments.value = processingPayments.value.filter(id => id !== paymentId);
+            }
+        });
+    } catch (err) {
+        console.error('Error de red:', err);
+        processingPayments.value = processingPayments.value.filter(id => id !== paymentId);
+    }
+};
+
+const confirmarBorrarHistorial = () => {
+    if (!confirm('⚠️ ¿Estás seguro de que deseas borrar TODO el historial de asignaciones?\n\nEsta acción no se puede deshacer.')) {
+        return;
+    }
+    
+    if (!confirm('⚠️ ¿Realmente estás seguro? Se eliminarán TODAS las asignaciones liberadas del sistema.')) {
+        return;
+    }
+    
+    router.delete('/admin/assignments/history', {
+        preserveScroll: true,
+        onSuccess: () => {
+            modalMensaje.value = 'Historial borrado exitosamente';
+            modalAbierto.value = true;
+            asignacionesList.value = [];
+        },
+        onError: (errors: Record<string, string>) => {
+            console.error('Error al borrar historial:', errors);
+            const errorMsg = Object.values(errors)[0] || 'No se pudo borrar el historial';
+            alert(errorMsg);
+        }
+    });
+};
+
 const buscarUsuario = async () => {
     if (!searchQuery.value) {
         usuarioSeleccionado.value = null;
-
         return;
     }
 
     try {
-
         const response = await fetch(`/admin/users/search?search=${encodeURIComponent(searchQuery.value)}`, {
-            headers: { 'Accept': 'application/json' }
+            headers: { 
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         });
 
-        if (!response.ok) {
-            throw new Error('Error');
-        }
+        if (!response.ok) throw new Error('Error');
 
         const users = await response.json();
-
-        usuarioSeleccionado.value = Array.isArray(users) && users.length > 0 ? users[0] : null;
+        const user = Array.isArray(users) && users.length > 0 ? users[0] : null;
+        
+        if (user) {
+            // Buscar asignación activa del usuario
+            try {
+                const assignmentsResponse = await fetch(`/admin/assignments/list?search=${encodeURIComponent(user.name)}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (assignmentsResponse.ok) {
+                    const assignmentsData = await assignmentsResponse.json();
+                    const activeAssignment = assignmentsData.asignaciones?.find((a: any) => 
+                        a.user_id === user.id && a.assignment_status === 'active'
+                    );
+                    
+                    user.locker_assignment = activeAssignment || null;
+                }
+            } catch (err) {
+                console.error('Error al obtener asignación:', err);
+            }
+        }
+        
+        usuarioSeleccionado.value = user;
+        formAsignar.locker_id = null;
+        
     } catch (err) {
         console.error('Error al buscar usuario:', err);
         usuarioSeleccionado.value = null;
     }
 };
 
-// Obtener lockers disponibles
 const fetchLockeresDisponibles = async () => {
     try {
         const response = await fetch('/admin/lockers/available', {
             headers: { 'Accept': 'application/json' }
         });
 
-        if (!response.ok) {
-            throw new Error('Error');
-        }
+        if (!response.ok) throw new Error('Error');
 
         const data = await response.json();
-
         lockeresDisponibles.value = data.lockers || data;
     } catch (err) {
         console.error('Error al obtener lockers:', err);
     }
 };
 
-// Obtener historial de asignaciones
 const fetchAsignaciones = async () => {
     try {
         const response = await fetch('/admin/assignments/list', {
             headers: { 'Accept': 'application/json' }
         });
 
-        if (!response.ok) {
-            throw new Error('Error');
-        }
+        if (!response.ok) throw new Error('Error');
 
         const data = await response.json();
-
         asignacionesList.value = data.asignaciones || data;
     } catch (err) {
         console.error('Error al obtener asignaciones:', err);
@@ -97,22 +163,23 @@ const fetchAsignaciones = async () => {
         loading.value = false;
     }
 };
+const processingPayments = ref<number[]>([]);
+
+const tienePagosPendientes = computed(() => {
+    return usuarioSeleccionado.value?.locker_assignment?.payments?.some((p: any) => 
+        ['pending', 'overdue'].includes(p.payment_status)
+    ) ?? false;
+});
 
 const getLockerDisplay = (locker: any) => {
-    if (!locker) {
-        return 'N/A';
-    }
-
+    if (!locker) return 'N/A';
     const sector = locker.sector || {};
     const building = sector.building || {};
-
     return `${locker.locker_code} - ${building.building_code || 'N/A'} - ${sector.sector_name || 'N/A'}`;
 };
 
 const confirmarAsignacion = () => {
-    if (!usuarioSeleccionado.value || !formAsignar.locker_id) {
-        return;
-    }
+    if (!usuarioSeleccionado.value || !formAsignar.locker_id) return;
 
     formAsignar.user_id = usuarioSeleccionado.value.id;
     formAsignar.post('/admin/assignments', {
@@ -120,6 +187,7 @@ const confirmarAsignacion = () => {
             modalMensaje.value = '¡Locker asignado con éxito!';
             modalAbierto.value = true;
             fetchAsignaciones();
+            fetchLockeresDisponibles();
             searchQuery.value = '';
             usuarioSeleccionado.value = null;
             formAsignar.reset();
@@ -127,16 +195,37 @@ const confirmarAsignacion = () => {
     });
 };
 
-const confirmarLiberacion = (assignment: any) => {
-    if (confirm('¿Deseas liberar el locker?')) {
-        formLiberar.put(`/admin/assignments/${assignment.assignment_id}/release`, {
+const confirmarLiberacion = (assignment: any) => {  // 👈🏼 Quita 'async' si no usas await
+    if (!confirm('¿Deseas liberar el locker?')) return;
+
+    router.put(  // 👈🏼 Usa router.put en lugar de formLiberar.put
+        `/admin/assignments/${assignment.assignment_id}/release`,
+        {},  // datos vacíos
+        {
+            preserveScroll: true,
             onSuccess: () => {
                 modalMensaje.value = '¡Locker liberado con éxito!';
                 modalAbierto.value = true;
+
+                if (usuarioSeleccionado.value) {
+                    usuarioSeleccionado.value.locker_assignment = null;
+                }
+
+                if (searchQuery.value) {
+                    buscarUsuario();
+                }
+
                 fetchAsignaciones();
+                fetchLockeresDisponibles();
+            },
+            // 👇🏼 CORRECCIÓN: Agrega tipo explícito a 'errors'
+            onError: (errors: Record<string, string>) => {
+                console.error('Error al liberar:', errors);
+                const errorMsg = Object.values(errors)[0] || 'No se pudo liberar el locker';
+                alert(errorMsg);
             }
-        });
-    }
+        }
+    );
 };
 
 onMounted(() => {
@@ -146,7 +235,6 @@ onMounted(() => {
     } else {
         fetchAsignaciones();
     }
-
     fetchLockeresDisponibles();
 });
 
@@ -179,6 +267,19 @@ onMounted(() => {
                     <div v-if="tabActual === 'asignar_liberar'" class="absolute bottom-[-1px] left-0 w-full h-[2px] bg-black"></div>
                 </button>
             </div>
+
+<!-- 👇 BOTÓN BORRAR HISTORIAL (solo visible en pestaña Historial) -->
+<div v-if="tabActual === 'historial' && asignacionesList.length > 0" class="w-full max-w-2xl mb-6 flex justify-end">
+    <button 
+        @click="confirmarBorrarHistorial"
+        class="bg-[#DC2626] hover:bg-red-700 text-white text-sm font-bold py-2.5 px-6 rounded-lg shadow-md transition-all hover:shadow-lg active:scale-95 flex items-center gap-2"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+            <path fill-rule="evenodd" d="M16.5 4.478v.227a48.816 48.816 0 0 1 3.878.512.75.75 0 1 1-.256 1.478l-.209-.035-1.005 13.07a3 3 0 0 1-2.991 2.77H8.084a3 3 0 0 1-2.991-2.77L4.087 6.66l-.209.035a.75.75 0 0 1-.256-1.478A48.567 48.567 0 0 1 7.5 4.705v-.227c0-1.564 1.213-2.9 2.816-2.951a52.662 52.662 0 0 1 3.369 0c1.603.051 2.815 1.387 2.815 2.951Zm-6.136-1.452a51.196 51.196 0 0 1 3.273 0C14.39 3.05 15 3.684 15 4.478v.113a49.488 49.488 0 0 0-6 0v-.113c0-.794.609-1.428 1.364-1.452Zm-.355 5.945a.75.75 0 1 0-1.5.058l.347 9a.75.75 0 1 0 1.499-.058l-.346-9Zm5.48.058a.75.75 0 1 0-1.498-.058l-.347 9a.75.75 0 0 0 1.5.058l.345-9Z" clip-rule="evenodd" />
+        </svg>
+        Borrar Historial
+    </button>
+</div>
 
             <!-- Contenido Tab Principal -->
             <div v-if="tabActual === 'asignar_liberar'" class="w-full flex flex-col items-center">
@@ -241,7 +342,38 @@ onMounted(() => {
                             <span class="font-bold text-gray-800 text-[15px]">{{ new Date(usuarioSeleccionado.locker_assignment.start_date).toLocaleDateString('es-ES') }}</span>
                         </div>
                     </div>
-
+<div v-if="usuarioSeleccionado?.locker_assignment?.payments?.length" 
+     class="mt-6 w-full max-w-[500px] mx-auto p-5 bg-yellow-50 rounded-xl border-2 border-yellow-300 shadow-md">
+    
+    <h4 class="font-bold text-yellow-800 mb-4 text-center text-base">⚠️ Pagos pendientes:</h4>
+    
+    <ul class="space-y-3">
+        <li v-for="pago in usuarioSeleccionado.locker_assignment.payments.filter((p: any) => 
+                 ['pending', 'overdue'].includes(p.payment_status))" 
+            :key="pago.payment_id"
+            class="flex items-center justify-between bg-white p-3 rounded-lg border border-yellow-200"
+        >
+            <!-- Información del pago -->
+            <div class="flex flex-col gap-1">
+                <span class="text-gray-800 font-bold text-base">
+                    Bs. {{ parseFloat(pago.amount).toFixed(2) }}
+                </span>
+                <span class="text-gray-600 text-xs">
+                    Vence: {{ new Date(pago.due_date).toLocaleDateString('es-ES') }}
+                </span>
+            </div>
+            
+            <!-- Botón de acción -->
+            <button 
+                @click="marcarComoPagado(pago.payment_id)"
+                :disabled="processingPayments.includes(pago.payment_id)"
+                class="bg-[#0D7A5F] hover:bg-[#0a5f4a] disabled:bg-gray-400 text-white text-xs font-bold py-2 px-5 rounded-lg transition-all disabled:opacity-50 shadow-sm hover:shadow-md active:scale-95"
+            >
+                {{ processingPayments.includes(pago.payment_id) ? '⏳ Procesando...' : '✓ Marcar pagado' }}
+            </button>
+        </li>
+    </ul>
+</div>
                     <button 
                         @click="confirmarLiberacion(usuarioSeleccionado.locker_assignment)"
                         :disabled="formLiberar.processing"

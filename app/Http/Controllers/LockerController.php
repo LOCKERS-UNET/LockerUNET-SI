@@ -227,4 +227,5 @@ class LockerController extends Controller
 
         return redirect()->back()->with('success', 'Locker eliminado exitosamente.');
     }
+    
 }

@@ -4,99 +4,81 @@ namespace App\Http\Controllers;
 
 use App\Models\Locker;
 use App\Models\LockerAssignment;
-use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Carbon\Carbon;
 
 class StatsController extends Controller
 {
-    /**
-     * GET /admin/stats/summary
-     * Totales de lockers por estado
-     */
-    public function summary()
+public function index(Request $request)
     {
-        return response()->json([
-            'total'       => Locker::count(),
-            'occupied'    => Locker::where('status', 1)->count(),
-            'available'   => Locker::where('status', 0)->count(),
-            'maintenance' => Locker::where('status', 2)->count(),
+        // 1. Obtener filtros
+        $carrera = $request->input('carrera');
+        $mesFiltro = $request->input('mes', 'Abril 2026'); // Valor por defecto
+
+        // 2. Extraer Mes y Año manualmente para evitar errores de Carbon
+        $mesesMap = [
+            'Enero' => 1, 'Febrero' => 2, 'Marzo' => 3, 'Abril' => 4, 'Mayo' => 5, 'Junio' => 6,
+            'Julio' => 7, 'Agosto' => 8, 'Septiembre' => 9, 'Octubre' => 10, 'Noviembre' => 11, 'Diciembre' => 12
+        ];
+        
+        $partes = explode(' ', $mesFiltro);
+        $nombreMes = $partes[0] ?? 'Abril';
+        $mesNum = $mesesMap[$nombreMes] ?? 4;
+        $anioNum = $partes[1] ?? 2026;
+
+        // 3. Consultas a la base de datos
+        // Importante: No filtramos por status 'active' para que la gráfica muestre el histórico de creación
+        $queryBase = LockerAssignment::whereMonth('created_at', $mesNum)
+                                    ->whereYear('created_at', $anioNum);
+
+        if (!empty($carrera)) {
+            $queryBase->whereHas('user', fn($q) => $q->where('career', $carrera));
+        }
+
+        // KPIs
+        $totalCapacity = Locker::count();
+        $usoEnMes = $queryBase->count();
+        
+        // Gráfica: Conteo por día
+        $dailyData = (clone $queryBase)
+            ->select(DB::raw('DAY(created_at) as day'), DB::raw('COUNT(*) as count'))
+            ->groupBy('day')
+            ->get()
+            ->pluck('count', 'day');
+
+        $chartPoints = [];
+        $acumulado = 0;
+$diasEnMes = Carbon::create($anioNum, $mesNum)->daysInMonth;
+
+// El ciclo for se mantiene igual:
+for ($i = 1; $i <= $diasEnMes; $i++) {
+    $acumulado += ($dailyData[$i] ?? 0);
+    $chartPoints[] = $acumulado;
+}
+
+        return Inertia::render('Admin/EstadisticasLockers', [
+            'stats' => [
+                'uso_proyectado'  => $usoEnMes,
+                'capacidad_total' => $totalCapacity,
+                'crecimiento'     => "0.0", // Puedes implementar lógica comparativa después
+                'tasa_ocupacion'  => $totalCapacity > 0 ? number_format(($usoEnMes / $totalCapacity) * 100, 1) : "0.0",
+                'chart_data'      => $chartPoints,
+            ],
+            'filters' => [
+                'carrera' => $carrera,
+                'mes'     => $mesFiltro
+            ]
         ]);
     }
-
-    /**
-     * GET /admin/stats/by-career
-     * Cuántos ocupantes aglomerados por carrera universitaria
-     */
-    public function byCareer()
-    {
-        $stats = DB::table('locker_assignments')
-            ->join('users', 'locker_assignments.user_id', '=', 'users.id')
-            ->where('locker_assignments.assignment_status', 'active')
-            ->select('users.career', DB::raw('COUNT(locker_assignments.assignment_id) as count'))
-            ->groupBy('users.career')
-            ->get();
-
-        // Fix null careers if untracked
-        $formattedStats = $stats->map(function ($item) {
-            return [
-                'career' => $item->career ?: 'Sin especificar',
-                'count'  => $item->count
-            ];
-        });
-
-        return response()->json($formattedStats);
-    }
-
-    /**
-     * GET /admin/stats/by-semester
-     * Montos facturados acumulados por semestre
-     */
-    public function bySemester(Request $request)
-    {
-        $query = DB::table('payments')
-            ->select('semester', DB::raw('SUM(amount) as total'), DB::raw('COUNT(payment_id) as count'))
-            ->groupBy('semester');
-
-        if ($request->has('semester') && $request->semester) {
-            $query->where('semester', $request->semester);
-        }
-
-        $stats = $query->get();
-
-        return response()->json($stats);
-    }
-
-    /**
-     * GET /admin/stats/monthly
-     * Curva de demanda (Asignaciones creadas por día del mes)
-     */
-    public function monthly(Request $request)
-    {
-        $month = $request->input('month', now()->month);
-        $year = $request->input('year', now()->year);
-
-        $stats = DB::table('locker_assignments')
-            ->select(DB::raw('DAY(created_at) as day'), DB::raw('COUNT(assignment_id) as count'))
-            ->whereMonth('created_at', $month)
-            ->whereYear('created_at', $year)
-            ->groupBy('day')
-            ->get();
-
-        // Para facilitar la gráfica, llenamos los días no reportados con 0
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-        $response = [];
-
-        // Inicializamos del 1 al $daysInMonth
-        for ($i = 1; $i <= $daysInMonth; $i++) {
-            $response[$i] = ['day' => $i, 'count' => 0];
-        }
-
-        // Rellenamos la información real
-        foreach ($stats as $stat) {
-            $response[$stat->day] = ['day' => $stat->day, 'count' => $stat->count];
-        }
-
-        return response()->json(array_values($response));
-    }
+public function summary()
+{
+    return response()->json([
+        'total'       => (int) Locker::count(),
+        'occupied'    => (int) Locker::where('status', 1)->count(),
+        'available'   => (int) Locker::where('status', 0)->count(),
+        'maintenance' => (int) Locker::where('status', 2)->count(),
+    ], 200, [], JSON_UNESCAPED_UNICODE); // 👈🏼 Asegura encoding correcto
+}
 }

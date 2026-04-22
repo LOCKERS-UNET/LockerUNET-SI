@@ -30,16 +30,19 @@
 <template>
     <section class="min-h-screen flex flex-col bg-white">
 
-        <header class="hidden lg:flex lg:justify-between lg:items-center lg:w-full lg:p-6 md:p-10 lg:flex-shrink-0"> 
-            <img src="/img/Logo_Lockers_UNET.png" 
-                 alt="logo lockers unet" 
-                 class="h-12 md:h-20 w-auto object-contain"
-            >
-            <img src="/img/Logo_UNET.png" 
-                 alt="Logo unet" 
-                 class="h-12 md:h-20 w-auto object-contain"
-            >
-        </header>
+<header class="hidden lg:flex lg:justify-between lg:items-center lg:w-full lg:p-6 md:p-10 lg:flex-shrink-0"> 
+    
+    <img src="/img/Logo_UNET.png" 
+         alt="Logo unet" 
+         class="h-16 md:h-24 w-auto object-contain"
+    >
+
+    <img src="/img/Logo_Lockers_UNET.png" 
+         alt="logo lockers unet" 
+         class="h-12 md:h-16 w-auto object-contain"
+    >
+
+</header>
 
         <main class="flex-grow flex items-center justify-center p-4">
 

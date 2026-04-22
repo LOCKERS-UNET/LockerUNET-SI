@@ -84,7 +84,7 @@ class LockerAssignmentController extends Controller
      */
     public function listJson(Request $request)
     {
-        $query = LockerAssignment::with(['user', 'locker.sector.building']);
+        $query = LockerAssignment::with(['user', 'locker.sector.building', 'payments']);
 
         if ($request->has('assignment_status') && $request->assignment_status) {
             $query->where('assignment_status', $request->assignment_status);
@@ -194,7 +194,8 @@ class LockerAssignmentController extends Controller
      */
     public function release($id)
     {
-        $assignment = LockerAssignment::findOrFail($id);
+        // Usar assignment_id explícitamente
+        $assignment = LockerAssignment::where('assignment_id', $id)->firstOrFail();
         
         if ($assignment->assignment_status === 'released') {
             return redirect()->back()->withErrors(['assignment' => 'Este locker ya fue liberado anteriormente.']);
@@ -213,19 +214,19 @@ class LockerAssignmentController extends Controller
                 return redirect()->back()->withErrors(['payments' => 'No se puede liberar: el usuario tiene pagos pendientes o vencidos vinculados a este locker.']);
             }
 
-            // 2. Liberar allocation
+            // 2. Liberar assignment
             $assignment->update([
                 'assignment_status' => 'released',
                 'end_date' => today(),
             ]);
 
-            // 3. Status de locker = 0
+            // 3. Liberar locker (status = 0)
             $locker = Locker::find($assignment->locker_id);
             if ($locker) {
                 $locker->update(['status' => 0]);
             }
 
-            // 4. Notificar
+            // 4. Notificar al usuario
             NotificationHelper::send(
                 $assignment->user_id, 
                 'locker_released', 
@@ -235,6 +236,7 @@ class LockerAssignmentController extends Controller
 
             DB::commit();
             
+            // Retornar respuesta compatible con Inertia
             return redirect()->back()->with('success', 'Asignación liberada con éxito.');
 
         } catch (\Exception $e) {

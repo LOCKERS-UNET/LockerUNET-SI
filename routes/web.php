@@ -88,7 +88,8 @@ Route::middleware(['auth'])->group(function () {
         return inertia('User/DevolucionLocker', ['asignacion' => $asignacion]);
     })->name('devolucion-locker');
     Route::post('/devolucion-locker/{id}', [LockerAssignmentController::class, 'release']);
-
+    Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release'])
+    ->name('admin.assignments.release');
     // Aranceles (disponibles para lectura)
     Route::get('/fee-rates', [FeeRateController::class, 'index'])->name('aranceles-admin');
 
@@ -121,17 +122,13 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release']);
 
         // Estadísticas (Vista)
-        Route::inertia('/estadisticas-lockers', 'Admin/EstadisticasLockers')->name('estadisticas-admin');
-
+Route::get('/estadisticas-lockers', [StatsController::class, 'index'])->name('estadisticas-admin');
         // Estadísticas (Endpoints JSON AJAX para Gráficos)
-        Route::get('/admin/stats/summary', [StatsController::class, 'summary']);
-        Route::get('/admin/stats/by-career', [StatsController::class, 'byCareer']);
-        Route::get('/admin/stats/by-semester', [StatsController::class, 'bySemester']);
+Route::get('/admin/stats/summary', [StatsController::class, 'summary'])->name('admin.stats.summary');        Route::get('/admin/stats/by-semester', [StatsController::class, 'bySemester']);
         Route::get('/admin/stats/monthly', [StatsController::class, 'monthly']);
-
         // Aranceles (tarifas) - Registro histórico
         Route::post('/admin/fee-rates', [FeeRateController::class, 'store']);
-
+        Route::get('/admin/stats', [StatsController::class, 'index']);
         // Incidencias
         Route::get('/admin/incidents', [IncidentController::class, 'index'])->name('incidencias-admin');
         Route::put('/admin/incidents/{id}/review', [IncidentController::class, 'review']);
