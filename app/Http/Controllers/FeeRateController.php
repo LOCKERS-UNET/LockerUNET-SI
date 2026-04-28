@@ -3,15 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\FeeRate;
+use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Artisan;
 
 class FeeRateController extends Controller
 {
     /**
      * GET /fee-rates
-     * Obtiene los aranceles más recientes para cada tamaño
      */
     public function index()
     {
@@ -26,14 +27,20 @@ class FeeRateController extends Controller
                 ->first();
         }
 
+        // Obtener semestres activos
+        $semesters = Semester::where('is_active', true)
+            ->orderBy('start_year', 'desc')
+            ->orderBy('start_month', 'desc')
+            ->get();
+
         return Inertia::render('Admin/Aranceles', [
-            'rates' => $rates
+            'rates' => $rates,
+            'semesters' => $semesters,
         ]);
     }
 
     /**
      * POST /admin/fee-rates
-     * Registra un nuevo aumento de tarifa en el tiempo (histórico)
      */
     public function store(Request $request)
     {
@@ -51,6 +58,34 @@ class FeeRateController extends Controller
             'created_by'     => Auth::id(),
         ]);
 
-        return redirect()->back()->with('success', 'Nuevo arancel estipulado correctamente. Empezará a tomar rigor a partir de hoy.');
+        return redirect()->back()->with('success', 'Nuevo arancel registrado correctamente.');
+    }
+
+    /**
+     * 👇 NUEVO: Generar pagos del semestre
+     */
+    public function generatePayments(Request $request)
+    {
+        $request->validate([
+            'semester_name' => 'required|string|exists:semesters,name',
+        ]);
+
+        $semesterName = $request->semester_name;
+
+        try {
+            // Ejecutar el command
+            Artisan::call('payments:generate-semester', [
+                'semester' => $semesterName
+            ]);
+
+            $output = Artisan::output();
+
+            return redirect()->back()->with('success', "Pagos del semestre {$semesterName} generados exitosamente.");
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors([
+                'error' => 'Error al generar pagos: ' . $e->getMessage()
+            ]);
+        }
     }
 }

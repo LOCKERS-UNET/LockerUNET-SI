@@ -133,6 +133,9 @@ Route::get('/admin/semesters', [StatsController::class, 'getSemesters'])->name('
 Route::post('/admin/semesters', [StatsController::class, 'storeSemester'])->name('admin.semesters.store');
         // Aranceles (tarifas) - Registro histórico
         Route::post('/admin/fee-rates', [FeeRateController::class, 'store']);
+        // Generar pagos semestrales
+Route::post('/admin/payments/generate-semester', [FeeRateController::class, 'generatePayments'])
+    ->name('admin.payments.generate-semester');
         Route::get('/admin/stats', [StatsController::class, 'index']);
         // Incidencias
         Route::get('/admin/incidents', [IncidentController::class, 'index'])->name('incidencias-admin');
