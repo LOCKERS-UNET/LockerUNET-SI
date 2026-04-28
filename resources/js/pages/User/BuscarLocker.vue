@@ -5,18 +5,14 @@ import Layout from '../Layouts/Layout.vue';
 
 defineOptions({ layout: Layout });
 
-// ─────────────────────────────────────────────
-// DATOS REALES DEL BACKEND
-// El controlador LockerController@disponibles
-// nos pasa los lockers disponibles via Inertia
-// ─────────────────────────────────────────────
+// Props: El backend ya filtra y envía SOLO lockers disponibles (status = 0)
 const props = defineProps<{
     lockers: Array<{
         locker_id: number;
         locker_code: string;
-        locker_type: string;  // small | mid | large
+        locker_type: string;
         plate_number: string | null;
-        status: number;       // 0=disponible, 1=ocupado, 2=mantenimiento
+        status: number; // 0=disponible (todos los que llegan aquí)
         sector: {
             sector_name: string;
             building: {
@@ -38,24 +34,36 @@ const tipoLabel: Record<string, string> = {
 const filtroEdificio = ref('');
 const filtroTamano   = ref('');
 
-// Lockers filtrados según lo que el usuario seleccione
+// 👇🏼 Lockers filtrados: SOLO disponibles + filtros de usuario
 const lockersFiltrados = computed(() => {
     return props.lockers.filter(locker => {
+        // 👈🏼 Solo lockers disponibles (status === 0)
+        const disponible = locker.status === 0;
+        
+        // Filtros adicionales del usuario
         const matchEdificio = filtroEdificio.value === '' || 
                               locker.sector.building.building_code === filtroEdificio.value;
         const matchTamano   = filtroTamano.value === '' || 
                               locker.locker_type === filtroTamano.value;
-        return matchEdificio && matchTamano;
+        
+        return disponible && matchEdificio && matchTamano;
     });
 });
 
-// Lista de edificios únicos para el select
-const edificios = [...new Map(props.lockers.map(l => 
-    [l.sector.building.building_code, l.sector.building]
-)).values()];
+// Lista de edificios únicos para el select (solo de lockers disponibles)
+const edificios = [...new Map(props.lockers
+    .filter(l => l.status === 0) // 👈🏼 Solo edificios con lockers disponibles
+    .map(l => [l.sector.building.building_code, l.sector.building])
+).values()];
 
 // Al hacer clic en "Solicitar" vamos a la página de confirmación
 const irASolicitud = (locker: typeof props.lockers[0]) => {
+    // Validación extra de seguridad (aunque el backend ya filtró)
+    if (locker.status !== 0) {
+        alert('Este locker no está disponible para solicitud.');
+        return;
+    }
+    
     router.get('/solicitud-locker', {
         locker_id: locker.locker_id,
         codigo:    locker.locker_code,
@@ -109,7 +117,7 @@ const irASolicitud = (locker: typeof props.lockers[0]) => {
 
                 </div>
 
-                <!-- Lista de Lockers -->
+                <!-- 👇🏼 Lista de Lockers DISPONIBLES -->
                 <div class="w-full max-w-3xl flex flex-col">
                     
                     <template v-if="lockersFiltrados.length > 0">
@@ -123,12 +131,15 @@ const irASolicitud = (locker: typeof props.lockers[0]) => {
                                     <p class="text-sm sm:text-base text-black"><span class="font-extrabold">Sector:</span> {{ locker.sector.sector_name }}</p>
                                 </div>
 
-                                <!-- Estado: todos son disponibles porque el controller ya filtra por status=0 -->
+                                <!-- 👇🏼 ESTADO: Siempre "Disponible" (verde) -->
                                 <div class="w-full sm:w-1/3 flex justify-center">
-                                    <span class="font-extrabold text-sm sm:text-base tracking-wide text-[#0D7A5F]">Disponible</span>
+                                    <span class="font-extrabold text-sm sm:text-base tracking-wide text-[#0D7A5F]">
+                                        Disponible
+                                    </span>
                                 </div>
 
                                 <div class="w-full sm:w-1/3 flex justify-center sm:justify-end">
+                                    <!-- 👇 BOTÓN SIEMPRE visible (porque todos están disponibles) -->
                                     <button 
                                         @click="irASolicitud(locker)"
                                         class="bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold py-2 px-8 rounded-xl shadow-md transition duration-300 active:scale-95 text-sm"
@@ -146,7 +157,12 @@ const irASolicitud = (locker: typeof props.lockers[0]) => {
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-10 h-10 mb-4 text-gray-400">
                                 <path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z" clip-rule="evenodd" />
                             </svg>
-                            <p class="font-bold text-gray-500">No hay lockers disponibles con esos filtros</p>
+                            <p class="font-bold text-gray-500">
+                                {{ filtroEdificio || filtroTamano 
+                                    ? 'No hay lockers disponibles con esos filtros' 
+                                    : 'No hay lockers disponibles actualmente' 
+                                }}
+                            </p>
                         </div>
                     </template>
                 </div>

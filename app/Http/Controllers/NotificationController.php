@@ -11,7 +11,7 @@ class NotificationController extends Controller
 {
     /**
      * GET /notifications
-     * Visor de notificaciones in-app
+     * Visor de notificaciones con paginación (5 por página)
      */
     public function index(Request $request)
     {
@@ -26,10 +26,20 @@ class NotificationController extends Controller
             });
         }
 
-        $notifications = $query->orderBy('created_at', 'desc')->get();
+        // 👇🏼 PAGINACIÓN: 5 notificaciones por página
+        $notifications = $query->orderBy('created_at', 'desc')
+            ->paginate(5)
+            ->withQueryString(); // Mantiene los filtros en la paginación
 
-        return Inertia::render('User/Notificaciones', [ // Ajuste de la vista
-            'notificaciones' => $notifications
+        return Inertia::render('User/Notificaciones', [
+            'notificaciones' => $notifications->items(), // Los datos de la página actual
+            'pagination' => [
+                'current_page' => $notifications->currentPage(),
+                'last_page' => $notifications->lastPage(),
+                'total' => $notifications->total(),
+                'per_page' => $notifications->perPage(),
+                'has_more_pages' => $notifications->hasMorePages(),
+            ]
         ]);
     }
 
@@ -40,13 +50,13 @@ class NotificationController extends Controller
     {
         $notification = Notification::findOrFail($id);
 
-        // Seguridad estricta
         if ($notification->user_id !== Auth::id()) {
             abort(403);
         }
 
         $notification->update(['is_read' => true]);
 
+        // 👇🏼 Retornar JSON para que el frontend pueda actualizar sin recargar
         return redirect()->back();
     }
 
@@ -64,7 +74,7 @@ class NotificationController extends Controller
 
     /**
      * GET /notifications/unread-count
-     * Endpoint ligero (Ajax) para la burbuja de la campana en frontend
+     * Endpoint para el indicador de la campanita
      */
     public function unreadCount()
     {

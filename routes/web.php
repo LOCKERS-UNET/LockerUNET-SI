@@ -33,8 +33,10 @@ Route::middleware(['auth'])->group(function () {
     Route::inertia('/', 'Home')->name('home');
 
     // Perfil
-    Route::get('/profile', [ProfileController::class, 'show'])->name('user-profile');
-    Route::put('/profile', [ProfileController::class, 'update']);
+Route::get('/profile', [ProfileController::class, 'show'])->name('user-profile');
+Route::get('/edit-profile', [PerfilController::class, 'index'])->name('edit-profile'); // 👈🏼 AGREGAR ESTO
+Route::put('/profile', [ProfileController::class, 'update']);
+Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Para guardar cambios
 
     // --------------------------------------------------------
     // RUTAS DEL ESTUDIANTE
@@ -126,6 +128,9 @@ Route::get('/estadisticas-lockers', [StatsController::class, 'index'])->name('es
         // Estadísticas (Endpoints JSON AJAX para Gráficos)
 Route::get('/admin/stats/summary', [StatsController::class, 'summary'])->name('admin.stats.summary');        Route::get('/admin/stats/by-semester', [StatsController::class, 'bySemester']);
         Route::get('/admin/stats/monthly', [StatsController::class, 'monthly']);
+        // Gestión de Semestres
+Route::get('/admin/semesters', [StatsController::class, 'getSemesters'])->name('admin.semesters.index');
+Route::post('/admin/semesters', [StatsController::class, 'storeSemester'])->name('admin.semesters.store');
         // Aranceles (tarifas) - Registro histórico
         Route::post('/admin/fee-rates', [FeeRateController::class, 'store']);
         Route::get('/admin/stats', [StatsController::class, 'index']);

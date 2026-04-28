@@ -25,7 +25,9 @@ class UserController extends Controller
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', $searchTerm)
                   ->orWhere('lastname', 'LIKE', $searchTerm)
-                  ->orWhere('card_code', 'LIKE', $searchTerm);
+                  ->orWhere('card_code', 'LIKE', $searchTerm)
+                  ->orWhere('email', 'LIKE', $searchTerm);
+                  
             });
         }
 
@@ -41,9 +43,11 @@ class UserController extends Controller
                 'id'            => $user->id,
                 'name'          => $user->name,
                 'lastname'      => $user->lastname,
+                'email'         => $user->email,
                 'card_code'     => $user->card_code,
                 'career'        => $user->career,
                 'is_admin'      => $user->is_admin,
+                'profile_photo' => $user->profile_photo,
                 // Flatten locker data if present
                 'locker_code'   => $locker ? $locker->locker_code : null,
                 'building_name' => ($locker && $locker->sector && $locker->sector->building) ? $locker->sector->building->building_name : null,
@@ -52,7 +56,8 @@ class UserController extends Controller
         });
 
         return Inertia::render('Admin/Usuarios', [
-            'users' => $users
+            'users' => $users,
+            'filters' => $request->only(['search'])
         ]);
     }
 
@@ -107,7 +112,7 @@ class UserController extends Controller
      * GET /admin/users/{id}
      * Muestra todo el perfil, historial y deudas de un usuario en concreto
      */
-    public function show($id)
+   public function show($id)
     {
         $user = User::findOrFail($id);
 
@@ -116,7 +121,8 @@ class UserController extends Controller
             ->where('assignment_status', 'active')
             ->first();
 
-        $fines = Fine::with(['assignment.locker'])
+        // 👇 OBTENER TODAS LAS MULTAS del usuario
+        $fines = Fine::with(['assignment.locker', 'admin'])
             ->where('user_id', $id)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -129,8 +135,9 @@ class UserController extends Controller
         return Inertia::render('Admin/VistaUsuario', [
             'user'            => $user,
             'assignment'      => $assignment,
-            'fines'           => $fines,
+            'multa'           => $fines, // Array de multas
             'pendingPayments' => $pendingPayments,
         ]);
     }
+
 }

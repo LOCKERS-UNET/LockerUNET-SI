@@ -9,6 +9,7 @@ use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use App\Models\Payment;
 
 class FineController extends Controller
 {
@@ -30,6 +31,35 @@ class FineController extends Controller
             'multa' => $fines
         ]);
     }
+
+    // En UserController.php - método show()
+public function show($id)
+{
+    $user = User::findOrFail($id);
+
+    $assignment = LockerAssignment::with(['locker.sector.building'])
+        ->where('user_id', $id)
+        ->where('assignment_status', 'active')
+        ->first();
+
+    // 👇🏼 OBTENER TODAS LAS MULTAS (no solo una)
+    $fines = Fine::with(['assignment.locker', 'admin'])
+        ->where('user_id', $id)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    $pendingPayments = Payment::where('user_id', $id)
+        ->whereIn('payment_status', ['pending', 'overdue'])
+        ->orderBy('due_date', 'asc')
+        ->get();
+
+    return Inertia::render('Admin/VistaUsuario', [
+        'user'            => $user,
+        'assignment'      => $assignment,
+        'multa'           => $fines, // 👈🏼 Pasar array de multas
+        'pendingPayments' => $pendingPayments,
+    ]);
+}
 
     // ==========================================
     // ADMIN
