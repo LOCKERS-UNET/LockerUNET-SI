@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Head, useForm } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { Head, useForm, router } from '@inertiajs/vue3';
+import { ref, computed, watch } from 'vue';
+import debounce from 'lodash/debounce';
 import ModalComponent from '../Components/ModalComponent.vue';
 import LayoutAdmin from '../Layouts/LayoutAdmin.vue';
 
@@ -11,12 +12,52 @@ const props = defineProps<{
     lockers: any[];
     buildings: any[];
     sectors: any[];
+    filters?: {
+        search?: string;
+        sector_id?: string | number;
+        locker_type?: string;
+        status?: string | number;
+    };
 }>();
 
 // ── Estado ──
 const vistaActual = ref<'modificar' | 'agregar' | 'listar'>('listar');
 const modalAbierto = ref(false);
 const lockerSeleccionado = ref<any>(null);
+
+// 👇🏼 Filtros de búsqueda
+const searchQuery = ref(props.filters?.search ?? '');
+const filterSector = ref(props.filters?.sector_id ?? '');
+const filterType = ref(props.filters?.locker_type ?? '');
+const filterStatus = ref(props.filters?.status ?? '');
+
+// 👇🏼 Debounce para búsqueda (como en Usuarios)
+watch(searchQuery, debounce((value) => {
+    aplicarFiltros();
+}, 300));
+
+// 👇🏼 Aplicar filtros al backend
+const aplicarFiltros = () => {
+    router.get('/admin/lockers', {
+        search: searchQuery.value || null,
+        sector_id: filterSector.value || null,
+        locker_type: filterType.value || null,
+        status: filterStatus.value || null,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
+
+// 👇🏼 Limpiar filtros
+const limpiarFiltros = () => {
+    searchQuery.value = '';
+    filterSector.value = '';
+    filterType.value = '';
+    filterStatus.value = '';
+    aplicarFiltros();
+};
 
 // Formulario para agregar locker
 const form = useForm({
@@ -87,15 +128,24 @@ const getNombreSector = (sectorId: number) => {
 
 // Helper para obtener el estado
 const getNombreEstado = (status: number) => {
-    const estados = { 0: 'Disponible', 1: 'Ocupado', 2: 'Mantenimiento' };
+    const estados: Record<number, string> = { 0: 'Disponible', 1: 'Ocupado', 2: 'Mantenimiento' };
     return estados[status] || 'Desconocido';
 };
 
 // Helper para obtener el tipo
 const getNombreTipo = (tipo: string) => {
-    const tipos = { small: 'Pequeño', medium: 'Mediano', mid: 'Mediano', large: 'Grande' };
+    const tipos: Record<string, string> = { small: 'Pequeño', medium: 'Mediano', mid: 'Mediano', large: 'Grande' };
     return tipos[tipo] || tipo;
 };
+
+// 👇🏼 Lockers filtrados (frontend fallback si no hay búsqueda backend)
+const lockersFiltrados = computed(() => {
+    // Si hay búsqueda activa del backend, usar esos datos directamente
+    if (props.filters?.search || props.filters?.sector_id || props.filters?.locker_type || props.filters?.status) {
+        return props.lockers;
+    }
+    return props.lockers;
+});
 </script>
 
 <template>
@@ -118,8 +168,91 @@ const getNombreTipo = (tipo: string) => {
                 </button>
             </div>
 
+            <!-- 👇🏼 BARRA DE BÚSQUEDA Y FILTROS -->
+            <div class="w-full max-w-4xl mb-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    
+                    <!-- Búsqueda por código -->
+                    <div class="relative lg:col-span-2">
+                        <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-gray-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                            </svg>
+                        </div>
+                        <input 
+                            v-model="searchQuery"
+                            type="text" 
+                            placeholder="Buscar por código..." 
+                            class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm"
+                        />
+                    </div>
+
+                    <!-- Filtro por Sector -->
+                    <div class="relative">
+                        <select v-model="filterSector" @change="aplicarFiltros" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
+                            <option value="">Todos los sectores</option>
+                            <option v-for="sector in sectors" :key="sector.sector_id" :value="sector.sector_id">
+                                {{ sector.sector_name }}
+                            </option>
+                        </select>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-gray-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Filtro por Tipo -->
+                    <div class="relative">
+                        <select v-model="filterType" @change="aplicarFiltros" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
+                            <option value="">Todos los tipos</option>
+                            <option value="small">Pequeño</option>
+                            <option value="mid">Mediano</option>
+                            <option value="large">Grande</option>
+                        </select>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-gray-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Filtro por Estado + Botón limpiar -->
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <select v-model="filterStatus" @change="aplicarFiltros" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
+                                <option value="">Todos los estados</option>
+                                <option :value="0">Disponible</option>
+                                <option :value="1">Ocupado</option>
+                                <option :value="2">Mantenimiento</option>
+                            </select>
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-gray-400">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </div>
+                        </div>
+                        <button 
+                            @click="limpiarFiltros"
+                            class="px-3 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition"
+                            title="Limpiar filtros"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contador de resultados -->
+                <p class="text-xs text-gray-500 mt-3">
+                    Mostrando {{ lockers.length }} locker(s)
+                    <span v-if="filters?.search || filters?.sector_id || filters?.locker_type || filters?.status">
+                        (con filtros aplicados)
+                    </span>
+                </p>
+            </div>
+
             <!-- Tabla de Lockers -->
-            <div v-if="props.lockers.length > 0" class="w-full overflow-x-auto">
+            <div v-if="lockers.length > 0" class="w-full overflow-x-auto">
                 <table class="w-full border-collapse">
                     <thead>
                         <tr class="bg-[#213779] text-white">
@@ -131,7 +264,7 @@ const getNombreTipo = (tipo: string) => {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="locker in props.lockers" :key="locker.locker_id" class="border-b hover:bg-gray-100">
+                        <tr v-for="locker in lockers" :key="locker.locker_id" class="border-b hover:bg-gray-100">
                             <td class="px-4 py-3 text-black font-bold">{{ locker.locker_code }}</td>
                             <td class="px-4 py-3 text-black">{{ getNombreSector(locker.sector_id) }}</td>
                             <td class="px-4 py-3 text-black">{{ getNombreTipo(locker.locker_type) }}</td>
@@ -158,8 +291,20 @@ const getNombreTipo = (tipo: string) => {
                 </table>
             </div>
             <div v-else class="text-center py-12">
-                <p class="text-gray-500 text-lg mb-4">No hay lockers disponibles</p>
-                <p class="text-gray-400">Crea el primer locker haciendo clic en el botón +</p>
+                <p class="text-gray-500 text-lg mb-4">
+                    {{ searchQuery || filterSector || filterType || filterStatus 
+                        ? 'No se encontraron lockers con esos filtros' 
+                        : 'No hay lockers disponibles' 
+                    }}
+                </p>
+                <p class="text-gray-400" v-if="searchQuery || filterSector || filterType || filterStatus">
+                    <button @click="limpiarFiltros" class="text-[#213779] hover:underline font-medium">
+                        Limpiar filtros
+                    </button>
+                </p>
+                <p class="text-gray-400" v-else>
+                    Crea el primer locker haciendo clic en el botón +
+                </p>
             </div>
         </div>
 

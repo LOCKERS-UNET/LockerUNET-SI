@@ -10,31 +10,11 @@ class UsersSeeder extends Seeder
 {
     public function run(): void
     {
-        $password = Hash::make('123456');
+        $password = Hash::make('@coordBE123..');
 
         $users = [
-            ['name' => 'Admin', 'lastname' => 'Principal', 'email' => 'admin@unet.edu.ve', 'password' => $password, 'card_code' => '67845', 'career' => null, 'is_admin' => 1],
-            ['name' => 'Juan', 'lastname' => 'Perez', 'email' => 'juan@unet.edu.ve', 'password' => $password, 'card_code' => '33564', 'career' => 'Informatica', 'is_admin' => 0],
-            ['name' => 'Maria', 'lastname' => 'Gomez', 'email' => 'maria@unet.edu.ve', 'password' => $password, 'card_code' => '12345', 'career' => 'Psicología', 'is_admin' => 0],
-            ['name' => 'Mariana', 'lastname' => 'Gomez', 'email' => 'marianita@unet.edu.ve', 'password' => $password, 'card_code' => '22223', 'career' => 'Psicología', 'is_admin' => 0],
-            ['name' => 'Diego', 'lastname' => 'Sanchez', 'email' => 'diego.sanchezr@unet.edu.ve', 'password' => $password, 'card_code' => '25040', 'career' => 'Informatica', 'is_admin' => 0],
-            ['name' => 'Lucas', 'lastname' => 'Perez', 'email' => 'lucp@unet.edu.ve', 'password' => $password, 'card_code' => '32658', 'career' => 'Civil', 'is_admin' => 0],
-            ['name' => 'Juan', 'lastname' => 'Perez', 'email' => 'juan.perez@unet.edu.ve', 'password' => $password, 'card_code' => '00001', 'career' => 'Informática', 'is_admin' => 0],
-            ['name' => 'Ana', 'lastname' => 'Rodriguez', 'email' => 'ana.rodriguez@unet.edu.ve', 'password' => $password, 'card_code' => '00025', 'career' => 'Música', 'is_admin' => 0],
-            ['name' => 'Pedro', 'lastname' => 'Briceno', 'email' => 'pedro.briceno@unet.edu.ve', 'password' => $password, 'card_code' => '10542', 'career' => 'Psicología', 'is_admin' => 0],
-            ['name' => 'Laura', 'lastname' => 'Mendez', 'email' => 'laura.mendez@unet.edu.ve', 'password' => $password, 'card_code' => '05487', 'career' => 'Civil', 'is_admin' => 0],
-            ['name' => 'Carlos', 'lastname' => 'Sanchez', 'email' => 'carlos.sanchez@unet.edu.ve', 'password' => $password, 'card_code' => '22365', 'career' => 'Mecánica', 'is_admin' => 0],
-            ['name' => 'Elena', 'lastname' => 'Diaz', 'email' => 'elena.diaz@unet.edu.ve', 'password' => $password, 'card_code' => '00985', 'career' => 'Prod. Animal', 'is_admin' => 0],
-            ['name' => 'Luis', 'lastname' => 'Ramirez', 'email' => 'luis.ramirez@unet.edu.ve', 'password' => $password, 'card_code' => '44512', 'career' => 'Agronomía', 'is_admin' => 0],
-            ['name' => 'Sofia', 'lastname' => 'Torres', 'email' => 'sofia.torres@unet.edu.ve', 'password' => $password, 'card_code' => '00777', 'career' => 'Arquitectura', 'is_admin' => 0],
-            ['name' => 'Diego', 'lastname' => 'Flores', 'email' => 'diego.flores@unet.edu.ve', 'password' => $password, 'card_code' => '33214', 'career' => 'Informática', 'is_admin' => 0],
-            ['name' => 'Lucia', 'lastname' => 'Garcia', 'email' => 'lucia.garcia@unet.edu.ve', 'password' => $password, 'card_code' => '00123', 'career' => 'Música', 'is_admin' => 0],
-            ['name' => 'Miguel', 'lastname' => 'Hernandez', 'email' => 'miguel.hernandez@unet.edu.ve', 'password' => $password, 'card_code' => '99854', 'career' => 'Civil', 'is_admin' => 0],
-            ['name' => 'Carmen', 'lastname' => 'Rivas', 'email' => 'carmen.rivas@unet.edu.ve', 'password' => $password, 'card_code' => '00050', 'career' => 'Prod. Animal', 'is_admin' => 0],
-            ['name' => 'Jorge', 'lastname' => 'Castro', 'email' => 'jorge.castro@unet.edu.ve', 'password' => $password, 'card_code' => '77412', 'career' => 'Mecánica', 'is_admin' => 0],
-            ['name' => 'Isabel', 'lastname' => 'Morales', 'email' => 'isabel.morales@unet.edu.ve', 'password' => $password, 'card_code' => '08520', 'career' => 'Arquitectura', 'is_admin' => 0],
-            ['name' => 'Andres', 'lastname' => 'Suarez', 'email' => 'andres.suarez@unet.edu.ve', 'password' => $password, 'card_code' => '55632', 'career' => 'Agronomía', 'is_admin' => 0],
-        ];
+            ['name' => 'Admin', 'lastname' => 'Principal', 'email' => 'adminBE@unet.edu.ve', 'password' => $password, 'card_code' => '67845', 'career' => null, 'is_admin' => 1],
+           ];
 
         User::upsert($users, ['card_code', 'email'], ['name', 'lastname', 'password', 'career', 'is_admin']);
     }

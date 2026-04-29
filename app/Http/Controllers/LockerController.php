@@ -97,6 +97,10 @@ class LockerController extends Controller
     {
         $query = Locker::with(['sector.building']);
 
+        if ($request->has('search') && $request->search) {
+        $searchTerm = '%' . $request->search . '%';
+        $query->where('locker_code', 'LIKE', $searchTerm);
+    }
         // Filtros opcionales (mismos que index)
         if ($request->has('sector_id') && $request->sector_id !== null && $request->sector_id !== '') {
             $query->where('sector_id', $request->sector_id);
@@ -116,6 +120,7 @@ class LockerController extends Controller
             'lockers' => $lockers,
             'buildings' => $buildings,
             'sectors' => $sectors,
+            'filters' => $request->only(['search', 'sector_id', 'locker_type', 'status']), // 👈🏼 Pasar filtros actuales
         ]);
     }
 

@@ -9,7 +9,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\PerfilController;
 
 // Nuevos controladores del backend
-
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LockerController;
 use App\Http\Controllers\LockerRequestController;
 use App\Http\Controllers\LockerAssignmentController;
@@ -46,6 +46,7 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
 
     // Buscar lockers disponibles
     Route::get('/lockers', [LockerController::class, 'index'])->name('buscar-locker');
+    Route::get('/', [HomeController::class, 'index'])->name('home');
 
     // Hacer una solicitud de locker
     Route::match(['get', 'head'], '/solicitud-locker', function () {
