@@ -2,43 +2,34 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+// Este modelo representa un pago de arancel por una asignación de locker
 class Payment extends Model
 {
-    use HasFactory;
-
     protected $primaryKey = 'payment_id';
+
+    // Solo tiene created_at, no updated_at
     public $timestamps = false;
 
     protected $fillable = [
+        'assignment_id',
         'user_id',
-        'fee_id',
-        'request_id',
-        'payment_date',
-        'amount_paid',
-        'reference_number',
-        'status',
+        'amount',
+        'due_date',
+        'payment_status',
+        'semester',
     ];
 
-    protected $casts = [
-        'payment_date' => 'datetime',
-        'amount_paid' => 'decimal:2',
-    ];
+    // El pago pertenece a una asignación
+    public function assignment()
+    {
+        return $this->belongsTo(LockerAssignment::class, 'assignment_id', 'assignment_id');
+    }
 
+    // El pago lo hizo un estudiante
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
-    }
-
-    public function feeRate()
-    {
-        return $this->belongsTo(FeeRate::class, 'fee_id', 'fee_id');
-    }
-
-    public function request()
-    {
-        return $this->belongsTo(Request::class, 'request_id', 'request_id');
     }
 }

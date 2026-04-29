@@ -11,13 +11,16 @@ return new class extends Migration
         Schema::create('fines', function (Blueprint $table) {
             $table->id('fine_id');
             $table->unsignedBigInteger('assignment_id');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->unsignedBigInteger('user_id');
             $table->decimal('amount', 10, 2);
             $table->text('reason');
-            $table->enum('status', ['pendiente', 'pagada', 'anulada'])->default('pendiente');
-            $table->timestamps();
-
-            $table->foreign('assignment_id')->references('assignment_id')->on('assignments')->onDelete('cascade');
+            $table->unsignedBigInteger('created_by');
+            
+            $table->timestamp('created_at')->useCurrent();
+            
+            $table->foreign('assignment_id')->references('assignment_id')->on('locker_assignments')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

@@ -1,66 +1,346 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, useForm, router } from '@inertiajs/vue3';
+import { ref, computed, watch } from 'vue';
+import debounce from 'lodash/debounce';
 import ModalComponent from '../Components/ModalComponent.vue';
 import LayoutAdmin from '../Layouts/LayoutAdmin.vue';
 
 defineOptions({ layout: LayoutAdmin });
 
+// Props del backend
+const props = defineProps<{
+    lockers: any[];
+    buildings: any[];
+    sectors: any[];
+    filters?: {
+        search?: string;
+        sector_id?: string | number;
+        locker_type?: string;
+        status?: string | number;
+    };
+}>();
+
 // ── Estado ──
-const vistaActual = ref<'modificar' | 'agregar'>('modificar');
-
-// Modal state
+const vistaActual = ref<'modificar' | 'agregar' | 'listar'>('listar');
 const modalAbierto = ref(false);
+const lockerSeleccionado = ref<any>(null);
 
-const cambiarVista = (vista: 'modificar' | 'agregar') => {
+// 👇🏼 Filtros de búsqueda
+const searchQuery = ref(props.filters?.search ?? '');
+const filterSector = ref(props.filters?.sector_id ?? '');
+const filterType = ref(props.filters?.locker_type ?? '');
+const filterStatus = ref(props.filters?.status ?? '');
+
+// 👇🏼 Debounce para búsqueda (como en Usuarios)
+watch(searchQuery, debounce((value) => {
+    aplicarFiltros();
+}, 300));
+
+// 👇🏼 Aplicar filtros al backend
+const aplicarFiltros = () => {
+    router.get('/admin/lockers', {
+        search: searchQuery.value || null,
+        sector_id: filterSector.value || null,
+        locker_type: filterType.value || null,
+        status: filterStatus.value || null,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+        replace: true,
+    });
+};
+
+// 👇🏼 Limpiar filtros
+const limpiarFiltros = () => {
+    searchQuery.value = '';
+    filterSector.value = '';
+    filterType.value = '';
+    filterStatus.value = '';
+    aplicarFiltros();
+};
+
+// Formulario para agregar locker
+const form = useForm({
+    locker_code: '',
+    sector_id: null,
+    locker_type: 'small',
+    status: 0,
+});
+
+// Formulario para editar
+const formEditar = useForm({
+    locker_code: '',
+    sector_id: null,
+    locker_type: 'small',
+    status: 0,
+});
+
+const cambiarVista = (vista: 'modificar' | 'agregar' | 'listar') => {
     vistaActual.value = vista;
+    if (vista === 'agregar') {
+        form.reset();
+    }
+};
+
+const abrirEditar = (locker: any) => {
+    lockerSeleccionado.value = locker;
+    formEditar.locker_code = locker.locker_code;
+    formEditar.sector_id = locker.sector_id;
+    formEditar.locker_type = locker.locker_type;
+    formEditar.status = locker.status;
+    vistaActual.value = 'modificar';
 };
 
 const confirmarAgregar = () => {
-    // Al simular el guardado, abrimos el modal
-    modalAbierto.value = true;
+    form.post('/admin/lockers', {
+        onSuccess: () => {
+            modalAbierto.value = true;
+            form.reset();
+        }
+    });
 };
+
+const confirmarEditar = () => {
+    formEditar.put(`/admin/lockers/${lockerSeleccionado.value.locker_id}`, {
+        onSuccess: () => {
+            modalAbierto.value = true;
+            vistaActual.value = 'listar';
+        }
+    });
+};
+
+const confirmarEliminar = () => {
+    if (confirm('¿Estás seguro de que deseas eliminar este locker?')) {
+        formEditar.delete(`/admin/lockers/${lockerSeleccionado.value.locker_id}`, {
+            onSuccess: () => {
+                modalAbierto.value = true;
+                vistaActual.value = 'listar';
+            }
+        });
+    }
+};
+
+// Helper para obtener el nombre del sector
+const getNombreSector = (sectorId: number) => {
+    const sector = props.sectors.find(s => s.sector_id === sectorId);
+    return sector ? sector.sector_name || 'N/A' : 'N/A';
+};
+
+// Helper para obtener el estado
+const getNombreEstado = (status: number) => {
+    const estados: Record<number, string> = { 0: 'Disponible', 1: 'Ocupado', 2: 'Mantenimiento' };
+    return estados[status] || 'Desconocido';
+};
+
+// Helper para obtener el tipo
+const getNombreTipo = (tipo: string) => {
+    const tipos: Record<string, string> = { small: 'Pequeño', medium: 'Mediano', mid: 'Mediano', large: 'Grande' };
+    return tipos[tipo] || tipo;
+};
+
+// 👇🏼 Lockers filtrados (frontend fallback si no hay búsqueda backend)
+const lockersFiltrados = computed(() => {
+    // Si hay búsqueda activa del backend, usar esos datos directamente
+    if (props.filters?.search || props.filters?.sector_id || props.filters?.locker_type || props.filters?.status) {
+        return props.lockers;
+    }
+    return props.lockers;
+});
 </script>
 
 <template>
-    <Head :title="vistaActual === 'modificar' ? 'Modificar Lockers' : 'Agregar Locker'" />
+    <Head title="Gestión de Lockers" />
     <div class="min-h-screen bg-white py-12 px-4 flex justify-center">
 
-        <!-- ─── VISTA: MODIFICAR LOCKER ─── -->
-        <div v-if="vistaActual === 'modificar'" class="w-full max-w-lg flex flex-col items-center">
+        <!-- ─── VISTA: LISTAR LOCKERS ─── -->
+        <div v-if="vistaActual === 'listar'" class="w-full max-w-6xl flex flex-col items-center">
             
-            <!-- Título y Añadir (Más llamativo) -->
-            <div class="flex items-center gap-4 mb-4 mt-6">
-                <h1 class="text-3xl font-extrabold text-black">Modificar Lockers</h1>
-                
-                <!-- Botón de Añadir muy llamativo -->
+            <div class="flex items-center gap-4 mb-8 mt-6">
+                <h1 class="text-3xl font-extrabold text-black">Gestión de Lockers</h1>
                 <button 
                     @click="cambiarVista('agregar')"
-                    class="bg-[#10b981] hover:bg-[#059669] text-white rounded-full p-1.5 shadow-[0_4px_10px_rgba(16,185,129,0.4)] transition-transform hover:scale-110 active:scale-95 group relative flex items-center justify-center"
+                    class="bg-[#10b981] hover:bg-[#059669] text-white rounded-full p-2 shadow-md transition-transform hover:scale-110"
                     title="Agregar Nuevo Locker"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-6 h-6">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                     </svg>
-                    <!-- Tooltip "Agregar Locker" flotante (opcional, le da un toque premium) -->
-                    <span class="absolute -top-10 bg-gray-800 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                        Agregar Locker
-                    </span>
                 </button>
             </div>
 
-            <h2 class="text-lg font-extrabold text-[#4472c4] mb-12 text-center">Modificar Locker B-142</h2>
+            <!-- 👇🏼 BARRA DE BÚSQUEDA Y FILTROS -->
+            <div class="w-full max-w-4xl mb-8 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                    
+                    <!-- Búsqueda por código -->
+                    <div class="relative lg:col-span-2">
+                        <div class="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-gray-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                            </svg>
+                        </div>
+                        <input 
+                            v-model="searchQuery"
+                            type="text" 
+                            placeholder="Buscar por código..." 
+                            class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm"
+                        />
+                    </div>
+
+                    <!-- Filtro por Sector -->
+                    <div class="relative">
+                        <select v-model="filterSector" @change="aplicarFiltros" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
+                            <option value="">Todos los sectores</option>
+                            <option v-for="sector in sectors" :key="sector.sector_id" :value="sector.sector_id">
+                                {{ sector.sector_name }}
+                            </option>
+                        </select>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-gray-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Filtro por Tipo -->
+                    <div class="relative">
+                        <select v-model="filterType" @change="aplicarFiltros" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
+                            <option value="">Todos los tipos</option>
+                            <option value="small">Pequeño</option>
+                            <option value="mid">Mediano</option>
+                            <option value="large">Grande</option>
+                        </select>
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-gray-400">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Filtro por Estado + Botón limpiar -->
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <select v-model="filterStatus" @change="aplicarFiltros" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
+                                <option value="">Todos los estados</option>
+                                <option :value="0">Disponible</option>
+                                <option :value="1">Ocupado</option>
+                                <option :value="2">Mantenimiento</option>
+                            </select>
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-gray-400">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </div>
+                        </div>
+                        <button 
+                            @click="limpiarFiltros"
+                            class="px-3 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium transition"
+                            title="Limpiar filtros"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contador de resultados -->
+                <p class="text-xs text-gray-500 mt-3">
+                    Mostrando {{ lockers.length }} locker(s)
+                    <span v-if="filters?.search || filters?.sector_id || filters?.locker_type || filters?.status">
+                        (con filtros aplicados)
+                    </span>
+                </p>
+            </div>
+
+            <!-- Tabla de Lockers -->
+            <div v-if="lockers.length > 0" class="w-full overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-[#213779] text-white">
+                            <th class="px-4 py-3 text-left font-bold">Código</th>
+                            <th class="px-4 py-3 text-left font-bold">Sector</th>
+                            <th class="px-4 py-3 text-left font-bold">Tipo</th>
+                            <th class="px-4 py-3 text-left font-bold">Estado</th>
+                            <th class="px-4 py-3 text-center font-bold">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="locker in lockers" :key="locker.locker_id" class="border-b hover:bg-gray-100">
+                            <td class="px-4 py-3 text-black font-bold">{{ locker.locker_code }}</td>
+                            <td class="px-4 py-3 text-black">{{ getNombreSector(locker.sector_id) }}</td>
+                            <td class="px-4 py-3 text-black">{{ getNombreTipo(locker.locker_type) }}</td>
+                            <td class="px-4 py-3">
+                                <span :class="[
+                                    'px-3 py-1 rounded-full text-white font-bold text-sm',
+                                    locker.status === 0 ? 'bg-[#10b981]' :
+                                    locker.status === 1 ? 'bg-[#f59e0b]' :
+                                    'bg-[#ef4444]'
+                                ]">
+                                    {{ getNombreEstado(locker.status) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                <button 
+                                    @click="abrirEditar(locker)"
+                                    class="bg-[#3b82f6] hover:bg-[#1d4ed8] text-white px-3 py-1 rounded text-sm mr-2"
+                                >
+                                    Editar
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div v-else class="text-center py-12">
+                <p class="text-gray-500 text-lg mb-4">
+                    {{ searchQuery || filterSector || filterType || filterStatus 
+                        ? 'No se encontraron lockers con esos filtros' 
+                        : 'No hay lockers disponibles' 
+                    }}
+                </p>
+                <p class="text-gray-400" v-if="searchQuery || filterSector || filterType || filterStatus">
+                    <button @click="limpiarFiltros" class="text-[#213779] hover:underline font-medium">
+                        Limpiar filtros
+                    </button>
+                </p>
+                <p class="text-gray-400" v-else>
+                    Crea el primer locker haciendo clic en el botón +
+                </p>
+            </div>
+        </div>
+
+        <!-- ─── VISTA: MODIFICAR LOCKER ─── -->
+        <div v-if="vistaActual === 'modificar'" class="w-full max-w-lg flex flex-col items-center">
+            
+            <button @click="cambiarVista('listar')" class="absolute top-6 left-4 text-gray-400 hover:text-black transition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-7 h-7">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                </svg>
+            </button>
+
+            <h1 class="text-3xl font-extrabold text-black mb-4 mt-6">Editar Locker</h1>
+            <h2 class="text-lg font-extrabold text-[#4472c4] mb-12 text-center">{{ lockerSeleccionado?.locker_code }}</h2>
 
             <!-- Grid de Formulario -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-7 w-full max-w-2xl pb-10">
                 
+                <!-- Código -->
+                <div class="w-full flex flex-col gap-1">
+                    <label class="text-sm font-extrabold text-black ml-2 mt-1">Código</label>
+                    <input 
+                        v-model="formEditar.locker_code" 
+                        type="text" 
+                        placeholder="Código Locker" 
+                        class="w-full h-14 px-6 rounded-xl border border-gray-100 bg-[#f3f4f6] placeholder:text-gray-400 font-bold text-[15px] text-black focus:bg-white focus:outline-none focus:border-gray-300"
+                    />
+                </div>
+
                 <!-- Sector -->
                 <div class="relative w-full shadow-sm rounded-full h-14 mt-[22px]">
-                    <select class="w-full h-full px-6 border border-gray-200 rounded-[2rem] font-extrabold text-[15px] text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
-                        <option value="" disabled selected>Sector</option>
-                        <option value="A">Edificio A</option>
-                        <option value="B">Edificio B</option>
-                        <option value="C">Edificio C</option>
+                    <select v-model="formEditar.sector_id" class="w-full h-full px-6 border border-gray-200 rounded-[2rem] font-extrabold text-[15px] text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
+                        <option :value="null" disabled>Sector</option>
+                        <option v-for="sector in sectors" :key="sector.sector_id" :value="sector.sector_id">
+                            {{ sector.sector_name || 'N/A' }}
+                        </option>
                     </select>
                     <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#1a5eb8]">
@@ -71,11 +351,11 @@ const confirmarAgregar = () => {
 
                 <!-- Tamaño -->
                 <div class="relative w-full shadow-sm rounded-full h-14 mt-[22px]">
-                    <select class="w-full h-full px-6 border border-gray-200 rounded-[2rem] font-extrabold text-[15px] text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
-                        <option value="" disabled selected>Tamaño</option>
-                        <option value="Pequeño">Pequeño</option>
-                        <option value="Mediano">Mediano</option>
-                        <option value="Grande">Grande</option>
+                    <select v-model="formEditar.locker_type" class="w-full h-full px-6 border border-gray-200 rounded-[2rem] font-extrabold text-[15px] text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
+                        <option value="small">Pequeño</option>
+                        <option value="medium">Mediano</option>
+                        <option value="mid">Mediano</option>
+                        <option value="large">Grande</option>
                     </select>
                     <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#1a5eb8]">
@@ -86,11 +366,10 @@ const confirmarAgregar = () => {
 
                 <!-- Estado -->
                 <div class="relative w-full shadow-sm rounded-full h-14 mt-[22px]">
-                    <select class="w-full h-full px-6 border border-gray-200 rounded-[2rem] font-extrabold text-[15px] text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
-                        <option value="" disabled selected>Estado</option>
-                        <option value="Disponible">Disponible</option>
-                        <option value="Ocupado">Ocupado</option>
-                        <option value="Mantenimiento">Mantenimiento</option>
+                    <select v-model="formEditar.status" class="w-full h-full px-6 border border-gray-200 rounded-[2rem] font-extrabold text-[15px] text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
+                        <option :value="0">Disponible</option>
+                        <option :value="1">Ocupado</option>
+                        <option :value="2">Mantenimiento</option>
                     </select>
                     <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#1a5eb8]">
@@ -98,32 +377,31 @@ const confirmarAgregar = () => {
                         </svg>
                     </div>
                 </div>
-
-                <!-- Código -->
-                <div class="w-full flex flex-col gap-1">
-                    <label class="text-sm font-extrabold text-black ml-2 mt-1">Código</label>
-                    <input type="text" placeholder="Código Locker" class="w-full h-14 px-6 rounded-xl border border-gray-100 bg-[#f3f4f6] placeholder:text-gray-400 font-bold text-[15px] text-black focus:bg-white focus:outline-none focus:border-gray-300 transition-colors" />
-                </div>
-
             </div>
 
             <!-- Botones -->
             <div class="w-full max-w-[280px] flex flex-col gap-4 mt-8">
-                <button class="w-full py-4 bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold rounded-xl shadow-md transition-colors active:scale-95 text-md">
-                    Guardar cambios
+                <button 
+                    @click="confirmarEditar"
+                    :disabled="formEditar.processing"
+                    class="w-full py-4 bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold rounded-xl shadow-md transition-colors active:scale-95 text-md disabled:opacity-50"
+                >
+                    {{ formEditar.processing ? 'Guardando...' : 'Guardar cambios' }}
                 </button>
-                <button class="w-full py-4 bg-[#f0384a] hover:bg-[#d42c3d] text-white font-extrabold rounded-xl shadow-md transition-colors active:scale-95 text-md">
-                    Eliminar Locker
+                <button 
+                    @click="confirmarEliminar"
+                    :disabled="formEditar.processing"
+                    class="w-full py-4 bg-[#f0384a] hover:bg-[#d42c3d] text-white font-extrabold rounded-xl shadow-md transition-colors active:scale-95 text-md disabled:opacity-50"
+                >
+                    {{ formEditar.processing ? 'Eliminando...' : 'Eliminar Locker' }}
                 </button>
             </div>
-
         </div>
 
         <!-- ─── VISTA: AGREGAR LOCKER ─── -->
         <div v-else-if="vistaActual === 'agregar'" class="w-full flex flex-col items-center max-w-2xl relative">
             
-            <!-- Botón Volver (Flecha atras) opcional pero útil -->
-            <button @click="cambiarVista('modificar')" class="absolute -left-10 sm:left-4 top-6 text-gray-400 hover:text-black transition">
+            <button @click="cambiarVista('listar')" class="absolute -left-10 sm:left-4 top-6 text-gray-400 hover:text-black transition">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-7 h-7">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                 </svg>
@@ -131,22 +409,27 @@ const confirmarAgregar = () => {
 
             <h1 class="text-3xl sm:text-4xl font-extrabold text-black mb-12 mt-6">Agregar Locker</h1>
 
-            <!-- Formulario de Agregar (Ensanchado y agrandado) -->
+            <!-- Formulario de Agregar -->
             <div class="w-full max-w-[500px] flex flex-col gap-7 mb-12">
                 
                 <!-- Codigo -->
                 <div class="w-full flex flex-col gap-1.5">
                     <label class="text-sm font-extrabold text-black ml-4">Código</label>
-                    <input type="text" placeholder="Ingrese el código del locker" class="w-full h-14 px-6 rounded-full border border-gray-200 bg-[#f9fafb] placeholder:text-gray-400 font-bold text-[15px] text-black focus:bg-white focus:outline-none focus:border-gray-400 transition-colors shadow-sm" />
+                    <input 
+                        v-model="form.locker_code"
+                        type="text" 
+                        placeholder="Ingrese el código del locker" 
+                        class="w-full h-14 px-6 rounded-full border border-gray-200 bg-[#f9fafb] placeholder:text-gray-400 font-bold text-[15px] text-black focus:bg-white focus:outline-none focus:border-gray-400"
+                    />
                 </div>
 
                 <!-- Sector -->
                 <div class="relative w-full shadow-sm rounded-full h-14">
-                    <select class="w-full h-full px-6 border border-gray-200 bg-[#f9fafb] rounded-[2rem] font-bold text-[15px] text-black appearance-none focus:outline-none focus:border-gray-400 focus:bg-white sm:text-center pl-6 sm:pl-0">
-                        <option value="" disabled selected>Sector</option>
-                        <option value="A">Edificio A</option>
-                        <option value="B">Edificio B</option>
-                        <option value="C">Edificio C</option>
+                    <select v-model="form.sector_id" class="w-full h-full px-6 border border-gray-200 bg-[#f9fafb] rounded-[2rem] font-bold text-[15px] text-black appearance-none focus:outline-none focus:border-gray-400 focus:bg-white">
+                        <option :value="null" disabled>Sector</option>
+                        <option v-for="sector in sectors" :key="sector.sector_id" :value="sector.sector_id">
+                            {{ sector.sector_name || 'N/A' }}
+                        </option>
                     </select>
                     <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-[#213779]">
@@ -155,19 +438,13 @@ const confirmarAgregar = () => {
                     </div>
                 </div>
 
-                <!-- Piso -->
-                <div class="w-full flex flex-col gap-1.5">
-                    <label class="text-sm font-extrabold text-black ml-4">Piso Sector</label>
-                    <input type="text" placeholder="Ingrese el piso del Sector" class="w-full h-14 px-6 sm:text-center rounded-full border border-gray-200 bg-[#f9fafb] placeholder:text-gray-400 font-bold text-[15px] text-black focus:bg-white focus:outline-none focus:border-gray-400 transition-colors shadow-sm" />
-                </div>
-
                 <!-- Tamaño -->
                 <div class="relative w-full shadow-sm rounded-full h-14">
-                    <select class="w-full h-full px-6 border border-gray-200 bg-[#f9fafb] rounded-[2rem] font-bold text-[15px] text-black appearance-none focus:outline-none focus:border-gray-400 focus:bg-white sm:text-center pl-6 sm:pl-0">
-                        <option value="" disabled selected>Tamaño</option>
-                        <option value="Pequeño">Pequeño</option>
-                        <option value="Mediano">Mediano</option>
-                        <option value="Grande">Grande</option>
+                    <select v-model="form.locker_type" class="w-full h-full px-6 border border-gray-200 bg-[#f9fafb] rounded-[2rem] font-bold text-[15px] text-black appearance-none focus:outline-none focus:border-gray-400 focus:bg-white">
+                        <option value="small">Pequeño</option>
+                        <option value="medium">Mediano</option>
+                        <option value="mid">Mediano</option>
+                        <option value="large">Grande</option>
                     </select>
                     <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-[#213779]">
@@ -178,11 +455,10 @@ const confirmarAgregar = () => {
 
                 <!-- Estado -->
                 <div class="relative w-full shadow-sm rounded-full h-14">
-                    <select class="w-full h-full px-6 border border-gray-200 bg-[#f9fafb] rounded-[2rem] font-bold text-[15px] text-black appearance-none focus:outline-none focus:border-gray-400 focus:bg-white sm:text-center pl-6 sm:pl-0">
-                        <option value="" disabled selected>Estado</option>
-                        <option value="Disponible">Disponible</option>
-                        <option value="Ocupado">Ocupado</option>
-                        <option value="Mantenimiento">Mantenimiento</option>
+                    <select v-model="form.status" class="w-full h-full px-6 border border-gray-200 bg-[#f9fafb] rounded-[2rem] font-bold text-[15px] text-black appearance-none focus:outline-none focus:border-gray-400 focus:bg-white">
+                        <option :value="0">Disponible</option>
+                        <option :value="1">Ocupado</option>
+                        <option :value="2">Mantenimiento</option>
                     </select>
                     <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 text-[#213779]">
@@ -190,30 +466,25 @@ const confirmarAgregar = () => {
                         </svg>
                     </div>
                 </div>
-
             </div>
 
             <!-- Boton Agregar -->
             <button 
                 @click="confirmarAgregar"
-                class="w-full max-w-[280px] py-4 bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold rounded-xl shadow-md transition-colors active:scale-95 text-[15px]"
+                :disabled="form.processing"
+                class="w-full max-w-[280px] py-4 bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold rounded-xl shadow-md transition-colors active:scale-95 text-[15px] disabled:opacity-50"
             >
-                Agregar Locker
+                {{ form.processing ? 'Agregando...' : 'Agregar Locker' }}
             </button>
-
         </div>
 
         <!-- Modal de confirmación -->
         <ModalComponent
             :show="modalAbierto"
-            text="¡Locker agregado correctamente!"
-            url="/gestion-lockers-admin"
+            :text="vistaActual === 'agregar' ? '¡Locker agregado correctamente!' : '¡Locker actualizado correctamente!'"
+            url="/inicio-admin"
             title-button="Volver al Panel"
-            @close="modalAbierto = false; cambiarVista('modificar')"
+            @close="modalAbierto = false; cambiarVista('listar')"
         />
-
     </div>
-
-    
-
 </template>

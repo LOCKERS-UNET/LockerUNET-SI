@@ -37,22 +37,19 @@
     }>();
 
     const form = reactive({
-        user_id:props.user.id,
-        monto:null,
-        descripcion:null
-
+        user_id: props.user.id,
+        amount: null,
+        reason: null
     })
 
     //**Ejemplo al momento de subir formulario, 
     // debemos abrir el modal en caso de que todo este bien. */
-    const submit=()=>{
-
-        router.post('/admin/multas',form,{
-            onSuccess:()=>{
+    const submit = () => {
+        router.post('/admin/fines', form, {
+            onSuccess: () => {
                 openModal();
             }
         });
-
     }
 
 </script>
@@ -87,12 +84,12 @@
                         class="w-full h-10 px-5 py-3 rounded-full bg-gray-100  border-3  focus:bg-white focus:outline-none text-[#404040] transition duration-200
                             placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
                         :class="{
-                            'border-[#DC2626]  bg-[#FEE2E2]': errors?.monto, 
-                            'border-[#A3A3A3] focus:border-[#22397A]': !errors?.monto
+                            'border-[#DC2626]  bg-[#FEE2E2]': errors?.amount, 
+                            'border-[#A3A3A3] focus:border-[#22397A]': !errors?.amount
                         }"
-                        v-model="form.monto"
+                        v-model="form.amount"
                     >
-                    <small v-if="errors?.monto" class="text-red-500">{{ errors.monto }}</small>
+                    <small v-if="errors?.amount" class="text-red-500">{{ errors.amount }}</small>
                 </div>
 
                 <div class="space-y-2 min-h-16">
@@ -107,12 +104,12 @@
                         class="w-full h-32 resize-none px-5 py-3 rounded-xl bg-gray-100  border-3  focus:bg-white focus:outline-none text-[#404040] transition duration-200
                             placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
                         :class="{
-                            'border-[#DC2626]  bg-[#FEE2E2]': errors?.descripcion, 
-                            'border-[#A3A3A3] focus:border-[#22397A]': !errors?.descripcion
+                            'border-[#DC2626]  bg-[#FEE2E2]': errors?.reason, 
+                            'border-[#A3A3A3] focus:border-[#22397A]': !errors?.reason
                         }"
-                        v-model="form.descripcion"
+                        v-model="form.reason"
                     ></textarea>
-                    <small v-if="errors?.descripcion" class="text-red-500">{{ errors.descripcion }}</small>
+                    <small v-if="errors?.reason" class="text-red-500">{{ errors.reason }}</small>
                 </div>
 
 

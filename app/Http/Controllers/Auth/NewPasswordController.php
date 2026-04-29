@@ -14,7 +14,7 @@ class NewPasswordController extends Controller
     public function show()
     {
         // Verificar que vino del flujo correcto
-        if (!session('reset_email') || !session('reset_code_verified')) {
+        if (!session('reset_user_id') || !session('reset_code_verified')) {
             return redirect('/forgot-password');
         }
 
@@ -31,20 +31,24 @@ class NewPasswordController extends Controller
             'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
-        $email = session('reset_email');
+        $userId = session('reset_user_id');
 
-        if (!$email || !session('reset_code_verified')) {
+        if (!$userId || !session('reset_code_verified')) {
             return redirect('/forgot-password');
         }
 
         // Actualizar la contraseña del usuario
-        User::where('email', $email)->update([
+        $updated = User::where('id', $userId)->update([
             'password' => Hash::make($request->password),
         ]);
 
+        if (!$updated) {
+            return back()->withErrors(['general' => 'No se pudo actualizar la contraseña. Intenta de nuevo.']);
+        }
+
         // Limpiar los datos del flujo de recuperación
-        PasswordResetCode::where('email', $email)->delete();
-        session()->forget(['reset_email', 'reset_code_verified']);
+        PasswordResetCode::where('user_id', $userId)->delete();
+        session()->forget(['reset_user_id', 'reset_code_verified']);
 
         return redirect('/login')->with(
             'status',

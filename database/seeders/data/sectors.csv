@@ -1,0 +1,14 @@
+sector_id,building_id,sector_name
+1,1,Cafetin A
+2,1,Pasillo 09A
+3,1,Pasillo 13A
+4,1,Pasillo 21A
+5,2,Pasillo labs
+6,2,Pasillo ceti
+10,3,Planta Baja
+11,3,Piso 1
+12,3,Piso 2 hall B mural
+13,3,Piso 3
+14,4,Área ping pong
+15,4,Área ajedrez
+16,5,gym

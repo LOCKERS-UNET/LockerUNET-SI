@@ -10,12 +10,15 @@ return new class extends Migration
     {
         Schema::create('lockers', function (Blueprint $table) {
             $table->id('locker_id');
+            $table->string('locker_code', 50)->unique()->comment('Ej: E-6-PB-001');
             $table->unsignedBigInteger('sector_id');
-            $table->string('locker_number', 20);
-            $table->enum('status', ['disponible', 'ocupado', 'mantenimiento', 'inhabilitado'])->default('disponible');
-            $table->text('observations')->nullable();
+            $table->string('locker_type', 20)->comment('small | mid | large');
+            $table->string('plate_number', 20)->nullable()->comment('Placa física, not si no tiene');
+            $table->integer('status')->default(0)->comment('0=disponible | 1=ocupado | 2=mantenimiento');
+            
+            // Laravel defaults
             $table->timestamps();
-
+            
             $table->foreign('sector_id')->references('sector_id')->on('sectors')->onDelete('cascade');
         });
     }

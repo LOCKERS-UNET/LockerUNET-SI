@@ -11,8 +11,8 @@ class VerificationCodeController extends Controller
 {
     public function show()
     {
-        // Si no hay email en sesión, redirigir al inicio del flujo
-        if (!session('reset_email')) {
+        // Si no hay user_id en sesión, redirigir al inicio del flujo
+        if (!session('reset_user_id')) {
             return redirect('/forgot-password');
         }
 
@@ -28,14 +28,16 @@ class VerificationCodeController extends Controller
             'code.digits'   => 'El código debe tener 6 dígitos.',
         ]);
 
-        $email = session('reset_email');
+        $userId = session('reset_user_id');
 
-        if (!$email) {
+        if (!$userId) {
             return redirect('/forgot-password');
         }
 
-        $record = PasswordResetCode::where('email', $email)
-            ->where('code', $request->code)
+        // Buscar el código por user_id y token (nombre correcto de columna)
+        $record = PasswordResetCode::where('user_id', $userId)
+            ->where('token', $request->code)  // 👈🏼 'token' es el nombre real
+            ->where('used', false)            // 👈🏼 Solo códigos no usados
             ->first();
 
         if (!$record) {
@@ -46,6 +48,9 @@ class VerificationCodeController extends Controller
             $record->delete();
             return back()->withErrors(['code' => 'El código ha expirado. Solicita uno nuevo.']);
         }
+
+        // Marcar el código como usado para que no se pueda reutilizar
+        $record->update(['used' => true]);
 
         // Marcar en sesión que el código fue verificado
         session(['reset_code_verified' => true]);

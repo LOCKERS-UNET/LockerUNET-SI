@@ -2,24 +2,27 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+// Este modelo representa una tarifa/arancel según el tipo de locker
 class FeeRate extends Model
 {
-    use HasFactory;
+    protected $primaryKey = 'rate_id';
 
-    protected $primaryKey = 'fee_id';
-    public $timestamps = false; // Only has created_at physically defined in SQL
+    // Solo tiene created_at, no updated_at
+    public $timestamps = false;
 
     protected $fillable = [
-        'amount',
-        'active_date',
-        'status',
+        'locker_type',
+        'monthly_amount',
+        'effective_from',
+        'reason',
+        'created_by',
     ];
 
-    protected $casts = [
-        'active_date' => 'date',
-        'amount' => 'decimal:2',
-    ];
+    // La tarifa fue creada por un admin
+    public function admin()
+    {
+        return $this->belongsTo(User::class, 'created_by', 'id');
+    }
 }

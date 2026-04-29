@@ -8,23 +8,27 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('assignments', function (Blueprint $table) {
+        Schema::create('locker_assignments', function (Blueprint $table) {
             $table->id('assignment_id');
-            $table->unsignedBigInteger('request_id');
-            $table->unsignedBigInteger('space_id'); // originally lockers.locker_id
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('locker_id');
+            $table->unsignedBigInteger('request_id')->nullable();
             $table->date('start_date');
-            $table->date('end_date');
-            $table->enum('status', ['activa', 'vencida', 'finalizada'])->default('activa');
+            $table->date('end_date')->nullable()->comment('NULL mientras esté activo');
+            $table->string('assignment_status', 20)->default('active')->comment('active | released');
+            $table->unsignedBigInteger('created_by')->comment('Admin que asignó');
+            
             $table->timestamps();
 
-            $table->foreign('request_id')->references('request_id')->on('requests')->onDelete('cascade');
-            $table->foreign('space_id')->references('locker_id')->on('lockers')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('locker_id')->references('locker_id')->on('lockers')->onDelete('cascade');
+            $table->foreign('request_id')->references('request_id')->on('locker_requests')->onDelete('set null');
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('assignments');
+        Schema::dropIfExists('locker_assignments');
     }
 };

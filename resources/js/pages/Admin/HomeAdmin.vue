@@ -1,8 +1,38 @@
 <script setup lang="ts">
     import { Link } from '@inertiajs/vue3';
+    import { ref, onMounted } from 'vue';
     import LayoutAdmin from '../Layouts/LayoutAdmin.vue';
 
     defineOptions({ layout: LayoutAdmin })
+
+    // Estado para estadísticas
+    const stats = ref({
+        total: 0,
+        occupied: 0,
+        available: 0,
+        maintenance: 0
+    });
+
+    const loading = ref(true);
+    const error = ref('');
+
+    // Obtener estadísticas del backend
+    const fetchStats = async () => {
+        try {
+            const response = await fetch('/admin/stats/summary');
+            if (!response.ok) throw new Error('Error fetching stats');
+            stats.value = await response.json();
+        } catch (err) {
+            console.error('Error al obtener estadísticas:', err);
+            error.value = 'No se pudieron cargar las estadísticas';
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    onMounted(() => {
+        fetchStats();
+    });
 </script>
 
 <template>
@@ -16,32 +46,44 @@
 
             <div class="grid grid-cols-2 gap-4 lg:gap-8 w-full lg:w-11/12 mb-12">
 
-                <div class="flex flex-col items-start justify-center gap-1 bg-[#213779] p-4 lg:p-6 rounded-xl shadow-lg">
-                    <p class="text-white font-bold text-xs lg:text-lg">Total Lockers</p>
-                    <p class="text-white font-bold text-xl lg:text-2xl">650</p>
-                </div>
+                <template v-if="loading">
+                    <div class="flex items-center justify-center col-span-2 py-8">
+                        <p class="text-gray-500">Cargando estadísticas...</p>
+                    </div>
+                </template>
+                <template v-else-if="error">
+                    <div class="flex items-center justify-center col-span-2 py-8">
+                        <p class="text-red-500">{{ error }}</p>
+                    </div>
+                </template>
+                <template v-else>
+                    <div class="flex flex-col items-start justify-center gap-1 bg-[#213779] p-4 lg:p-6 rounded-xl shadow-lg">
+                        <p class="text-white font-bold text-xs lg:text-lg">Total Lockers</p>
+                        <p class="text-white font-bold text-xl lg:text-2xl">{{ stats.total }}</p>
+                    </div>
 
-                <div class="flex flex-col items-start justify-center gap-1 bg-[#0D7A5F] p-4 lg:p-6 rounded-xl shadow-lg">
-                    <p class="text-white font-bold text-xs lg:text-lg">Disponibles</p>
-                    <p class="text-white font-bold text-xl lg:text-2xl">650</p>
-                </div>
+                    <div class="flex flex-col items-start justify-center gap-1 bg-[#0D7A5F] p-4 lg:p-6 rounded-xl shadow-lg">
+                        <p class="text-white font-bold text-xs lg:text-lg">Disponibles</p>
+                        <p class="text-white font-bold text-xl lg:text-2xl">{{ stats.available }}</p>
+                    </div>
 
-                <div class="flex flex-col items-start justify-center gap-1 bg-[#1768B4] p-4 lg:p-6 rounded-xl shadow-lg">
-                    <p class="text-white font-bold text-xs lg:text-lg">Ocupados</p>
-                    <p class="text-white font-bold text-xl lg:text-2xl">650</p>
-                </div>
+                    <div class="flex flex-col items-start justify-center gap-1 bg-[#1768B4] p-4 lg:p-6 rounded-xl shadow-lg">
+                        <p class="text-white font-bold text-xs lg:text-lg">Ocupados</p>
+                        <p class="text-white font-bold text-xl lg:text-2xl">{{ stats.occupied }}</p>
+                    </div>
 
-                <div class="flex flex-col items-start justify-center gap-1 bg-[#F97316] p-4 lg:p-6 rounded-xl shadow-lg">
-                    <p class="text-white font-bold text-xs lg:text-lg">Mantenimiento</p>
-                    <p class="text-white font-bold text-xl lg:text-2xl">650</p>
-                </div>
+                    <div class="flex flex-col items-start justify-center gap-1 bg-[#F97316] p-4 lg:p-6 rounded-xl shadow-lg">
+                        <p class="text-white font-bold text-xs lg:text-lg">Mantenimiento</p>
+                        <p class="text-white font-bold text-xl lg:text-2xl">{{ stats.maintenance }}</p>
+                    </div>
+                </template>
             </div>
 
             <h2 class="text-xl font-bold self-start mb-6 text-black ml-2 lg:ml-10">Accesos Rápidos</h2>
 
             <div class="grid grid-cols-2 gap-4 lg:gap-6 w-full lg:w-10/12">
 
-                <Link href="/asignaciones-admin" 
+                <Link href="/admin/assignments" 
                     class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] p-3 lg:p-4 rounded-xl shadow-md transition-colors"
                     aria-label="Ir a la sección de Asignaciones de lockers">
                     <span class="text-white font-bold text-[10px] lg:text-base">Asignaciones</span>
@@ -51,7 +93,7 @@
                     </svg>
                 </Link>
 
-                <Link href="/gestion-lockers-admin" 
+                <Link href="/admin/lockers" 
                     class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] p-3 lg:p-4 rounded-xl shadow-md transition-colors"
                     aria-label="Gestionar inventario de lockers">
                     <span class="text-white font-bold text-[10px] lg:text-base">Gestión Lockers</span>
@@ -60,7 +102,7 @@
                     </svg>
                 </Link>
 
-                <Link href="/usuarios-admin" 
+                <Link href="/admin/users" 
                     class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] p-3 lg:p-4 rounded-xl shadow-md transition-colors"
                     aria-label="Administrar usuarios del sistema">
                     <span class="text-white font-bold text-[10px] lg:text-base">Usuarios</span>
@@ -78,7 +120,7 @@
                     </svg>
                 </Link>
 
-                <Link href="/aranceles-admin" 
+                <Link href="/fee-rates" 
                     class="flex items-center justify-between bg-[#213779] hover:bg-[#1a2b5f] p-3 lg:p-4 rounded-xl shadow-md transition-colors"
                     aria-label="Configurar precios y aranceles">
                     <span class="text-white font-bold text-[10px] lg:text-base">Aranceles</span>
@@ -93,7 +135,7 @@
 
                 </Link>
 
-                <Link href="/incidencias-admin" 
+                <Link href="/admin/incidents" 
                     class="flex items-center justify-between bg-[#DC2626] hover:bg-[#b91c1c] p-3 lg:p-4 rounded-xl shadow-md transition-colors"
                     aria-label="Ver y reportar incidencias técnicas">
                     <span class="text-white font-bold text-[10px] lg:text-base">Incidencias</span>

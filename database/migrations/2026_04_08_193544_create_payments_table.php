@@ -10,16 +10,17 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id('payment_id');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->unsignedBigInteger('fee_id');
-            $table->unsignedBigInteger('request_id')->nullable();
-            $table->timestamp('payment_date')->useCurrent();
-            $table->decimal('amount_paid', 10, 2);
-            $table->string('reference_number', 50)->unique();
-            $table->enum('status', ['completado', 'rechazado', 'pendiente'])->default('pendiente');
-
-            $table->foreign('fee_id')->references('fee_id')->on('fee_rates')->onDelete('cascade');
-            $table->foreign('request_id')->references('request_id')->on('requests')->onDelete('set null');
+            $table->unsignedBigInteger('assignment_id');
+            $table->unsignedBigInteger('user_id');
+            $table->decimal('amount', 10, 2);
+            $table->date('due_date')->comment('Fecha límite de pago mostrada al usuario');
+            $table->string('payment_status', 20)->default('pending')->comment('pending | paid | overdue');
+            $table->string('semester', 20)->nullable()->comment('Ej: 2026-1, usado en estadísticas');
+            
+            $table->timestamp('created_at')->useCurrent();
+            
+            $table->foreign('assignment_id')->references('assignment_id')->on('locker_assignments')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

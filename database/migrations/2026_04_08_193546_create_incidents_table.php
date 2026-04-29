@@ -10,14 +10,18 @@ return new class extends Migration
     {
         Schema::create('incidents', function (Blueprint $table) {
             $table->id('incident_id');
+            $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('locker_id');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->text('description');
-            $table->timestamp('report_date')->useCurrent();
-            $table->enum('status', ['abierto', 'en_proceso', 'resuelto', 'cerrado'])->default('abierto');
-            $table->text('resolution')->nullable();
-
+            $table->string('status', 20)->default('pending')->comment('pending | reviewed');
+            $table->unsignedBigInteger('reviewed_by')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
+            
+            $table->timestamp('created_at')->useCurrent();
+            
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('locker_id')->references('locker_id')->on('lockers')->onDelete('cascade');
+            $table->foreign('reviewed_by')->references('id')->on('users')->onDelete('set null');
         });
     }
 

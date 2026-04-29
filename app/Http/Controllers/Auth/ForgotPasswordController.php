@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Mail\ResetCodeMail;
 use App\Models\PasswordResetCode;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
@@ -26,24 +27,42 @@ class ForgotPasswordController extends Controller
             'email.exists'   => 'No encontramos una cuenta con ese correo.',
         ]);
 
-        // Eliminar códigos anteriores del mismo correo
-        PasswordResetCode::where('email', $request->email)->delete();
+        // Buscar el usuario por email
+        $user = User::where('email', $request->email)->firstOrFail();
+
+        // Eliminar códigos anteriores no usados del mismo usuario
+        PasswordResetCode::where('user_id', $user->id)
+            ->where('used', false)
+            ->delete();
 
         // Generar código de 6 dígitos
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 
         // Guardar en BD con expiración de 15 minutos
         PasswordResetCode::create([
-            'email'      => $request->email,
-            'code'       => $code,
+            'user_id'    => $user->id,      // 👈🏼 Usar user_id
+            'token'      => $code,          // 👈🏼 Usar 'token' (nombre real de la columna)
             'expires_at' => now()->addMinutes(15),
+            'used'       => false,
         ]);
 
-        // Guardar el email en sesión
-        session(['reset_email' => $request->email]);
+        // Guardar el user_id en sesión (más seguro que email)
+        session(['reset_user_id' => $user->id]);
 
         // Enviar el código por correo
-        Mail::to($request->email)->send(new ResetCodeMail($code));
+        try {
+            Mail::to($user->email)->send(new ResetCodeMail($code));
+        } catch (\Exception $e) {
+            // En desarrollo, mostrar el código en consola para pruebas
+            if (app()->environment('local')) {
+                logger()->error('Error al enviar correo: ' . $e->getMessage());
+                logger()->info("Código de verificación para {$user->email}: $code");
+            }
+            
+            return back()->withErrors([
+                'email' => 'No se pudo enviar el correo. Revisa la configuración de mail.'
+            ]);
+        }
 
         return redirect('/verify-code')->with(
             'status',
