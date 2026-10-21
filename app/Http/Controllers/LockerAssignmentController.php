@@ -7,10 +7,12 @@ use App\Models\Locker;
 use App\Models\FeeRate;
 use App\Models\Payment;
 use App\Helpers\NotificationHelper;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class LockerAssignmentController extends Controller
 {
@@ -184,69 +186,72 @@ class LockerAssignmentController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'Error de BD: ' . $e->getMessage()]);
+            report($e);
+
+            return redirect()->back()->withErrors(['error' => 'No se pudo crear la asignación. Intenta de nuevo.']);
         }
     }
 
     /**
-     * PUT /admin/assignments/{id}/release
-     * Libera el locker
+     * PUT /admin/assignments/{id}/release  (admin: cualquier asignación)
+     * POST /devolucion-locker/{id}         (estudiante: solo la suya)
+     * Libera el locker si no hay pagos pendientes o vencidos
      */
     public function release($id)
     {
-        // Usar assignment_id explícitamente
-        $assignment = LockerAssignment::where('assignment_id', $id)->firstOrFail();
-
-        // Un estudiante (POST /devolucion-locker/{id}) solo puede devolver su propio locker
-        if (! auth()->user()->is_admin && (int) $assignment->user_id !== (int) auth()->id()) {
-            abort(403);
-        }
-
-        if ($assignment->assignment_status === 'released') {
-            return redirect()->back()->withErrors(['assignment' => 'Este locker ya fue liberado anteriormente.']);
-        }
-
         try {
-            DB::beginTransaction();
+            return DB::transaction(function () use ($id) {
+                // Bloquear la fila evita que dos liberaciones simultáneas pasen las validaciones
+                $assignment = LockerAssignment::whereKey($id)->lockForUpdate()->firstOrFail();
 
-            // 1. Verificar pagos pending o overdue
-            $hasDebts = Payment::where('assignment_id', $assignment->assignment_id)
-                ->whereIn('payment_status', ['pending', 'overdue'])
-                ->exists();
+                // Un estudiante solo puede devolver su propio locker
+                if (! auth()->user()->is_admin && (int) $assignment->user_id !== (int) auth()->id()) {
+                    abort(403);
+                }
 
-            if ($hasDebts) {
-                DB::rollBack();
-                return redirect()->back()->withErrors(['payments' => 'No se puede liberar: el usuario tiene pagos pendientes o vencidos vinculados a este locker.']);
-            }
+                if ($assignment->assignment_status === 'released') {
+                    return redirect()->back()->withErrors(['assignment' => 'Este locker ya fue liberado anteriormente.']);
+                }
 
-            // 2. Liberar assignment
-            $assignment->update([
-                'assignment_status' => 'released',
-                'end_date' => today(),
-            ]);
+                // 1. Verificar pagos pending o overdue
+                $hasDebts = Payment::where('assignment_id', $assignment->assignment_id)
+                    ->whereIn('payment_status', ['pending', 'overdue'])
+                    ->exists();
 
-            // 3. Liberar locker (status = 0)
-            $locker = Locker::find($assignment->locker_id);
-            if ($locker) {
-                $locker->update(['status' => 0]);
-            }
+                if ($hasDebts) {
+                    return redirect()->back()->withErrors(['payments' => 'No se puede liberar: el usuario tiene pagos pendientes o vencidos vinculados a este locker.']);
+                }
 
-            // 4. Notificar al usuario
-            NotificationHelper::send(
-                $assignment->user_id, 
-                'locker_released', 
-                'Locker liberado',
-                'Tu locker ha sido liberado. Cualquier consulta dirígete al Decanato.'
-            );
+                // 2. Liberar assignment
+                $assignment->update([
+                    'assignment_status' => 'released',
+                    'end_date' => today(),
+                ]);
 
-            DB::commit();
-            
-            // Retornar respuesta compatible con Inertia
-            return redirect()->back()->with('success', 'Asignación liberada con éxito.');
+                // 3. Liberar locker (status = 0)
+                $locker = Locker::find($assignment->locker_id);
+                if ($locker) {
+                    $locker->update(['status' => 0]);
+                }
 
+                // 4. Notificar al usuario
+                NotificationHelper::send(
+                    $assignment->user_id,
+                    'locker_released',
+                    'Locker liberado',
+                    'Tu locker ha sido liberado. Cualquier consulta dirígete al Decanato.'
+                );
+
+                // Retornar respuesta compatible con Inertia
+                return redirect()->back()->with('success', 'Asignación liberada con éxito.');
+            });
+        } catch (HttpExceptionInterface|ModelNotFoundException $e) {
+            // 403 y 404 se responden como tales, no como error de BD
+            throw $e;
         } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'Error de BD: ' . $e->getMessage()]);
+            report($e);
+
+            return redirect()->back()->withErrors(['error' => 'No se pudo liberar el locker. Intenta de nuevo.']);
         }
     }
 }

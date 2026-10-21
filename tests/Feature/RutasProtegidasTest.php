@@ -41,6 +41,7 @@ class RutasProtegidasTest extends TestCase
         $this->actingAs($admin)->get('/fee-rates')->assertOk();
     }
 
+    // Ya pasaba antes de ac81933 (la ruta dentro del grupo admin sobrescribia la de afuera); queda como regresion
     public function test_un_estudiante_no_puede_liberar_asignaciones_por_la_ruta_de_admin(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
@@ -70,9 +71,11 @@ class RutasProtegidasTest extends TestCase
         $dueno = User::factory()->create(['is_admin' => false]);
         $id = $this->crearAsignacion($dueno, $admin);
 
-        $this->actingAs($dueno)->post("/devolucion-locker/{$id}")->assertRedirect();
+        $this->actingAs($dueno)->post("/devolucion-locker/{$id}")->assertRedirect()->assertSessionHasNoErrors();
 
-        $this->assertSame('released', LockerAssignment::find($id)->assignment_status);
+        $asignacion = LockerAssignment::find($id);
+        $this->assertSame('released', $asignacion->assignment_status);
+        $this->assertDatabaseHas('lockers', ['locker_id' => $asignacion->locker_id, 'status' => 0]);
     }
 
     public function test_un_admin_puede_liberar_cualquier_asignacion(): void
@@ -81,8 +84,52 @@ class RutasProtegidasTest extends TestCase
         $estudiante = User::factory()->create(['is_admin' => false]);
         $id = $this->crearAsignacion($estudiante, $admin);
 
-        $this->actingAs($admin)->put("/admin/assignments/{$id}/release")->assertRedirect();
+        $this->actingAs($admin)->put("/admin/assignments/{$id}/release")->assertRedirect()->assertSessionHasNoErrors();
+
+        $asignacion = LockerAssignment::find($id);
+        $this->assertSame('released', $asignacion->assignment_status);
+        $this->assertDatabaseHas('lockers', ['locker_id' => $asignacion->locker_id, 'status' => 0]);
+    }
+
+    public function test_un_admin_puede_liberar_por_la_ruta_de_devolucion(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $id = $this->crearAsignacion($estudiante, $admin);
+
+        $this->actingAs($admin)->post("/devolucion-locker/{$id}")->assertRedirect()->assertSessionHasNoErrors();
 
         $this->assertSame('released', LockerAssignment::find($id)->assignment_status);
+    }
+
+    public function test_no_se_puede_devolver_con_pagos_pendientes_o_vencidos(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $dueno = User::factory()->create(['is_admin' => false]);
+
+        foreach (['pending', 'overdue'] as $estado) {
+            $id = $this->crearAsignacion($dueno, $admin);
+            DB::table('payments')->insert(['assignment_id' => $id, 'user_id' => $dueno->id, 'amount' => 10, 'due_date' => today(), 'payment_status' => $estado]);
+
+            $this->actingAs($dueno)->post("/devolucion-locker/{$id}")->assertSessionHasErrors('payments');
+
+            $asignacion = LockerAssignment::find($id);
+            $this->assertSame('active', $asignacion->assignment_status, "con pago {$estado}");
+            $this->assertDatabaseHas('lockers', ['locker_id' => $asignacion->locker_id, 'status' => 1]);
+        }
+    }
+
+    public function test_devolver_una_asignacion_inexistente_da_404(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+
+        $this->actingAs($estudiante)->post('/devolucion-locker/999999')->assertNotFound();
+    }
+
+    public function test_un_invitado_es_enviado_al_login(): void
+    {
+        $this->post('/devolucion-locker/1')->assertRedirect('/login');
+        $this->put('/admin/assignments/1/release')->assertRedirect('/login');
+        $this->get('/fee-rates')->assertRedirect('/login');
     }
 }
