@@ -38,7 +38,7 @@
     <div>
 
         <header class="bg-[#1C2F5E] text-white">
-            <nav class=" flex items-center justify-between p-4 max-w-screen-lg mx-auto ">
+            <nav class=" flex items-center justify-between p-4 max-w-screen-lg lg:max-w-screen-xl lg:gap-8 lg:px-8 mx-auto ">
                 
                 <div class="flex flex-row gap-2 sm:gap-5">
                     <button @click="openMenu" class=" block lg:hidden cursor-pointer mx-5">
@@ -60,7 +60,7 @@
 
                 
 
-                <div class=" hidden lg:flex lg:flex-row md:text-xs md:gap-5 lg:gap-10  lg:text-base">
+                <div class=" hidden lg:flex lg:flex-row md:text-xs md:gap-5 lg:gap-6 xl:gap-10  lg:text-base">
                     <Link 
                         href="/admin/assignments"
                         class=""
