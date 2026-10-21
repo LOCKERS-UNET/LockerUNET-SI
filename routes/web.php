@@ -69,7 +69,6 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
 
     // Pago de arancel e historial
     Route::get('/payments/my', [PaymentController::class, 'myPayments'])->name('pago-arancel');
-    Route::get('/payments/my/pending', [PaymentController::class, 'myPending']);
 
     // Reportar incidencia
     Route::get('/reportes-user', function () {
@@ -105,7 +104,6 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
         // Gestión de Lockers (ver, crear, editar, eliminar)
         Route::get('/admin/lockers', [LockerController::class, 'adminIndex'])->name('gestion-admin');
         Route::get('/admin/lockers/available', [LockerController::class, 'availableJson']);
-        Route::get('/admin/lockers/create', [LockerController::class, 'create'])->name('crear-locker-admin');
         Route::post('/admin/lockers', [LockerController::class, 'store']);
         Route::get('/admin/lockers/{id}/edit', [LockerController::class, 'edit'])->name('modificar-locker-admin');
         Route::put('/admin/lockers/{id}', [LockerController::class, 'update']);
@@ -147,13 +145,11 @@ Route::post('/admin/payments/generate-semester', [FeeRateController::class, 'gen
         Route::get('/admin/users/{id}', [UserController::class, 'show'])->name('admin-ver-usuario');
 
         // Multas del admin (ver y crear para un usuario específico)
-        Route::get('/admin/users/{userId}/fines', [FineController::class, 'userFines']);
         Route::get('/admin/multas/{user:card_code}', [FineController::class, 'create'])->name('crear-multa-admin');
         Route::post('/admin/fines', [FineController::class, 'store']);
         Route::delete('/admin/fines/{id}', [FineController::class, 'destroy']);
 
         // Pagos
-        Route::get('/admin/payments', [PaymentController::class, 'index']);
         Route::patch('/admin/payments/{id}/paid', [PaymentController::class, 'markPaid']);
     });
 });

@@ -125,18 +125,6 @@ class LockerController extends Controller
     }
 
     /**
-     * GET /admin/lockers/create
-     * Formulario para crear nuevo locker
-     */
-    public function create()
-    {
-        return Inertia::render('Admin/AgregarLocker', [
-            'sectors' => Sector::with('building')->get(),
-            'buildings' => Building::all(),
-        ]);
-    }
-
-    /**
      * POST /admin/lockers
      * Guardar el nuevo locker
      */

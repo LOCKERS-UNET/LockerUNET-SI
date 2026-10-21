@@ -91,7 +91,7 @@ const chartOptions = computed(() => ({
         legend: { display: false },
         tooltip: {
             backgroundColor: '#213779',
-            titleFont: { size: 14, weight: 'bold' },
+            titleFont: { size: 14, weight: 'bold' as const },
             padding: 12,
             cornerRadius: 10
         }
@@ -102,11 +102,11 @@ const chartOptions = computed(() => ({
             // Validación de seguridad para capacidad_total
             max: (props.stats?.capacidad_total > 0) ? props.stats.capacidad_total : 10,
             grid: { color: 'rgba(0,0,0,0.03)' },
-            ticks: { font: { size: 10, weight: 'bold' }, color: '#94a3b8' }
+            ticks: { font: { size: 10, weight: 'bold' as const }, color: '#94a3b8' }
         },
         x: {
             grid: { display: false },
-            ticks: { font: { size: 10, weight: 'bold' }, color: '#94a3b8' }
+            ticks: { font: { size: 10, weight: 'bold' as const }, color: '#94a3b8' }
         }
     }
 }));

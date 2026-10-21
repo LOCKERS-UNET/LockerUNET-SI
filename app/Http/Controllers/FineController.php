@@ -66,25 +66,6 @@ public function show($id)
     // ==========================================
 
     /**
-     * GET /admin/users/{userId}/fines
-     * Lista de multas aplicadas a un usuario en específico
-     */
-    public function userFines($userId)
-    {
-        $user = User::findOrFail($userId);
-        
-        $fines = Fine::with(['assignment.locker'])
-            ->where('user_id', $userId)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return Inertia::render('Admin/UsuarioMultas', [
-            'user' => $user,
-            'fines' => $fines
-        ]);
-    }
-
-    /**
      * GET /admin/multas/{card_code}
      * Muestra el formulario para crear una multa
      */
