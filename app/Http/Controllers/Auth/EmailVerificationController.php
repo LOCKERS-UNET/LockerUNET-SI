@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Helpers\EmailVerificationHelper;
 use App\Http\Controllers\Controller;
-use App\Mail\EmailVerificationCodeMail;
 use App\Models\EmailVerificationCode;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 
 class EmailVerificationController extends Controller
@@ -22,7 +20,9 @@ class EmailVerificationController extends Controller
             return redirect('/');
         }
 
-        return Inertia::render('Auth/VerifyEmail');
+        return Inertia::render('Auth/VerifyEmail', [
+            'status' => session('status'),
+        ]);
     }
 
     public function send(Request $request)
@@ -33,26 +33,8 @@ class EmailVerificationController extends Controller
             return redirect('/');
         }
 
-        // Eliminar códigos anteriores no usados
-        EmailVerificationCode::where('user_id', $user->id)
-            ->where('used', false)
-            ->delete();
-
-        // Generar código de 6 dígitos
-        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-        // Guardar en BD con expiración de 15 minutos
-        EmailVerificationCode::create([
-            'user_id'    => $user->id,
-            'token'      => $code,
-            'expires_at' => now()->addMinutes(15),
-            'used'       => false,
-        ]);
-
-        // Enviar el código por correo
-        try {
-            Mail::to($user->email)->send(new EmailVerificationCodeMail($code, $user->name));
-        } catch (\Exception $e) {
+        // Genera un código nuevo (invalida los anteriores) y lo envía por correo
+        if (! EmailVerificationHelper::send($user)) {
             return back()->withErrors([
                 'email' => 'No se pudo enviar el correo de verificación.'
             ]);

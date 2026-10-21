@@ -50,24 +50,29 @@ const user = usePage().props.auth.user;
                         <img src="/img/Logo_Lockers_UNET.png" alt="logo" class="h-auto max-h-[80px] md:max-h-[120px] w-auto object-contain">
                     </div>
 
-                    <!-- Volver -->
-                    <Link href="/" class="flex items-center gap-1 text-[#404040] text-sm font-medium hover:text-[#213779] transition mb-6 w-fit">
+                    <!-- Volver: sin verificar no se puede entrar al inicio, así que se cierra la sesión -->
+                    <Link href="/logout" method="post" as="button" class="flex items-center gap-1 text-[#404040] text-sm font-medium hover:text-[#213779] transition mb-6 w-fit cursor-pointer">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                         </svg>
-                        Volver al inicio
+                        Cerrar sesión
                     </Link>
 
                     <!-- Título -->
                     <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-3">Verifica tu correo</h2>
                     <p class="text-[#404040] text-sm mb-8 leading-relaxed">
                         Hemos enviado un código de verificación a <strong>{{ user?.email }}</strong>. 
-                        Introdúcelo a continuación para activar tu cuenta.
+                        Introdúcelo a continuación para activar tu cuenta. Si no lo ves, revisa la carpeta de spam.
                     </p>
 
                     <!-- Mensaje de éxito -->
                     <div v-if="status" class="bg-green-100 border border-green-400 text-green-700 font-semibold p-3 text-center rounded-2xl mb-4 text-sm">
                         {{ status }}
+                    </div>
+
+                    <!-- Error de envío del correo -->
+                    <div v-if="errors?.email" class="bg-[#FEE2E2] border border-[#DC2626] text-[#DC2626] font-semibold p-3 text-center rounded-2xl mb-4 text-sm">
+                        {{ errors.email }}
                     </div>
 
                     <form @submit.prevent="submit" method="POST" class="space-y-6">

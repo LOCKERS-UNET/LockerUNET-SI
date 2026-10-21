@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Helpers\EmailVerificationHelper;
 use App\Http\Controllers\Controller;
-use App\Mail\EmailVerificationCodeMail;
-use App\Models\EmailVerificationCode;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 
 class RegisterController extends Controller
@@ -52,18 +49,7 @@ class RegisterController extends Controller
         ]);
 
         // Generar y enviar código de verificación
-        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        
-        EmailVerificationCode::create([
-            'user_id'    => $user->id,
-            'token'      => $code,
-            'expires_at' => now()->addMinutes(15),
-            'used'       => false,
-        ]);
-
-        try {
-            Mail::to($user->email)->send(new EmailVerificationCodeMail($code, $user->name));
-        } catch (\Exception $e) {
+        if (! EmailVerificationHelper::send($user)) {
             // Si el envío del correo falla, eliminar el usuario creado
             $user->delete();
             return back()->withErrors(['email' => 'No se pudo enviar el código de verificación. Por favor, intenta nuevamente.']);

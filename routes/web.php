@@ -27,9 +27,10 @@ use App\Http\Middleware\IsAdminMiddleware;
 use Illuminate\Support\Facades\Route;
 
 // ============================================================
-// RUTAS PARA USUARIOS AUTENTICADOS (estudiantes y admins)
+// RUTAS PARA USUARIOS AUTENTICADOS Y CON CORREO VERIFICADO (estudiantes y admins)
+// Sin correo verificado, 'verified' redirige a /verify-email (verification.notice)
 // ============================================================
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
 
     // Página de inicio
     Route::inertia('/', 'Home')->name('home');
@@ -167,9 +168,13 @@ Route::post('/register', [RegisterController::class, 'store']);
    // Paso 2: Verificar código
     Route::get('/verify-code', [VerificationCodeController::class, 'show'])->name('password.verify');
     Route::post('/verify-code', [VerificationCodeController::class, 'verify'])->name('password.verify.post');
+
+// Verificación de correo: requiere sesión, pero no correo verificado
+Route::middleware('auth')->group(function () {
     Route::get('/verify-email', [EmailVerificationController::class, 'show'])->name('verification.notice');
     Route::post('/verify-email', [EmailVerificationController::class, 'verify'])->name('verification.verify');
     Route::post('/verify-email/resend', [EmailVerificationController::class, 'resend'])->name('verification.resend');
+});
 
 
 

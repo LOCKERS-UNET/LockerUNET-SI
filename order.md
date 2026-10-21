@@ -42,9 +42,9 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 
 | Archivo | Qué hace |
 | --- | --- |
-| `LoginController.php` | Login y logout. Manda a los admins a `home-admin`. |
-| `RegisterController.php` | Registro, solo con correos `@unet.edu.ve`. Envía el código de verificación. |
-| `EmailVerificationController.php` | Verifica el código de registro y lo reenvía. Marca `email_verified_at`. |
+| `LoginController.php` | Login y logout. Si el correo no está verificado, envía un código nuevo y manda a `/verify-email`. Manda a los admins a `home-admin`. |
+| `RegisterController.php` | Registro, solo con correos `@unet.edu.ve`. Envía el código de verificación; si el correo no sale, borra el usuario. |
+| `EmailVerificationController.php` | Muestra `/verify-email`, verifica el código y lo reenvía. Marca `email_verified_at`. |
 | `ForgotPasswordController.php` | Paso 1 de la recuperación: envía el código. |
 | `VerificationCodeController.php` | Paso 2: valida el código (sesión `reset_code_verified`). |
 | `NewPasswordController.php` | Paso 3: guarda la contraseña nueva. |
@@ -106,6 +106,7 @@ Cada página que se renderiza desde PHP debe existir en `resources/js/pages/`. L
 | Archivo | Qué hace |
 | --- | --- |
 | `app/Helpers/NotificationHelper.php` | `NotificationHelper::send($userId, $type, $title, $message)` crea una notificación en la app. |
+| `app/Helpers/EmailVerificationHelper.php` | `EmailVerificationHelper::send($user)` genera un código de 6 dígitos (15 min), invalida los anteriores y lo envía. Lo usan el registro, el login y "Reenviar código". |
 | `app/Mail/EmailVerificationCodeMail.php` | Correo con el código de registro. |
 | `app/Mail/ResetCodeMail.php` | Correo con el código para recuperar la contraseña. |
 | `app/Providers/AppServiceProvider.php` | Provider de la app. |
@@ -114,7 +115,7 @@ Cada página que se renderiza desde PHP debe existir en `resources/js/pages/`. L
 
 | Archivo | Qué hace |
 | --- | --- |
-| `web.php` | Todas las rutas, en tres zonas. **Estudiante:** grupo `auth`. **Admin:** `IsAdminMiddleware`, casi todas bajo `/admin/*`. **Públicas e invitado:** login, registro, verificación y recuperación. Algunas devuelven páginas Inertia y otras devuelven JSON. |
+| `web.php` | Todas las rutas, en tres zonas. **Estudiante:** grupo `auth` + `verified` (sin correo verificado redirige a `/verify-email`). **Admin:** `IsAdminMiddleware`, casi todas bajo `/admin/*`. **Públicas e invitado:** login, registro, verificación y recuperación. Algunas devuelven páginas Inertia y otras devuelven JSON. |
 | `console.php` | Programa `app:check-payments` a diario. |
 
 Notas sobre `web.php`:
@@ -150,13 +151,14 @@ Notas sobre `web.php`:
 | `2026_04_24_045310_create_semesters_table.php` | `semesters` |
 | `2026_04_28_152837_add_email_verified_at_to_users_table.php` | `email_verified_at` en `users` |
 | `2026_04_28_153201_create_email_verification_codes_table.php` | `email_verification_codes` |
+| `2026_10_21_000000_mark_existing_admins_as_verified.php` | Marca como verificados a los admins existentes, que el seeder creaba sin `email_verified_at`. |
 
 ### `seeders/`
 
 | Archivo | Qué siembra |
 | --- | --- |
 | `DatabaseSeeder.php` | Llama a los demás seeders. |
-| `UsersSeeder.php` | El admin `adminBE@unet.edu.ve`. |
+| `UsersSeeder.php` | El admin `adminBE@unet.edu.ve`, ya verificado. |
 | `LockerSeeder.php` | Edificios, sectores y lockers desde `data/*.csv`. |
 | `FeeRateSeeder.php` | Tarifas iniciales. |
 | `data/Buildings.csv`, `data/sectors.csv`, `data/Lockers.csv` | El inventario real de la UNET. |
@@ -249,7 +251,7 @@ Notas sobre `web.php`:
 | `bootstrap/` | `app.php` (rutas, middleware y excepciones) y `providers.php`. |
 | `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. |
 | `storage/` | Logs, caché y archivos subidos. En git solo están sus `.gitignore`. |
-| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
+| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
 | `.github/workflows/` | CI: `lint.yml` y `tests.yml`. |
 | `scripts/actualizar-order.php` | Regenera el árbol de este archivo. |
 | `.githooks/pre-commit` | Corre el script anterior antes de cada commit. |
@@ -272,6 +274,7 @@ LockerUNET-SI/
 │   │       ├── ImportLockers.php
 │   │       └── ImportSectors.php
 │   ├── Helpers/
+│   │   ├── EmailVerificationHelper.php
 │   │   └── NotificationHelper.php
 │   ├── Http/
 │   │   ├── Controllers/
@@ -362,7 +365,8 @@ LockerUNET-SI/
 │   │   ├── 2026_04_09_094348_add_profile_photo_to_users_table.php
 │   │   ├── 2026_04_24_045310_create_semesters_table.php
 │   │   ├── 2026_04_28_152837_add_email_verified_at_to_users_table.php
-│   │   └── 2026_04_28_153201_create_email_verification_codes_table.php
+│   │   ├── 2026_04_28_153201_create_email_verification_codes_table.php
+│   │   └── 2026_10_21_000000_mark_existing_admins_as_verified.php
 │   ├── seeders/
 │   │   ├── data/  (3 archivos)
 │   │   ├── DatabaseSeeder.php
@@ -445,7 +449,8 @@ LockerUNET-SI/
 │   ├── Feature/
 │   │   ├── ExampleTest.php
 │   │   ├── GestionSolicitudesTest.php
-│   │   └── RutasProtegidasTest.php
+│   │   ├── RutasProtegidasTest.php
+│   │   └── VerificacionCorreoTest.php
 │   ├── Unit/
 │   │   ├── ExampleTest.php
 │   │   └── PaginasInertiaExistenTest.php

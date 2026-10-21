@@ -13,9 +13,9 @@ class UsersSeeder extends Seeder
         $password = Hash::make('@coordBE123..');
 
         $users = [
-            ['name' => 'Admin', 'lastname' => 'Principal', 'email' => 'adminBE@unet.edu.ve', 'password' => $password, 'card_code' => '67845', 'career' => null, 'is_admin' => 1],
+            ['name' => 'Admin', 'lastname' => 'Principal', 'email' => 'adminBE@unet.edu.ve', 'password' => $password, 'card_code' => '67845', 'career' => null, 'is_admin' => 1, 'email_verified_at' => now()],
            ];
 
-        User::upsert($users, ['card_code', 'email'], ['name', 'lastname', 'password', 'career', 'is_admin']);
+        User::upsert($users, ['card_code', 'email'], ['name', 'lastname', 'password', 'career', 'is_admin', 'email_verified_at']);
     }
 }
