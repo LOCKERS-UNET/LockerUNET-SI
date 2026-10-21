@@ -56,7 +56,7 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | `HomeController.php` | Inicio del estudiante. | `Home` |
 | `LockerController.php` | Busca lockers (estudiante) y los gestiona: CRUD y JSON de disponibles. | `User/BuscarLocker`, `Admin/GestionLockers`, `Admin/ModificarLocker`, `Admin/AgregarLocker` ⚠️ |
 | `LockerRequestController.php` | Crea solicitudes, muestra "mis solicitudes" y permite aprobarlas o rechazarlas. | `User/MisSolicitudes`, `Admin/GestionSolicitudes` ⚠️ |
-| `LockerAssignmentController.php` | Muestra "mi locker", crea asignaciones directas, lista asignaciones en JSON y libera lockers. | `User/MiLocker`, `Admin/Asignaciones` |
+| `LockerAssignmentController.php` | Muestra "mi locker", crea asignaciones directas, lista asignaciones en JSON y libera lockers. El admin libera cualquiera; el estudiante, solo la suya. | `User/MiLocker`, `Admin/Asignaciones` |
 | `PaymentController.php` | Muestra los pagos del estudiante y permite al admin marcarlos como pagados. | `User/PagoArancel`, `User/PagosPendientes` ⚠️, `Admin/GestionPagos` ⚠️ |
 | `FeeRateController.php` | Tarifas (aranceles) y generación de pagos del semestre. | `Admin/Aranceles` |
 | `FineController.php` | Multas: las del estudiante, y crearlas o borrarlas desde el admin. | `User/MultasUser`, `Admin/CrearMulta`, `Admin/UsuarioMultas` ⚠️ |
@@ -120,7 +120,8 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 Notas sobre `web.php`:
 
 - `home` está declarada dos veces. Gana la segunda, la de `HomeController`.
-- `/fee-rates` (`aranceles-admin`) y `PUT /admin/assignments/{id}/release` están dentro de `auth` pero **fuera** de `IsAdminMiddleware`, así que cualquier estudiante autenticado puede llegar a ellas.
+- `/fee-rates` (`aranceles-admin`) está dentro del grupo admin, aunque su URL no empiece con `/admin`.
+- `POST /devolucion-locker/{id}` (estudiante) y `PUT /admin/assignments/{id}/release` (admin) usan el mismo `LockerAssignmentController@release`. Ese método solo deja que un estudiante libere su propia asignación.
 - Las rutas de estadísticas, semestres y generación de pagos están dentro del grupo admin, aunque su indentación no lo parezca.
 - Varias páginas se renderizan desde closures en la misma ruta: `User/SolicitudLocker`, `User/ReporteIncidencia` y `User/DevolucionLocker`.
 
@@ -247,7 +248,7 @@ Notas sobre `web.php`:
 | `bootstrap/` | `app.php` (rutas, middleware y excepciones) y `providers.php`. |
 | `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. |
 | `storage/` | Logs, caché y archivos subidos. En git solo están sus `.gitignore`. |
-| `tests/` | `Feature/ExampleTest.php`, `Unit/ExampleTest.php` y `TestCase.php`. Solo hay pruebas de ejemplo. |
+| `tests/` | `TestCase.php`, los `ExampleTest.php` y `Feature/RutasProtegidasTest.php`, que prueba que aranceles y la liberación de lockers solo los usen el admin o el dueño. |
 | `.github/workflows/` | CI: `lint.yml` y `tests.yml`. |
 | `scripts/actualizar-order.php` | Regenera el árbol de este archivo. |
 | `.githooks/pre-commit` | Corre el script anterior antes de cada commit. |
@@ -440,7 +441,8 @@ LockerUNET-SI/
 ├── storage/  (10 archivos)
 ├── tests/
 │   ├── Feature/
-│   │   └── ExampleTest.php
+│   │   ├── ExampleTest.php
+│   │   └── RutasProtegidasTest.php
 │   ├── Unit/
 │   │   └── ExampleTest.php
 │   └── TestCase.php

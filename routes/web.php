@@ -93,10 +93,6 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
         return inertia('User/DevolucionLocker', ['asignacion' => $asignacion]);
     })->name('devolucion-locker');
     Route::post('/devolucion-locker/{id}', [LockerAssignmentController::class, 'release']);
-    Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release'])
-    ->name('admin.assignments.release');
-    // Aranceles (disponibles para lectura)
-    Route::get('/fee-rates', [FeeRateController::class, 'index'])->name('aranceles-admin');
 
     // --------------------------------------------------------
     // RUTAS SOLO PARA EL ADMIN (protegidas con IsAdminMiddleware)
@@ -124,7 +120,7 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
         Route::get('/admin/assignments', [LockerAssignmentController::class, 'index'])->name('asignaciones-admin');
         Route::get('/admin/assignments/list', [LockerAssignmentController::class, 'listJson']);
         Route::post('/admin/assignments', [LockerAssignmentController::class, 'store']);
-        Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release']);
+        Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release'])->name('admin.assignments.release');
 
         // Estadísticas (Vista)
 Route::get('/estadisticas-lockers', [StatsController::class, 'index'])->name('estadisticas-admin');
@@ -135,6 +131,7 @@ Route::get('/admin/stats/summary', [StatsController::class, 'summary'])->name('a
 Route::get('/admin/semesters', [StatsController::class, 'getSemesters'])->name('admin.semesters.index');
 Route::post('/admin/semesters', [StatsController::class, 'storeSemester'])->name('admin.semesters.store');
         // Aranceles (tarifas) - Registro histórico
+        Route::get('/fee-rates', [FeeRateController::class, 'index'])->name('aranceles-admin');
         Route::post('/admin/fee-rates', [FeeRateController::class, 'store']);
         // Generar pagos semestrales
 Route::post('/admin/payments/generate-semester', [FeeRateController::class, 'generatePayments'])

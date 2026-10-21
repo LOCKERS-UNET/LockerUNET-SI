@@ -196,7 +196,12 @@ class LockerAssignmentController extends Controller
     {
         // Usar assignment_id explícitamente
         $assignment = LockerAssignment::where('assignment_id', $id)->firstOrFail();
-        
+
+        // Un estudiante (POST /devolucion-locker/{id}) solo puede devolver su propio locker
+        if (! auth()->user()->is_admin && (int) $assignment->user_id !== (int) auth()->id()) {
+            abort(403);
+        }
+
         if ($assignment->assignment_status === 'released') {
             return redirect()->back()->withErrors(['assignment' => 'Este locker ya fue liberado anteriormente.']);
         }
