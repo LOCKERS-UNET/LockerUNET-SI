@@ -1,0 +1,6 @@
+#!/bin/sh
+# Regenera el arbol de order.md y lo agrega al commit.
+# Se activa una vez por clon con: composer hooks
+
+php scripts/actualizar-order.php || exit 1
+git add order.md

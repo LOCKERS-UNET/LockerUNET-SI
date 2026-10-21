@@ -56,6 +56,12 @@
         "lint:check": [
             "pint --parallel --test"
         ],
+        "order": [
+            "@php scripts/actualizar-order.php"
+        ],
+        "hooks": [
+            "git config core.hooksPath .githooks"
+        ],
         "ci:check": [
             "Composer\\Config::disableProcessTimeout",
             "npm run lint:check",
