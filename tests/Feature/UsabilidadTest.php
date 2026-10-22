@@ -285,4 +285,16 @@ class UsabilidadTest extends TestCase
         $this->actingAs($estudiante)->post('/edit-profile/password', ['current_password' => 'vieja1234', 'password' => $larga, 'password_confirmation' => $larga])
             ->assertSessionHasErrors('password');
     }
+
+    public function test_el_registro_limita_los_intentos_con_cuentas_existentes(): void
+    {
+        User::factory()->create(['email' => 'existe@unet.edu.ve']);
+
+        for ($i = 0; $i < 20; $i++) {
+            $this->post('/register', ['email' => 'existe@unet.edu.ve'])->assertSessionHasErrors(['email' => 'El correo ingresado ya está registrado.']);
+        }
+
+        $this->post('/register', ['email' => 'existe@unet.edu.ve'])
+            ->assertSessionHasErrors(['email' => 'Demasiados intentos con correos o carnets ya registrados. Intenta de nuevo en una hora.']);
+    }
 }

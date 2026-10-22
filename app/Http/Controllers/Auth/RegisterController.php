@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -30,6 +31,18 @@ class RegisterController extends Controller
 
     public function store(Request $request)
     {
+        // El "ya está registrado" permite averiguar qué correos/carnets tienen cuenta. Solo se cuentan
+        // esos choques (no todos los registros: en la universidad muchos comparten la misma IP).
+        $clave = 'registro-duplicado:'.$request->ip();
+        if (RateLimiter::tooManyAttempts($clave, 20)) {
+            return back()->withErrors(['email' => 'Demasiados intentos con correos o carnets ya registrados. Intenta de nuevo en una hora.']);
+        }
+        $correo = is_string($request->email) ? $request->email : '';
+        $carnet = is_string($request->card_code) || is_int($request->card_code) ? (string) $request->card_code : '';
+        if (User::where('email', $correo)->orWhere('card_code', $carnet)->exists()) {
+            RateLimiter::hit($clave, 3600);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'lastname' => 'required|string|max:255',
