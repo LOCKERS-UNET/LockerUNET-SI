@@ -207,4 +207,18 @@ class UsabilidadTest extends TestCase
 
         $this->assertTrue(Hash::check('nueva12345', $estudiante->fresh()->password));
     }
+
+    public function test_la_pagina_de_solicitud_muestra_el_arancel_vigente(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $admin = User::factory()->create(['is_admin' => true]);
+        DB::table('fee_rates')->insert([
+            ['locker_type' => 'small', 'monthly_amount' => 100, 'effective_from' => today()->subMonth(), 'created_by' => $admin->id],
+            ['locker_type' => 'small', 'monthly_amount' => 150, 'effective_from' => today()->subDay(), 'created_by' => $admin->id],
+            ['locker_type' => 'small', 'monthly_amount' => 999, 'effective_from' => today()->addMonth(), 'created_by' => $admin->id],
+        ]);
+
+        $this->actingAs($estudiante)->get('/solicitud-locker?locker_id='.$this->crearLocker())
+            ->assertInertia(fn (Assert $page) => $page->where('lockerData.arancel_mensual', fn ($monto) => (float) $monto === 150.0));
+    }
 }

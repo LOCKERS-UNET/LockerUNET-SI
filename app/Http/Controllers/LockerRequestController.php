@@ -34,12 +34,19 @@ class LockerRequestController extends Controller
 
         $tamanos = ['small' => 'Pequeño', 'mid' => 'Mediano', 'large' => 'Grande'];
 
+        // Arancel vigente para ese tamaño, para que el estudiante sepa el costo antes de pedirlo
+        $arancel = FeeRate::where('locker_type', $locker->locker_type)
+            ->where('effective_from', '<=', today())
+            ->orderBy('effective_from', 'desc')
+            ->value('monthly_amount');
+
         return Inertia::render('User/SolicitudLocker', [
             'lockerData' => [
                 'locker_id' => $locker->locker_id,
                 'codigo' => $locker->locker_code,
                 'tamano' => $tamanos[$locker->locker_type] ?? $locker->locker_type,
                 'edificio' => $locker->sector->building->building_name.' - '.$locker->sector->sector_name,
+                'arancel_mensual' => $arancel,
             ],
         ]);
     }

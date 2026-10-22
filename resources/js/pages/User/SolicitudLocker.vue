@@ -15,6 +15,7 @@ const props = defineProps<{
         codigo: string;
         tamano: string;
         edificio: string;
+        arancel_mensual: string | null;
     }
 }>();
 
@@ -56,12 +57,13 @@ const enviarSolicitud = () => {
                     <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Código:</span> {{ lockerData.codigo }}</p>
                     <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Tamaño:</span> {{ lockerData.tamano }}</p>
                     <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Edificio:</span> {{ lockerData.edificio }}</p>
+                    <p v-if="lockerData.arancel_mensual" class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Arancel:</span> Bs. {{ Number(lockerData.arancel_mensual).toLocaleString('es-VE', { minimumFractionDigits: 2 }) }} al mes</p>
                 </div>
             </div>
 
             <!-- Descarga del formulario -->
             <div class="w-full flex flex-col items-center mb-16">
-                <p class="text-2xl font-bold text-gray-600 mb-6 text-center">Descargar Formulario CBE-102</p>
+                <p class="text-2xl font-bold text-gray-600 mb-6 text-center">Descargar Formulario CBE-100</p>
                 
                 <!-- Todo el bloque descarga (antes solo el ícono pequeño) -->
                 <a
@@ -95,6 +97,19 @@ const enviarSolicitud = () => {
                 <hr class="border-gray-200 w-11/12 mx-auto mt-6">
             </div>
 
+            <!-- Qué pide el formulario CBE-100 (tomado del PDF) -->
+            <div class="w-full bg-[#F3F4F6] rounded-2xl p-6 mb-10 text-gray-800 text-base leading-relaxed">
+                <h3 class="text-xl font-extrabold text-black mb-3">Antes de enviar, ten en cuenta</h3>
+                <p class="mb-2">El formulario CBE-100 pide: nombre completo, cédula, especialidad, lapso de ingreso, dirección de habitación, teléfonos, motivo de la solicitud y tu firma.</p>
+                <p class="font-bold mb-1">Recaudos que debes llevar al Decanato:</p>
+                <ol class="list-decimal ml-6 mb-2">
+                    <li>Copia de la cédula de identidad.</li>
+                    <li>Copia del carnet estudiantil (en la misma hoja que la cédula).</li>
+                    <li>Constancia de residencia, solo si vives fuera de San Cristóbal o del estado Táchira.</li>
+                </ol>
+                <p class="text-sm text-gray-600">Estos documentos los revisa la Coordinación de Bienestar Estudiantil; la app no los pide ni los guarda.</p>
+            </div>
+
             <!-- Checkbox de confirmación -->
             <div class="flex items-start gap-4 mb-10 w-full px-6">
                 <input 
@@ -104,7 +119,7 @@ const enviarSolicitud = () => {
                     class="mt-1 size-7 rounded border-gray-300 text-[#213779] focus:ring-[#213779] cursor-pointer"
                 >
                 <label for="confirm-solicitud" class="text-gray-700 text-lg leading-tight cursor-pointer select-none">
-                    He descargado el Formulario CBE-102 y acepto consignar los recaudos necesarios para la solicitud del Casillero <span class="font-bold text-black">{{ lockerData.codigo }}</span>.
+                    He descargado el Formulario CBE-100 y acepto consignar los recaudos indicados arriba para la solicitud del locker <span class="font-bold text-black">{{ lockerData.codigo }}</span>.
                 </label>
             </div>
 

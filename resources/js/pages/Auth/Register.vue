@@ -178,6 +178,12 @@
         <Link href="/login" class="text-blue-500 font-semibold hover:underline">Inicia Sesión</Link>
     </p>
 
+    <!-- Uso de los datos: describe lo que hace la app; la política formal es de la universidad -->
+    <p class="text-xs text-gray-500 leading-relaxed">
+        Tus datos (correo institucional, carnet y carrera) se usan solo para identificarte al solicitar, pagar y devolver tu locker.
+        Los ven únicamente los administradores del Decanato de Desarrollo Estudiantil. Tu contraseña se guarda cifrada.
+    </p>
+
     <div class="pt-2">
         <button type="submit" :disabled="enviando"
             class="w-full py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95 disabled:opacity-60 disabled:cursor-wait">
