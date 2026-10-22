@@ -125,14 +125,14 @@ const procesar = (sol: any, accion: 'approve' | 'reject') => {
                             <button
                                 :disabled="procesando === sol.request_id"
                                 @click="procesar(sol, 'approve')"
-                                class="flex-1 bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold py-1.5 px-2 rounded-md shadow-sm transition active:scale-95 text-[10px] disabled:opacity-50"
+                                class="flex-1 bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold min-h-[44px] px-2 rounded-md shadow-sm transition active:scale-95 text-xs disabled:opacity-50"
                             >
                                 Aprobar
                             </button>
                             <button
                                 :disabled="procesando === sol.request_id"
                                 @click="procesar(sol, 'reject')"
-                                class="flex-1 bg-white hover:bg-red-50 text-red-600 border border-red-200 font-extrabold py-1.5 px-2 rounded-md shadow-sm transition active:scale-95 text-[10px] disabled:opacity-50"
+                                class="flex-1 bg-white hover:bg-red-50 text-red-600 border border-red-200 font-extrabold min-h-[44px] px-2 rounded-md shadow-sm transition active:scale-95 text-xs disabled:opacity-50"
                             >
                                 Rechazar
                             </button>

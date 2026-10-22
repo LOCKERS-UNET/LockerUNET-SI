@@ -113,7 +113,7 @@ const marcarComoRevisada = (inc: any) => {
 
                         <!-- Botón Acción Compacto -->
                         <div v-if="inc.status === 'pending'" class="w-full flex justify-center mt-auto">
-                            <button @click="marcarComoRevisada(inc)" :disabled="formReview.processing" class="w-full bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold py-1.5 px-2 rounded-md shadow-sm transition active:scale-95 text-[10px] disabled:opacity-50">
+                            <button @click="marcarComoRevisada(inc)" :disabled="formReview.processing" class="w-full bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold min-h-[44px] px-2 rounded-md shadow-sm transition active:scale-95 text-xs disabled:opacity-50">
                                 {{ formReview.processing ? 'Guardando…' : 'Revisada' }}
                             </button>
                         </div>
