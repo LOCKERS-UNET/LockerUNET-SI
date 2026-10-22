@@ -83,7 +83,7 @@ const submit = () => {
                                 type="email" 
                                 id="email"
                                 placeholder="Ingresa tu correo UNET"
-                                class="w-full h-10 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
+                                class="w-full h-11 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
                                 :class="{
                                     'border-[#DC2626] bg-[#FEE2E2]': errors?.email, 
                                     'border-[#A3A3A3] focus:border-[#22397A]': !errors?.email
@@ -101,7 +101,7 @@ const submit = () => {
                                 type="password" 
                                 id="password"
                                 placeholder="Ingresa tu contraseña"
-                                class="w-full h-10 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
+                                class="w-full h-11 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
                                 :class="{
                                     'border-[#DC2626] bg-[#FEE2E2]': errors?.password, 
                                     'border-[#A3A3A3] focus:border-[#22397A]': !errors?.password
@@ -110,7 +110,7 @@ const submit = () => {
                             >
                             <small v-if="errors?.password" class="text-red-500">{{ errors.password }}</small>
                             <div class="flex justify-end pr-2">
-                                <Link href="/forgot-password" class="text-gray-500 text-sm hover:text-blue-600 transition">
+                                <Link href="/forgot-password" class="inline-flex items-center min-h-[44px] text-gray-500 text-sm hover:text-blue-600 transition">
                                     ¿Olvidaste tu contraseña?
                                 </Link>
                             </div>
@@ -127,7 +127,7 @@ const submit = () => {
 
                         <p class="text-center text-gray-600 mt-8">
                             ¿No tienes cuenta? 
-                            <Link href="/register" class="text-blue-500 font-semibold hover:underline">
+                            <Link href="/register" class="inline-flex items-center min-h-[44px] px-1 text-blue-500 font-semibold hover:underline">
                                 Resgístrate
                             </Link>
                         </p>

@@ -74,7 +74,7 @@ const irASolicitud = (locker: Locker) => {
                     
                     <!-- Filtro por Edificio -->
                     <div class="relative w-full shadow-sm rounded-full">
-                        <select v-model="filtroEdificio" @change="buscar()" aria-label="Filtrar por edificio" class="w-full h-12 px-6 border border-gray-200 rounded-[2rem] font-bold text-sm text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
+                        <select v-model="filtroEdificio" @change="buscar()" aria-label="Filtrar por edificio" class="w-full h-12 px-6 border border-gray-200 rounded-[2rem] font-bold text-base sm:text-sm text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
                             <option value="">Edificio (Todos)</option>
                             <option v-for="ed in edificios" :key="ed.building_code" :value="ed.building_code">
                                 {{ ed.building_name }} ({{ ed.disponibles }})
@@ -89,7 +89,7 @@ const irASolicitud = (locker: Locker) => {
 
                     <!-- Filtro por Tamaño -->
                     <div class="relative w-full shadow-sm rounded-full">
-                        <select v-model="filtroTamano" @change="buscar()" aria-label="Filtrar por tamaño" class="w-full h-12 px-6 border border-gray-200 rounded-[2rem] font-bold text-sm text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
+                        <select v-model="filtroTamano" @change="buscar()" aria-label="Filtrar por tamaño" class="w-full h-12 px-6 border border-gray-200 rounded-[2rem] font-bold text-base sm:text-sm text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
                             <option value="">Tamaño (Todos)</option>
                             <option value="small">Pequeño</option>
                             <option value="mid">Mediano</option>

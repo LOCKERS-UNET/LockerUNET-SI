@@ -127,7 +127,7 @@
                 <select 
                     id="career"
                     name="career"
-                    class="w-full h-11 px-4 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none transition duration-200 appearance-none cursor-pointer pr-10 text-xs font-bold"
+                    class="w-full h-11 px-4 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none transition duration-200 appearance-none cursor-pointer pr-10 text-base sm:text-xs font-bold"
                     :class="{
                         'border-[#DC2626] bg-[#FEE2E2] text-[#DC2626]': errors?.career, 
                         'border-[#A3A3A3] focus:border-[#22397A]': !errors?.career,
