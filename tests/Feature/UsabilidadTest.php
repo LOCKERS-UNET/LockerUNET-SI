@@ -297,4 +297,9 @@ class UsabilidadTest extends TestCase
         $this->post('/register', ['email' => 'existe@unet.edu.ve'])
             ->assertSessionHasErrors(['email' => 'Demasiados intentos con correos o carnets ya registrados. Intenta de nuevo en una hora.']);
     }
+
+    public function test_la_pagina_404_esta_en_espanol(): void
+    {
+        $this->get('/no-existe-esta-pagina')->assertNotFound()->assertSee('Página no encontrada')->assertSee('Volver al inicio');
+    }
 }
