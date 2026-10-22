@@ -128,6 +128,13 @@ class UsuariosEstadisticasTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_un_mes_con_un_ano_invalido_usa_el_ano_actual(): void
+    {
+        foreach (['Octubre%20abc', 'Octubre%2099999', 'Foo', 'Octubre%20'] as $mes) {
+            $this->actingAs($this->admin)->get("/estadisticas-lockers?mes={$mes}")->assertOk();
+        }
+    }
+
     public function test_las_estadisticas_filtran_por_carrera(): void
     {
         LockerAssignment::factory()->create(['user_id' => $this->estudiante(['career' => 'Ingeniería Civil'])->id]);

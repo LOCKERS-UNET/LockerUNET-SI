@@ -97,7 +97,8 @@ class StatsController extends Controller
             $partes = explode(' ', $mesFiltro);
             $nombreMes = $partes[0] ?? Carbon::now()->format('F');
             $mesNum = $mesesMap[$nombreMes] ?? Carbon::now()->month;
-            $anioNum = $partes[1] ?? Carbon::now()->year;
+            // El año viene del texto del filtro: si no son 4 dígitos ("Octubre abc") daba un error 500
+            $anioNum = isset($partes[1]) && preg_match('/^\d{4}$/', $partes[1]) ? (int) $partes[1] : Carbon::now()->year;
         }
 
         // 3. Query base (solo activos)
