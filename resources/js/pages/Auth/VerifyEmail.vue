@@ -22,9 +22,10 @@ const submit = () => {
         return;
     }
 
+    // Se marca antes de la petición: con CPU lenta onStart llegaba tarde y un doble toque enviaba dos veces
+    enviando.value = true;
     router.post('/verify-email', form, {
         preserveScroll: true,
-        onStart: () => (enviando.value = true),
         onFinish: () => (enviando.value = false),
     });
 };

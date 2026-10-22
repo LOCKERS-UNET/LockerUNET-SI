@@ -50,9 +50,10 @@ const cancelar = (id: number) => {
         return;
     }
 
+    // Se marca antes de la petición: con CPU lenta onStart llegaba tarde y un doble toque enviaba dos veces
+    cancelando.value = id;
     router.post(`/requests/${id}/cancel`, {}, {
         preserveScroll: true,
-        onStart: () => (cancelando.value = id),
         onFinish: () => (cancelando.value = null),
     });
 };

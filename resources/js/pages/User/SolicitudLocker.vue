@@ -29,10 +29,11 @@ const urlFormulario = '/docs/Solicitud_de_Locker.pdf';
 const enviarSolicitud = () => {
     if (!confirmado.value || enviando.value) return;
 
+    // Se marca antes de la petición: con CPU lenta onStart llegaba tarde y un doble toque enviaba dos veces
+    enviando.value = true;
     router.post('/requests', {
         locker_id: props.lockerData.locker_id
     }, {
-        onStart: () => (enviando.value = true),
         onFinish: () => (enviando.value = false),
     });
 };

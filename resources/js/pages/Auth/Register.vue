@@ -22,9 +22,10 @@
     const submit = () =>{
         if (enviando.value) return
 
+        // Se marca antes de la petición: con CPU lenta onStart llegaba tarde y un doble toque enviaba dos veces
+        enviando.value = true;
         router.post('/register',form,{
             preserveScroll:true,
-            onStart: () => (enviando.value = true),
             onFinish: () => (enviando.value = false),
             // Solo se borran las contraseñas si el error es de la contraseña (antes se perdían con cualquier error)
             onError:(errores) => {
