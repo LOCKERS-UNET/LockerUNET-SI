@@ -273,4 +273,16 @@ class UsabilidadTest extends TestCase
             ->where('bloqueo.mensaje', fn ($m) => str_contains($m, 'Ya tienes una solicitud pendiente')));
         $this->actingAs($estudiante)->get('/solicitud-locker?locker_id='.$this->crearLocker())->assertRedirect(route('buscar-locker'));
     }
+
+    public function test_la_contrasena_no_puede_pasar_de_72_caracteres(): void
+    {
+        $larga = str_repeat('Z', 73);
+
+        $this->post('/register', ['password' => $larga, 'password_confirmation' => $larga])
+            ->assertSessionHasErrors(['password' => 'La contraseña no puede tener más de 72 caracteres.']);
+
+        $estudiante = User::factory()->create(['is_admin' => false, 'password' => 'vieja1234']);
+        $this->actingAs($estudiante)->post('/edit-profile/password', ['current_password' => 'vieja1234', 'password' => $larga, 'password_confirmation' => $larga])
+            ->assertSessionHasErrors('password');
+    }
 }

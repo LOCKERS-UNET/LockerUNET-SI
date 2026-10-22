@@ -24,10 +24,11 @@ class NewPasswordController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'password' => ['required', 'min:8', 'confirmed'],
+            'password' => ['required', 'min:8', 'max:72', 'confirmed'], // bcrypt ignora lo que pase de 72
         ], [
             'password.required'  => 'La contraseña es obligatoria.',
             'password.min'       => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.max'       => 'La contraseña no puede tener más de 72 caracteres.',
             'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 

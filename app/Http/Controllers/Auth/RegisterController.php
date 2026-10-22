@@ -36,9 +36,11 @@ class RegisterController extends Controller
             'email' => ['required','email','unique:users','ends_with:@unet.edu.ve'],
             'card_code' => ['required', 'regex:/^\d{1,5}$/', 'unique:users'],
             'career' => ['required', Rule::in(User::CARRERAS)],
-            'password' => 'required|string|min:8|confirmed',
+            // max:72: bcrypt ignora lo que pase de 72 caracteres
+            'password' => 'required|string|min:8|max:72|confirmed',
         ], [
             'card_code.regex' => 'El carnet debe tener solo números (hasta 5 dígitos).',
+            'password.max' => 'La contraseña no puede tener más de 72 caracteres.',
         ]);
 
         // Crear usuario (email_verified_at será null por defecto)
