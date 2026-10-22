@@ -83,7 +83,8 @@
                                 id="code"
                                 name="code"
                                 placeholder="Ingresa el código de verificación"
-                                maxlength="6"
+                                inputmode="numeric"
+                                autocomplete="one-time-code"
                                 class="w-full h-10 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200
                                        placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm tracking-widest text-center font-bold text-lg"
                                 :class="{

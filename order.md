@@ -45,8 +45,8 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | `LoginController.php` | Login y logout. Si el correo no está verificado, envía un código nuevo y manda a `/verify-email`. Manda a los admins a `home-admin`. |
 | `RegisterController.php` | Registro, solo con correos `@unet.edu.ve`. Envía el código de verificación; si el correo no sale, borra el usuario. |
 | `EmailVerificationController.php` | Muestra `/verify-email`, verifica el código y lo reenvía. Marca `email_verified_at`. |
-| `ForgotPasswordController.php` | Paso 1 de la recuperación: envía el código. |
-| `VerificationCodeController.php` | Paso 2: valida el código (sesión `reset_code_verified`). |
+| `ForgotPasswordController.php` | Paso 1 de la recuperación: envía el código. Responde igual exista o no el correo (sesión `reset_iniciado`). |
+| `VerificationCodeController.php` | Paso 2: valida el código (sesión `reset_code_verified`), con límite de 5 intentos. |
 | `NewPasswordController.php` | Paso 3: guarda la contraseña nueva. |
 
 **Dominio.**
@@ -253,7 +253,7 @@ Notas sobre `web.php`:
 | `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. `app.locale` está fijo en `es`. |
 | `lang/es/validation.php` | Mensajes de validación en español y nombres de los campos (`card_code` → "carnet", etc.). |
 | `storage/` | Logs, caché y archivos subidos. En git solo están sus `.gitignore`. |
-| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
+| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/RecuperarContrasenaTest.php`: recuperar contraseña sin revelar cuentas y con límite de intentos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
 | `.github/workflows/` | CI: `lint.yml` y `tests.yml`. |
 | `scripts/actualizar-order.php` | Regenera el árbol de este archivo. |
 | `.githooks/pre-commit` | Corre el script anterior antes de cada commit. |
@@ -570,6 +570,7 @@ LockerUNET-SI/
 │   │   ├── DevolucionLockerTest.php
 │   │   ├── ExampleTest.php
 │   │   ├── GestionSolicitudesTest.php
+│   │   ├── RecuperarContrasenaTest.php
 │   │   ├── RutasProtegidasTest.php
 │   │   ├── UsabilidadTest.php
 │   │   └── VerificacionCorreoTest.php

@@ -19,16 +19,23 @@ class ForgotPasswordController extends Controller
 
     public function send(Request $request)
     {
+        // Sin 'exists': la respuesta es la misma exista o no la cuenta, para no revelar qué correos están registrados
         $request->validate([
-            'email' => ['required', 'email', 'exists:users,email'],
+            'email' => ['required', 'email'],
         ], [
             'email.required' => 'El correo es obligatorio.',
             'email.email'    => 'Ingresa un correo válido.',
-            'email.exists'   => 'No encontramos una cuenta con ese correo.',
         ]);
 
-        // Buscar el usuario por email
-        $user = User::where('email', $request->email)->firstOrFail();
+        $user = User::where('email', $request->email)->first();
+        $mensaje = 'Si el correo está registrado, te enviamos un código de verificación. Revisa también la carpeta de spam.';
+
+        // 'reset_iniciado' habilita /verify-code; con un correo inexistente reset_user_id queda en 0 y ningún código coincide
+        session(['reset_iniciado' => true, 'reset_user_id' => $user?->id ?? 0]);
+
+        if (! $user) {
+            return redirect('/verify-code')->with('status', $mensaje);
+        }
 
         // Eliminar códigos anteriores no usados del mismo usuario
         PasswordResetCode::where('user_id', $user->id)
@@ -46,9 +53,6 @@ class ForgotPasswordController extends Controller
             'used'       => false,
         ]);
 
-        // Guardar el user_id en sesión (más seguro que email)
-        session(['reset_user_id' => $user->id]);
-
         // Enviar el código por correo
         try {
             Mail::to($user->email)->send(new ResetCodeMail($code));
@@ -64,9 +68,6 @@ class ForgotPasswordController extends Controller
             ]);
         }
 
-        return redirect('/verify-code')->with(
-            'status',
-            'Se ha enviado un código de verificación a tu correo.'
-        );
+        return redirect('/verify-code')->with('status', $mensaje);
     }
 }

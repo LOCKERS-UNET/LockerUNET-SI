@@ -48,7 +48,7 @@ class NewPasswordController extends Controller
 
         // Limpiar los datos del flujo de recuperación
         PasswordResetCode::where('user_id', $userId)->delete();
-        session()->forget(['reset_user_id', 'reset_code_verified']);
+        session()->forget(['reset_iniciado', 'reset_user_id', 'reset_code_verified']);
 
         return redirect('/login')->with(
             'status',
