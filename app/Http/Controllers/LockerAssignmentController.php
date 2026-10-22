@@ -58,7 +58,7 @@ class LockerAssignmentController extends Controller
      */
     public function index(Request $request)
     {
-        $query = LockerAssignment::with(['user', 'locker.sector.building']);
+        $query = LockerAssignment::with(['user', 'locker.sector.building', 'payments']);
 
         if ($request->has('assignment_status') && $request->assignment_status) {
             $query->where('assignment_status', $request->assignment_status);

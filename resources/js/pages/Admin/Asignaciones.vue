@@ -148,6 +148,22 @@ const devolucionesPendientes = computed(() =>
     asignacionesList.value.filter((a: any) => a.assignment_status === 'return_requested')
 );
 
+// Un pago está vencido si el comando diario ya lo marcó (overdue) o si su fecha límite pasó y aún no corrió
+const hoyLocal = (() => {
+    const hoy = new Date();
+
+    return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+})();
+const estaVencido = (pago: any) =>
+    pago.payment_status === 'overdue' || (pago.payment_status === 'pending' && String(pago.due_date).slice(0, 10) < hoyLocal);
+const tienePagoVencido = (asignacion: any) => (asignacion.payments ?? []).some(estaVencido);
+
+// En el historial, para encontrar rápido a quién cobrar
+const soloVencidos = ref(false);
+const asignacionesFiltradas = computed(() =>
+    soloVencidos.value ? asignacionesList.value.filter(tienePagoVencido) : asignacionesList.value
+);
+
 const tienePagosPendientes = computed(() => {
     return usuarioSeleccionado.value?.locker_assignment?.payments?.some((p: any) => 
         ['pending', 'overdue'].includes(p.payment_status)
@@ -358,15 +374,18 @@ onMounted(() => {
         <li v-for="pago in usuarioSeleccionado.locker_assignment.payments.filter((p: any) => 
                  ['pending', 'overdue'].includes(p.payment_status))" 
             :key="pago.payment_id"
-            class="flex items-center justify-between bg-white p-3 rounded-lg border border-yellow-200"
+            class="flex items-center justify-between bg-white p-3 rounded-lg border"
+            :class="estaVencido(pago) ? 'border-red-300' : 'border-yellow-200'"
         >
-            <!-- Información del pago -->
+            <!-- Información del pago: estado y semestre, para no marcar pagado el que no es -->
             <div class="flex flex-col gap-1">
-                <span class="text-gray-800 font-bold text-base">
+                <span class="text-gray-800 font-bold text-base flex items-center gap-2">
                     Bs. {{ parseFloat(pago.amount).toFixed(2) }}
+                    <span v-if="estaVencido(pago)" class="bg-[#fee2e2] text-[#B91C1C] text-[11px] font-extrabold px-2 py-0.5 rounded-full">Vencido</span>
+                    <span v-else class="bg-[#FEF3C7] text-[#92400E] text-[11px] font-extrabold px-2 py-0.5 rounded-full">Pendiente</span>
                 </span>
                 <span class="text-gray-600 text-xs">
-                    Vence: {{ formatFecha(pago.due_date) }}
+                    Semestre {{ pago.semester ?? '—' }} · Vence: {{ formatFecha(pago.due_date) }}
                 </span>
             </div>
             
@@ -443,7 +462,12 @@ onMounted(() => {
                     <p class="text-gray-500">No hay asignaciones</p>
                 </div>
                 <div v-else class="w-full flex flex-col gap-4">
-                    <div v-for="item in asignacionesList" :key="item.assignment_id" class="border border-gray-200 bg-[#f9fafb] p-5 flex justify-between items-center rounded-sm hover:shadow-sm transition">
+                    <label class="flex items-center gap-2 self-end text-sm font-bold text-gray-700 min-h-[44px] cursor-pointer">
+                        <input v-model="soloVencidos" type="checkbox" class="w-5 h-5" />
+                        Solo con pagos vencidos
+                    </label>
+                    <p v-if="asignacionesFiltradas.length === 0" class="text-center text-gray-500 py-6">Nadie tiene pagos vencidos.</p>
+                    <div v-for="item in asignacionesFiltradas" :key="item.assignment_id" class="border border-gray-200 bg-[#f9fafb] p-5 flex justify-between items-center rounded-sm hover:shadow-sm transition">
                         <!-- Estudiante -->
                         <div class="flex flex-col">
                             <span class="font-extrabold text-black">{{ item.user?.name }} {{ item.user?.lastname }}</span>
@@ -454,6 +478,7 @@ onMounted(() => {
                         <div class="flex flex-col items-center">
                             <span class="font-black text-[#213779] text-sm">{{ item.locker?.locker_code }}</span>
                             <span class="text-[11px] text-gray-500 font-bold mt-1">{{ formatFecha(item.start_date) }}</span>
+                            <span v-if="tienePagoVencido(item)" class="mt-1 bg-[#fee2e2] text-[#B91C1C] text-[10px] font-extrabold px-2 py-0.5 rounded-full">Pago vencido</span>
                         </div>
                         
                         <!-- Acción (Pill) -->
