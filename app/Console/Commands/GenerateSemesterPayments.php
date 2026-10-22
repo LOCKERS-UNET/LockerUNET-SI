@@ -47,6 +47,7 @@ class GenerateSemesterPayments extends Command
 
         $created = 0;
         $skipped = 0;
+        $withoutRate = 0;
 
         foreach ($activeAssignments as $assignment) {
             // Verificar si ya existe un pago para este semestre y asignación
@@ -65,6 +66,7 @@ class GenerateSemesterPayments extends Command
 
             if (!$feeRate) {
                 $this->error("⊗ No hay tarifa vigente para locker tipo: {$assignment->locker->locker_type}");
+                $withoutRate++;
                 continue;
             }
 
@@ -92,8 +94,10 @@ class GenerateSemesterPayments extends Command
         $this->info("═══════════════════════════════════════");
         $this->info("Pagos creados: {$created}");
         $this->info("Pagos omitidos (ya existen): {$skipped}");
+        $this->info("Sin tarifa vigente: {$withoutRate}");
         $this->info("═══════════════════════════════════════");
 
-        return 0;
+        // Falla si quedaron asignaciones sin pago por falta de tarifa, para que el panel no diga que todo salió bien
+        return $withoutRate > 0 ? 1 : 0;
     }
 }

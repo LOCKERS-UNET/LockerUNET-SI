@@ -163,6 +163,34 @@ class PagosArancelesTest extends TestCase
         $this->assertDatabaseCount('payments', 1);
     }
 
+    public function test_generar_pagos_avisa_si_falta_un_arancel(): void
+    {
+        $this->crearSemestre();
+        $this->crearArancel('small', 10, today()->subDay());
+        LockerAssignment::factory()->create();
+        LockerAssignment::factory()->create(['locker_id' => Locker::factory()->ocupado()->create(['locker_type' => 'large'])]);
+
+        $this->actingAs($this->admin)->post('/admin/payments/generate-semester', ['semester_name' => '2027-1'])
+            ->assertSessionHasErrors('error')
+            ->assertSessionMissing('success');
+
+        $this->assertDatabaseCount('payments', 1);
+        $this->assertStringContainsString('Se generaron 1 pagos', session('errors')->first('error'));
+    }
+
+    public function test_generar_pagos_dice_cuantos_creo(): void
+    {
+        $this->crearSemestre();
+        $this->crearArancel('small', 10, today()->subDay());
+        LockerAssignment::factory()->count(2)->create();
+
+        $this->actingAs($this->admin)->post('/admin/payments/generate-semester', ['semester_name' => '2027-1'])
+            ->assertSessionHas('success', 'Se generaron 2 pagos del semestre 2027-1.');
+
+        $this->actingAs($this->admin)->post('/admin/payments/generate-semester', ['semester_name' => '2027-1'])
+            ->assertSessionHas('success', 'No había pagos nuevos que generar para el semestre 2027-1.');
+    }
+
     public function test_generar_pagos_exige_un_semestre_existente(): void
     {
         $this->actingAs($this->admin)->post('/admin/payments/generate-semester', ['semester_name' => '1999-9'])

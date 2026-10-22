@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FeeRate;
+use App\Models\Payment;
 use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -69,15 +70,24 @@ class FeeRateController extends Controller
         $semesterName = $request->semester_name;
 
         try {
-            // Ejecutar el command
-            Artisan::call('payments:generate-semester', [
+            $antes = Payment::where('semester', $semesterName)->count();
+
+            $codigo = Artisan::call('payments:generate-semester', [
                 'semester' => $semesterName
             ]);
 
-            $output = Artisan::output();
+            $creados = Payment::where('semester', $semesterName)->count() - $antes;
 
-            return redirect()->back()->with('success', "Pagos del semestre {$semesterName} generados exitosamente.");
-            
+            // Antes decía "generados exitosamente" aunque no se hubiera creado ningún pago
+            if ($codigo !== 0) {
+                return redirect()->back()->withErrors([
+                    'error' => "Faltan aranceles para algunos tipos de locker. Se generaron {$creados} pagos: crea los aranceles que faltan y vuelve a generar."
+                ]);
+            }
+
+            return redirect()->back()->with('success', $creados > 0
+                ? "Se generaron {$creados} pagos del semestre {$semesterName}."
+                : "No había pagos nuevos que generar para el semestre {$semesterName}.");
         } catch (\Exception $e) {
             report($e);
 
