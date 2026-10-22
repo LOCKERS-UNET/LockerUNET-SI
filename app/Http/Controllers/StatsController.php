@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Models\LockerAssignment;
 use Illuminate\Http\Request;
 use App\Models\Semester; 
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -134,11 +133,10 @@ class StatsController extends Controller
         $usoEnMes = $queryBase->count();
         
         // Gráfica
+        // Se agrupa por día en PHP: DAY() es de MySQL y no existe en SQLite ni en PostgreSQL
         $dailyData = (clone $queryBase)
-            ->select(DB::raw('DAY(created_at) as day'), DB::raw('COUNT(*) as count'))
-            ->groupBy('day')
-            ->get()
-            ->pluck('count', 'day');
+            ->pluck('created_at')
+            ->countBy(fn ($fecha) => $fecha->day);
 
         $chartPoints = [];
         $acumulado = 0;
