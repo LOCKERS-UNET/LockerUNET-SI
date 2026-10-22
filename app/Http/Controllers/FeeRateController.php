@@ -83,8 +83,10 @@ class FeeRateController extends Controller
             return redirect()->back()->with('success', "Pagos del semestre {$semesterName} generados exitosamente.");
             
         } catch (\Exception $e) {
+            report($e);
+
             return redirect()->back()->withErrors([
-                'error' => 'Error al generar pagos: ' . $e->getMessage()
+                'error' => 'No se pudieron generar los pagos del semestre. Intenta de nuevo.'
             ]);
         }
     }
