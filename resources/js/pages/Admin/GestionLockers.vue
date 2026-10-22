@@ -135,7 +135,7 @@ const getNombreEstado = (status: number) => {
 
 // Helper para obtener el tipo
 const getNombreTipo = (tipo: string) => {
-    const tipos: Record<string, string> = { small: 'Pequeño', medium: 'Mediano', mid: 'Mediano', large: 'Grande' };
+    const tipos: Record<string, string> = { small: 'Pequeño', mid: 'Mediano', large: 'Grande' };
     return tipos[tipo] || tipo;
 };
 
@@ -358,7 +358,6 @@ const getNombreTipo = (tipo: string) => {
                 <div class="relative w-full shadow-sm rounded-full h-14 mt-[22px]">
                     <select v-model="formEditar.locker_type" class="w-full h-full px-6 border border-gray-200 rounded-[2rem] font-extrabold text-[15px] text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
                         <option value="small">Pequeño</option>
-                        <option value="medium">Mediano</option>
                         <option value="mid">Mediano</option>
                         <option value="large">Grande</option>
                     </select>
@@ -448,7 +447,6 @@ const getNombreTipo = (tipo: string) => {
                 <div class="relative w-full shadow-sm rounded-full h-14">
                     <select v-model="form.locker_type" class="w-full h-full px-6 border border-gray-200 bg-[#f9fafb] rounded-[2rem] font-bold text-[15px] text-black appearance-none focus:outline-none focus:border-gray-400 focus:bg-white">
                         <option value="small">Pequeño</option>
-                        <option value="medium">Mediano</option>
                         <option value="mid">Mediano</option>
                         <option value="large">Grande</option>
                     </select>
