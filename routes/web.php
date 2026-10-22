@@ -32,8 +32,9 @@ use Illuminate\Support\Facades\Route;
 // Sin correo verificado, 'verified' redirige a /verify-email (verification.notice)
 // ============================================================
 // CifrarHistorial: el historial del navegador guarda los datos de cada página cifrados;
-// al cerrar sesión se limpia (Inertia::clearHistory) y 'Atrás' ya no los muestra
-Route::middleware(['auth', 'verified', CifrarHistorial::class])->group(function () {
+// al cerrar sesión se limpia (Inertia::clearHistory) y 'Atrás' ya no los muestra.
+// auth.session: si la contraseña cambia (perfil o recuperación), las demás sesiones se cierran.
+Route::middleware(['auth', 'auth.session', 'verified', CifrarHistorial::class])->group(function () {
 
     // Página de inicio
     Route::inertia('/', 'Home')->name('home');
@@ -173,7 +174,7 @@ Route::post('/register', [RegisterController::class, 'store']);
     Route::post('/verify-code', [VerificationCodeController::class, 'verify'])->name('password.verify.post');
 
 // Verificación de correo: requiere sesión, pero no correo verificado
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/verify-email', [EmailVerificationController::class, 'show'])->name('verification.notice');
     Route::post('/verify-email', [EmailVerificationController::class, 'verify'])->name('verification.verify');
     Route::post('/verify-email/resend', [EmailVerificationController::class, 'resend'])->name('verification.resend');

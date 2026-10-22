@@ -316,4 +316,33 @@ class UsabilidadTest extends TestCase
         $this->assertGuest();
         $this->assertStringStartsWith('Demasiados intentos fallidos', session('errors')->first('auth'));
     }
+
+    public function test_si_la_contrasena_cambia_las_otras_sesiones_se_cierran(): void
+    {
+        $estudiante = User::factory()->create(['email' => 'yo@unet.edu.ve', 'password' => 'vieja1234', 'is_admin' => false]);
+
+        // Sesión abierta en "otro navegador"
+        $this->post('/login', ['email' => 'yo@unet.edu.ve', 'password' => 'vieja1234']);
+        $this->get('/profile')->assertOk();
+
+        // La contraseña cambia desde otro lado (perfil en otro equipo o recuperación)
+        $estudiante->update(['password' => 'nueva12345']);
+        $this->app['auth']->forgetGuards(); // como en una petición real, el usuario se vuelve a leer de la base
+
+        $this->get('/profile')->assertRedirect(route('login'));
+        $this->assertGuest();
+    }
+
+    public function test_quien_cambia_la_contrasena_sigue_con_su_sesion(): void
+    {
+        User::factory()->create(['email' => 'yo@unet.edu.ve', 'password' => 'vieja1234', 'is_admin' => false]);
+        $this->post('/login', ['email' => 'yo@unet.edu.ve', 'password' => 'vieja1234']);
+        $this->get('/edit-profile')->assertOk();
+
+        $this->post('/edit-profile/password', ['current_password' => 'vieja1234', 'password' => 'nueva12345', 'password_confirmation' => 'nueva12345'])
+            ->assertSessionHasNoErrors();
+        $this->app['auth']->forgetGuards();
+
+        $this->get('/profile')->assertOk();
+    }
 }
