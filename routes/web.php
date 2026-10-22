@@ -128,8 +128,7 @@ Route::post('/edit-profile/password', [PerfilController::class, 'password']);
         // Estadísticas (Vista)
 Route::get('/estadisticas-lockers', [StatsController::class, 'index'])->name('estadisticas-admin');
         // Estadísticas (Endpoints JSON AJAX para Gráficos)
-Route::get('/admin/stats/summary', [StatsController::class, 'summary'])->name('admin.stats.summary');        Route::get('/admin/stats/by-semester', [StatsController::class, 'bySemester']);
-        Route::get('/admin/stats/monthly', [StatsController::class, 'monthly']);
+Route::get('/admin/stats/summary', [StatsController::class, 'summary'])->name('admin.stats.summary');
         // Gestión de Semestres
 Route::get('/admin/semesters', [StatsController::class, 'getSemesters'])->name('admin.semesters.index');
 Route::post('/admin/semesters', [StatsController::class, 'storeSemester'])->name('admin.semesters.store');

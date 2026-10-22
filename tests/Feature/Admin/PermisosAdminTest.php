@@ -13,12 +13,6 @@ class PermisosAdminTest extends TestCase
 {
     use RefreshDatabase;
 
-    // Hallazgos de la capa A pendientes de aprobación: se sacan de la lista cuando se arreglen
-    private const GET_CON_ERROR_CONOCIDO = [
-        'admin/stats/by-semester', // la ruta apunta a StatsController::bySemester, que no existe
-        'admin/stats/monthly',     // la ruta apunta a StatsController::monthly, que no existe
-    ];
-
     /** Todas las rutas protegidas por IsAdminMiddleware, con método y URI. */
     private function rutasDeAdmin(): array
     {
@@ -81,7 +75,7 @@ class PermisosAdminTest extends TestCase
         $errores = [];
 
         foreach ($this->rutasDeAdmin() as [$metodo, $uri]) {
-            if ($metodo !== 'GET' || in_array($uri, self::GET_CON_ERROR_CONOCIDO, true)) {
+            if ($metodo !== 'GET') {
                 continue;
             }
 
