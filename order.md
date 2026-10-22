@@ -175,7 +175,7 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 | `views/app.blade.php` | Shell HTML de Inertia. Carga `resources/js/app.ts` con Vite. |
 | `views/emails/email-verification.blade.php` | Plantilla del correo de verificación. |
 | `views/emails/reset-code.blade.php` | Plantilla del correo de recuperación. |
-| `views/errors/*.blade.php` | Páginas de error en español (403, 404, 419, 429, 500, 503) con `layout.blade.php`; HTML simple, sin Vite. |
+| `views/errors/*.blade.php` | Páginas de error en español (403, 404, 405, 419, 429, 500, 503) con `layout.blade.php`; HTML simple, sin Vite. |
 | `css/app.css` | Tailwind v4 y estilos globales. |
 | `js/app.ts` | Arranque de Inertia y Vue. |
 | `js/lib/utils.ts` | Utilidades compartidas. |
@@ -460,6 +460,7 @@ LockerUNET-SI/
 │       ├── errors/
 │       │   ├── 403.blade.php
 │       │   ├── 404.blade.php
+│       │   ├── 405.blade.php
 │       │   ├── 419.blade.php
 │       │   ├── 429.blade.php
 │       │   ├── 500.blade.php

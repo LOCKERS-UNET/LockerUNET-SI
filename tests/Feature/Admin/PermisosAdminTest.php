@@ -88,4 +88,13 @@ class PermisosAdminTest extends TestCase
 
         $this->assertSame([], $errores);
     }
+
+    public function test_una_url_con_el_metodo_equivocado_muestra_la_pagina_405_en_espanol(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)->get('/admin/lockers/999999')
+            ->assertStatus(405)
+            ->assertSee('Esa dirección no se puede abrir así');
+    }
 }
