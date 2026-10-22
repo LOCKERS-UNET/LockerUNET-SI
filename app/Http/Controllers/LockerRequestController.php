@@ -215,6 +215,15 @@ class LockerRequestController extends Controller
             return redirect()->back()->withErrors(['locker' => 'El locker de esta solicitud fue tomado u ocupado por otra vía. Recomienda al usuario otra opción.']);
         }
 
+        // Si mientras esperaba se le asignó un locker directamente, aprobar le daría un segundo
+        $yaTieneLocker = LockerAssignment::where('user_id', $lockerReq->user_id)
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
+            ->exists();
+
+        if ($yaTieneLocker) {
+            return redirect()->back()->withErrors(['user' => 'Este estudiante ya tiene un locker asignado. Rechaza esta solicitud.']);
+        }
+
         try {
             DB::beginTransaction();
 

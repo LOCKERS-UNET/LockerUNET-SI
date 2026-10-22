@@ -104,6 +104,20 @@ class SolicitudesAsignacionesTest extends TestCase
         $this->assertDatabaseCount('locker_assignments', 0);
     }
 
+    public function test_no_se_aprueba_a_quien_ya_tiene_un_locker(): void
+    {
+        $this->crearArancel();
+        $existente = LockerAssignment::factory()->create();
+        $pedido = Locker::factory()->create();
+        $id = $this->crearSolicitud($existente->user, $pedido);
+
+        $this->actingAs($this->admin)->put("/admin/requests/{$id}/approve")->assertSessionHasErrors('user');
+
+        $this->assertDatabaseHas('locker_requests', ['request_id' => $id, 'request_status' => 'pending']);
+        $this->assertDatabaseHas('lockers', ['locker_id' => $pedido->locker_id, 'status' => 0]);
+        $this->assertSame(1, LockerAssignment::where('user_id', $existente->user_id)->count());
+    }
+
     public function test_rechazar_notifica_al_estudiante(): void
     {
         $estudiante = $this->estudiante();
