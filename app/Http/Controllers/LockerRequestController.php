@@ -189,7 +189,9 @@ class LockerRequestController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'Error de BD: ' . $e->getMessage()]);
+            report($e);
+
+            return redirect()->back()->withErrors(['error' => 'No se pudo aprobar la solicitud. Intenta de nuevo.']);
         }
     }
 
