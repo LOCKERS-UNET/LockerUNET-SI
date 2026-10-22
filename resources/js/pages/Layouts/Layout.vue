@@ -59,7 +59,7 @@ onUnmounted(() => {
                     </button>
 
                     <Link href="/">
-                        <img src="/img/Logo_Minimal.png" alt="Logo Lockers UNET" class="w-auto h-12 sm:h-15 object-contain">
+                        <img src="/img/Logo_Minimal.webp" alt="Logo Lockers UNET" class="w-auto h-12 sm:h-15 object-contain">
                     </Link>
                 </div>
 

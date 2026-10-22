@@ -44,12 +44,12 @@
 
 <header class="hidden lg:flex lg:justify-between lg:items-center lg:w-full lg:p-6 md:p-10 lg:flex-shrink-0"> 
     
-    <img src="/img/Logo_UNET.png" 
+    <img src="/img/Logo_UNET.webp" 
          alt="Logo unet" 
          class="h-16 md:h-24 w-auto object-contain"
     >
 
-    <img src="/img/Logo_Lockers_UNET.png" 
+    <img src="/img/Logo_Lockers_UNET.webp" 
          alt="logo lockers unet" 
          class="h-12 md:h-16 w-auto object-contain"
     >
@@ -61,12 +61,12 @@
             <div class="flex flex-col lg:flex-row w-full max-w-6xl items-center justify-center gap-10 md:gap-24">
 
                 <div class="flex-shrink-0">
-                    <img src="/img/Login.png" 
+                    <img loading="lazy" src="/img/Login.webp" 
                          alt="imagen prueba" 
                          class="hidden lg:block lg:h-auto lg:max-h-[300px] md:max-h-[500px] lg:w-auto lg:object-contain"
                     >
 
-                    <img src="/img/Logo_Lockers_UNET.png" 
+                    <img src="/img/Logo_Lockers_UNET.webp" 
                          alt="imagen prueba" 
                          class="block h-auto max-h-[100px] md:max-h-[200px] w-auto object-contain lg:hidden"
                     >

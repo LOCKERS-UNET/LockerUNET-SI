@@ -48,7 +48,7 @@
             <div class="flex flex-col sm:flex-row items-center gap-5 sm:gap-10">
 
                 <img 
-                    src="/img/Icono_Aceptar.png" 
+                    src="/img/Icono_Aceptar.webp" 
                     alt="Icono aceptar"
 
                     class="object-contain h-auto max-h-[100px]"

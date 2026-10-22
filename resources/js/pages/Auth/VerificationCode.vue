@@ -20,11 +20,11 @@
 
         <!-- Header: logos (solo escritorio) -->
         <header class="hidden lg:flex lg:justify-between lg:items-center lg:w-full lg:p-6 lg:flex-shrink-0">
-            <img src="/img/Logo_Lockers_UNET.png"
+            <img src="/img/Logo_Lockers_UNET.webp"
                  alt="logo lockers unet"
                  class="h-12 md:h-20 w-auto object-contain"
             >
-            <img src="/img/Logo_UNET.png"
+            <img src="/img/Logo_UNET.webp"
                  alt="Logo unet"
                  class="h-12 md:h-20 w-auto object-contain"
             >
@@ -39,7 +39,7 @@
 
                     <!-- Logo solo en móvil/tablet -->
                     <div class="flex justify-center mb-6 lg:hidden">
-                        <img src="/img/Logo_Lockers_UNET.png"
+                        <img src="/img/Logo_Lockers_UNET.webp"
                              alt="logo lockers unet"
                              class="h-auto max-h-[80px] md:max-h-[120px] w-auto object-contain"
                         >
@@ -110,7 +110,7 @@
 
                 <!-- ===== COLUMNA DERECHA: Imagen decorativa (solo escritorio) ===== -->
                 <div class="hidden lg:flex flex-shrink-0 items-center justify-center w-[400px] h-[400px]">
-                    <img src="/img/VerificationCode.png" alt="Código de verificación" class="w-full h-full object-contain">
+                    <img loading="lazy" src="/img/VerificationCode.webp" alt="Código de verificación" class="w-full h-full object-contain">
                 </div>
 
             </div>

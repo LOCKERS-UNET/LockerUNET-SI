@@ -382,7 +382,7 @@ LockerUNET-SI/
 ├── public/
 │   ├── docs/
 │   │   └── Solicitud_de_Locker.pdf
-│   ├── img/  (9 archivos)
+│   ├── img/  (17 archivos)
 │   ├── .htaccess
 │   ├── apple-touch-icon.png
 │   ├── favicon.ico

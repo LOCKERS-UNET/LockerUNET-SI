@@ -21,12 +21,12 @@
         <!-- Header: logos (solo visible en escritorio) -->
 <header class="hidden lg:flex lg:justify-between lg:items-center lg:w-full lg:p-6 md:p-10 lg:flex-shrink-0"> 
     
-    <img src="/img/Logo_UNET.png" 
+    <img src="/img/Logo_UNET.webp" 
          alt="Logo unet" 
          class="h-16 md:h-24 w-auto object-contain"
     >
 
-    <img src="/img/Logo_Lockers_UNET.png" 
+    <img src="/img/Logo_Lockers_UNET.webp" 
          alt="logo lockers unet" 
          class="h-12 md:h-16 w-auto object-contain"
     >
@@ -42,7 +42,7 @@
 
                     <!-- Logo: solo visible en móvil y tablet -->
                     <div class="flex justify-center mb-6 lg:hidden">
-                        <img src="/img/Logo_Lockers_UNET.png"
+                        <img src="/img/Logo_Lockers_UNET.webp"
                             alt="logo lockers unet"
                             class="h-auto max-h-[80px] md:max-h-[120px] w-auto object-contain"
                         >
@@ -120,7 +120,7 @@
 
                 <!-- ===== COLUMNA DERECHA: Imagen decorativa (solo escritorio) ===== -->
                 <div class="hidden lg:flex flex-shrink-0 items-center justify-center w-[400px] h-[400px]">
-                    <img src="/img/ForgotPassword.png" alt="Recuperar contraseña" class="w-full h-full object-contain">
+                    <img loading="lazy" src="/img/ForgotPassword.webp" alt="Recuperar contraseña" class="w-full h-full object-contain">
                 </div>
 
             </div>

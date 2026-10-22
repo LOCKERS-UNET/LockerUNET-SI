@@ -50,7 +50,7 @@
                 
                     <Link href="/inicio-admin">
 
-                        <img src="/img/Logo_Minimal.png" 
+                        <img src="/img/Logo_Minimal.webp" 
                             alt="Logo Minimalista Lockers"
                             class="w-auto h-12 sm:h-15 object-contain"
                         >

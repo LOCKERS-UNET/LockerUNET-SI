@@ -64,8 +64,8 @@ const user = usePage().props.auth.user;
 
         <!-- Header -->
         <header class="hidden lg:flex lg:justify-between lg:items-center lg:w-full lg:p-6 lg:flex-shrink-0"> 
-            <img src="/img/Logo_UNET.png" alt="Logo unet" class="h-16 md:h-24 w-auto object-contain">
-            <img src="/img/Logo_Lockers_UNET.png" alt="logo lockers unet" class="h-12 md:h-16 w-auto object-contain">
+            <img src="/img/Logo_UNET.webp" alt="Logo unet" class="h-16 md:h-24 w-auto object-contain">
+            <img src="/img/Logo_Lockers_UNET.webp" alt="logo lockers unet" class="h-12 md:h-16 w-auto object-contain">
         </header>
 
         <main class="flex-grow flex items-center justify-center p-4">
@@ -76,7 +76,7 @@ const user = usePage().props.auth.user;
 
                     <!-- Logo móvil -->
                     <div class="flex justify-center mb-6 lg:hidden">
-                        <img src="/img/Logo_Lockers_UNET.png" alt="logo" class="h-auto max-h-[80px] md:max-h-[120px] w-auto object-contain">
+                        <img src="/img/Logo_Lockers_UNET.webp" alt="logo" class="h-auto max-h-[80px] md:max-h-[120px] w-auto object-contain">
                     </div>
 
                     <!-- Volver: sin verificar no se puede entrar al inicio, así que se cierra la sesión -->
@@ -144,7 +144,7 @@ const user = usePage().props.auth.user;
 
                 <!-- Columna derecha: Imagen -->
                 <div class="hidden lg:flex flex-shrink-0 items-center justify-center w-[400px] h-[400px]">
-                    <img src="/img/VerificationCode.png" alt="Verificar correo" class="w-full h-full object-contain">
+                    <img loading="lazy" src="/img/VerificationCode.webp" alt="Verificar correo" class="w-full h-full object-contain">
                 </div>
             </div>
         </main>
