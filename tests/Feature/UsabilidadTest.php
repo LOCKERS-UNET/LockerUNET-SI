@@ -352,4 +352,23 @@ class UsabilidadTest extends TestCase
 
         $this->get('/profile')->assertOk();
     }
+
+    public function test_el_inicio_cuenta_los_disponibles_igual_que_la_busqueda(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $otro = User::factory()->create(['is_admin' => false]);
+        $pedido = $this->crearLocker();
+        $edificio = DB::table('lockers')->join('sectors', 'sectors.sector_id', '=', 'lockers.sector_id')->where('locker_id', $pedido)->value('building_id');
+        $sector = DB::table('sectors')->where('building_id', $edificio)->value('sector_id');
+        DB::table('lockers')->insert([
+            ['locker_code' => 'L-LIBRE', 'sector_id' => $sector, 'locker_type' => 'small', 'status' => 0],
+            ['locker_code' => 'L-OCUPADO', 'sector_id' => $sector, 'locker_type' => 'small', 'status' => 1],
+        ]);
+        $this->actingAs($otro)->post('/requests', ['locker_id' => $pedido]);
+
+        $this->actingAs($estudiante)->get('/')->assertInertia(fn (Assert $page) => $page
+            ->where('buildings.0.available_lockers', 1)
+            ->where('buildings.0.total_lockers', 3));
+        $this->actingAs($estudiante)->get('/lockers')->assertInertia(fn (Assert $page) => $page->where('lockers.total', 1));
+    }
 }
