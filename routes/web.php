@@ -43,6 +43,7 @@ Route::get('/profile', [ProfileController::class, 'show'])->name('user-profile')
 Route::get('/edit-profile', [PerfilController::class, 'index'])->name('edit-profile'); // 👈🏼 AGREGAR ESTO
 Route::put('/profile', [ProfileController::class, 'update']);
 Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Para guardar cambios
+Route::post('/edit-profile/password', [PerfilController::class, 'password']);
 
     // --------------------------------------------------------
     // RUTAS DEL ESTUDIANTE
@@ -59,6 +60,7 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
 
     // Ver mis solicitudes
     Route::get('/requests/my', [LockerRequestController::class, 'myRequests'])->name('mis-solicitudes');
+    Route::post('/requests/{id}/cancel', [LockerRequestController::class, 'cancel']);
 
     // Ver mi locker activo (Asignación)
     Route::get('/assignments/my', [LockerAssignmentController::class, 'myAssignment'])->name('mi-locker');

@@ -45,6 +45,26 @@ class LockerRequestController extends Controller
     }
 
     /**
+     * POST /requests/{id}/cancel
+     * El estudiante cancela su solicitud mientras sigue pendiente
+     * (queda como 'cancelled' para no perder el historial)
+     */
+    public function cancel($id)
+    {
+        $lockerReq = LockerRequest::where('request_id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if ($lockerReq->request_status !== 'pending') {
+            return redirect()->back()->withErrors(['request' => 'Solo puedes cancelar una solicitud pendiente.']);
+        }
+
+        $lockerReq->update(['request_status' => 'cancelled']);
+
+        return redirect()->back()->with('success', 'Solicitud cancelada. Puedes solicitar otro locker cuando quieras.');
+    }
+
+    /**
      * POST /requests
      * Crear una solicitud de locker
      */

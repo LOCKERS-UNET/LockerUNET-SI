@@ -50,4 +50,23 @@ class PerfilController extends Controller
 
         return redirect()->back();
     }
+
+    /**
+     * POST /edit-profile/password
+     * Cambiar la contraseña desde adentro (antes solo existía "olvidé mi contraseña")
+     */
+    public function password(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+        ], [
+            'current_password.current_password' => 'La contraseña actual no es correcta.',
+            'password.different' => 'La nueva contraseña debe ser distinta de la actual.',
+        ]);
+
+        Auth::user()->update(['password' => $request->password]);
+
+        return redirect()->back()->with('success', 'Contraseña actualizada.');
+    }
 }

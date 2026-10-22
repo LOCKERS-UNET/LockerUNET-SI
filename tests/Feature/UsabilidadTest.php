@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -173,5 +174,37 @@ class UsabilidadTest extends TestCase
         $this->assertGuest();
         $this->assertNotSame($tokenAntes, session()->token());
         $this->get('/profile')->assertRedirect(route('login'));
+    }
+
+    public function test_el_estudiante_cancela_su_solicitud_pendiente_y_puede_pedir_otra(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $otro = User::factory()->create(['is_admin' => false]);
+        $id = DB::table('locker_requests')->insertGetId(['user_id' => $estudiante->id, 'locker_id' => $this->crearLocker(), 'request_status' => 'pending']);
+
+        // Nadie más puede cancelarla
+        $this->actingAs($otro)->post("/requests/{$id}/cancel")->assertNotFound();
+
+        $this->actingAs($estudiante)->post("/requests/{$id}/cancel")->assertSessionHas('success');
+        $this->assertDatabaseHas('locker_requests', ['request_id' => $id, 'request_status' => 'cancelled']);
+
+        // Ya no está "en proceso": puede pedir otro locker
+        $this->actingAs($estudiante)->post('/requests', ['locker_id' => $this->crearLocker()])->assertSessionHasNoErrors();
+
+        // Una cancelada no se vuelve a cancelar
+        $this->actingAs($estudiante)->post("/requests/{$id}/cancel")->assertSessionHasErrors('request');
+    }
+
+    public function test_cambiar_la_contrasena_pide_la_actual(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false, 'password' => 'vieja1234']);
+
+        $this->actingAs($estudiante)->post('/edit-profile/password', ['current_password' => 'equivocada', 'password' => 'nueva12345', 'password_confirmation' => 'nueva12345'])
+            ->assertSessionHasErrors(['current_password' => 'La contraseña actual no es correcta.']);
+
+        $this->actingAs($estudiante)->post('/edit-profile/password', ['current_password' => 'vieja1234', 'password' => 'nueva12345', 'password_confirmation' => 'nueva12345'])
+            ->assertSessionHasNoErrors()->assertSessionHas('success');
+
+        $this->assertTrue(Hash::check('nueva12345', $estudiante->fresh()->password));
     }
 }

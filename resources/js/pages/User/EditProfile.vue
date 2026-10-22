@@ -41,6 +41,21 @@ const handlePhotoChange = (e: any) => {
     }
 };
 
+// Cambiar contraseña (formulario aparte)
+const formClave = useForm({
+    current_password: '',
+    password: '',
+    password_confirmation: '',
+});
+
+const cambiarClave = () => {
+    formClave.post('/edit-profile/password', {
+        preserveScroll: true,
+        onSuccess: () => formClave.reset(),
+        onError: () => formClave.reset('password', 'password_confirmation'),
+    });
+};
+
 const submit = () => {
     // IMPORTANTE: Se usa post con forceFormData para que Laravel reciba el archivo correctamente
     form.post('/edit-profile', {
@@ -136,6 +151,31 @@ const submit = () => {
                     </button>
                 </div>
 
+            </form>
+
+            <!-- Cambiar contraseña -->
+            <form @submit.prevent="cambiarClave" class="flex flex-col gap-5 w-full mt-12 pt-8 border-t border-gray-200">
+                <h2 class="text-2xl font-bold text-center">Cambiar contraseña</h2>
+
+                <div v-for="campo in [
+                        { id: 'current_password', label: 'Contraseña actual', auto: 'current-password' },
+                        { id: 'password', label: 'Nueva contraseña (mínimo 8 caracteres)', auto: 'new-password' },
+                        { id: 'password_confirmation', label: 'Confirmar nueva contraseña', auto: 'new-password' },
+                    ] as const" :key="campo.id" class="space-y-2">
+                    <label :for="campo.id" class="block text-[#404040] font-semibold ml-1">{{ campo.label }}</label>
+                    <input type="password" :id="campo.id" :autocomplete="campo.auto"
+                        class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200"
+                        :class="formClave.errors[campo.id] ? 'border-[#DC2626] bg-[#FEE2E2]' : 'border-[#E5E5E5] focus:border-[#22397A]'"
+                        v-model="formClave[campo.id]">
+                    <small v-if="formClave.errors[campo.id]" class="text-red-500 font-bold ml-4">{{ formClave.errors[campo.id] }}</small>
+                </div>
+
+                <div class="pt-2 flex justify-center">
+                    <button type="submit" :disabled="formClave.processing"
+                        class="w-1/2 py-3 bg-white border-2 border-[#213779] text-[#213779] font-bold rounded-xl transition duration-300 hover:bg-[#f3f5fb] active:scale-95 disabled:opacity-50">
+                        {{ formClave.processing ? 'Cambiando…' : 'Cambiar contraseña' }}
+                    </button>
+                </div>
             </form>
         </section>
 

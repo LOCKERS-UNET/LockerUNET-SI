@@ -55,7 +55,7 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | --- | --- | --- |
 | `HomeController.php` | Inicio del estudiante. | `Home` |
 | `LockerController.php` | Busca lockers disponibles para el estudiante (filtrados por edificio y tamaño, 15 por página) y los gestiona: CRUD y JSON de disponibles. Los lockers se crean desde un modal de `GestionLockers`. | `User/BuscarLocker`, `Admin/GestionLockers`, `Admin/ModificarLocker` |
-| `LockerRequestController.php` | Muestra el formulario de solicitud con los datos del locker (`form`), crea solicitudes, muestra "mis solicitudes" y permite aprobarlas o rechazarlas. Aprobar crea la asignación y el primer pago, y necesita un arancel para ese tipo de locker. | `User/MisSolicitudes`, `Admin/GestionSolicitudes` |
+| `LockerRequestController.php` | Muestra el formulario de solicitud con los datos del locker (`form`), crea solicitudes, muestra "mis solicitudes", deja al estudiante cancelar una pendiente (`cancelled`) y permite aprobarlas o rechazarlas. Aprobar crea la asignación y el primer pago, y necesita un arancel para ese tipo de locker. | `User/MisSolicitudes`, `Admin/GestionSolicitudes` |
 | `LockerAssignmentController.php` | Muestra "mi locker", crea asignaciones directas y lista asignaciones en JSON. Devolución en dos pasos: el estudiante la solicita (`requestReturn`, queda `return_requested`) y el admin la confirma (`release`). Pagos pendientes o multas la bloquean. | `User/MiLocker`, `Admin/Asignaciones` |
 | `PaymentController.php` | Muestra los pagos del estudiante y permite al admin marcarlos como pagados (desde `Asignaciones`). | `User/PagoArancel` |
 | `FeeRateController.php` | Tarifas (aranceles) y generación de pagos del semestre. | `Admin/Aranceles` |
@@ -65,7 +65,7 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | `StatsController.php` | Estadísticas: la vista y los endpoints JSON para las gráficas. También gestiona los semestres. | `Admin/EstadisticasLockers` |
 | `UserController.php` | Listado, búsqueda y detalle de usuarios (admin). | `Admin/Usuarios`, `Admin/VistaUsuario` |
 | `ProfileController.php` | Ver y actualizar el perfil (`/profile`). | `User/Profile` |
-| `PerfilController.php` | Editar el perfil (`/edit-profile`): nombre, apellido, carrera (de `User::CARRERAS`) y foto. El correo y el carnet no se editan. | `User/EditProfile` |
+| `PerfilController.php` | Editar el perfil (`/edit-profile`): nombre, apellido, carrera (de `User::CARRERAS`) y foto, y cambiar la contraseña (`password`). El correo y el carnet no se editan. | `User/EditProfile` |
 | `Controller.php` | Clase base. | |
 | `MultaController.php` | **Legado.** Reemplazado por `FineController`. | |
 | `BuscarUsuarioController.php` | **Legado.** Reemplazado por `UserController`. | |
@@ -211,7 +211,7 @@ Notas sobre `web.php`:
 | --- | --- | --- |
 | `BuscarLocker.vue` | `/lockers` | Buscar lockers disponibles, con filtros y paginación del servidor. |
 | `SolicitudLocker.vue` | `/solicitud-locker` | Pedir un locker y descargar el PDF de la solicitud. |
-| `MisSolicitudes.vue` | `/requests/my` | Estado de las solicitudes. |
+| `MisSolicitudes.vue` | `/requests/my` | Estado de las solicitudes; cancelar una pendiente. |
 | `MiLocker.vue` | `/assignments/my` | El locker asignado. |
 | `PagoArancel.vue` | `/payments/my` | Pagos del semestre. |
 | `MultasUser.vue` | `/fines/my` | Multas del estudiante. |
@@ -219,7 +219,7 @@ Notas sobre `web.php`:
 | `DevolucionLocker.vue` | `/devolucion-locker` | Solicitar la devolución del locker; muestra "Devolución en proceso" hasta que el admin la confirme. |
 | `Notificaciones.vue` | `/notifications` | Notificaciones de la app. |
 | `Profile.vue` | `/profile` | Ver el perfil. |
-| `EditProfile.vue` | `/edit-profile` | Editar el perfil. |
+| `EditProfile.vue` | `/edit-profile` | Editar el perfil y cambiar la contraseña. |
 
 **`Admin/`**: páginas del administrador.
 

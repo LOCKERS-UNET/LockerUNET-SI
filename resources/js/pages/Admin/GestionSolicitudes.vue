@@ -15,6 +15,7 @@ const filtros: Record<string, string> = {
     Pendientes: 'pending',
     Aprobadas: 'approved',
     Rechazadas: 'rejected',
+    Canceladas: 'cancelled',
 };
 const filtroActual = ref('Pendientes');
 
@@ -119,6 +120,7 @@ const procesar = (sol: any, accion: 'approve' | 'reject') => {
                         </div>
                         <div v-else class="w-full flex justify-center mt-auto py-1">
                             <span v-if="sol.request_status === 'approved'" class="text-[#0D7A5F] font-bold italic text-[10px]">Aprobada</span>
+                            <span v-else-if="sol.request_status === 'cancelled'" class="text-gray-500 font-bold italic text-[10px]">Cancelada por el estudiante</span>
                             <span v-else class="text-red-500 font-bold italic text-[10px]">Rechazada</span>
                         </div>
 

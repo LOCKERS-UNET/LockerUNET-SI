@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
 import { formatFechaHora } from '@/lib/utils';
 import Layout from '../Layouts/Layout.vue';
 
@@ -13,7 +14,7 @@ defineOptions({ layout: Layout });
 const props = defineProps<{
     solicitudes: Array<{
         request_id: number;
-        request_status: string; // pending | approved | rejected
+        request_status: string; // pending | approved | rejected | cancelled
         requested_at: string;
         locker: {
             locker_code: string;
@@ -31,12 +32,29 @@ const estadoLabel: Record<string, string> = {
     pending:  'Pendiente',
     approved: 'Aprobada',
     rejected: 'Rechazada',
+    cancelled: 'Cancelada',
 };
 
 const estadoColor: Record<string, string> = {
     pending:  'text-orange-500',
     approved: 'text-green-600',
     rejected: 'text-red-500',
+    cancelled: 'text-gray-500',
+};
+
+const cancelando = ref<number | null>(null);
+const errorSolicitud = computed(() => usePage().props.errors?.request as string | undefined);
+
+const cancelar = (id: number) => {
+    if (!confirm('¿Seguro que quieres cancelar esta solicitud?')) {
+        return;
+    }
+
+    router.post(`/requests/${id}/cancel`, {}, {
+        preserveScroll: true,
+        onStart: () => (cancelando.value = id),
+        onFinish: () => (cancelando.value = null),
+    });
 };
 
 const tipoLabel: Record<string, string> = {
@@ -53,6 +71,10 @@ const tipoLabel: Record<string, string> = {
         <section class="w-full max-w-lg flex flex-col items-center mt-6">
             
             <h1 class="text-3xl font-extrabold text-black mb-8">Mis Solicitudes</h1>
+
+            <div v-if="errorSolicitud" class="w-full max-w-[380px] mb-6 bg-[#FEE2E2] border border-[#DC2626] text-[#DC2626] font-semibold p-3 text-center rounded-2xl text-sm">
+                {{ errorSolicitud }}
+            </div>
 
             <!-- Lista de solicitudes reales -->
             <template v-if="solicitudes.length > 0">
@@ -74,6 +96,15 @@ const tipoLabel: Record<string, string> = {
                     <p class="text-md font-bold" :class="estadoColor[solicitud.request_status] ?? 'text-gray-500'">
                         Estado: {{ estadoLabel[solicitud.request_status] ?? solicitud.request_status }}
                     </p>
+                    <button
+                        v-if="solicitud.request_status === 'pending'"
+                        type="button"
+                        :disabled="cancelando === solicitud.request_id"
+                        @click="cancelar(solicitud.request_id)"
+                        class="self-start min-h-[44px] px-4 rounded-xl border border-red-300 bg-white text-red-600 font-bold text-sm hover:bg-red-50 disabled:opacity-50"
+                    >
+                        {{ cancelando === solicitud.request_id ? 'Cancelando…' : 'Cancelar solicitud' }}
+                    </button>
                 </div>
             </template>
 
