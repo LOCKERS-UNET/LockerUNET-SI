@@ -258,6 +258,7 @@ Notas sobre `web.php`:
 | `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/RecuperarContrasenaTest.php`: recuperar contraseña sin revelar cuentas y con límite de intentos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
 | `.github/workflows/` | CI: `lint.yml` y `tests.yml`. |
 | `scripts/actualizar-order.php` | Regenera el árbol de este archivo. |
+| `qa-reports/` | Reportes de las pruebas de usabilidad con subagentes (`RESUMEN.md`, uno por persona y por ronda). Las capturas están en el gitignore. |
 | `.githooks/pre-commit` | Corre el script anterior antes de cada commit. |
 
 ## Árbol de archivos
@@ -393,120 +394,7 @@ LockerUNET-SI/
 │   ├── favicon.svg
 │   ├── index.php
 │   └── robots.txt
-├── qa-reports/
-│   ├── screenshots/
-│   │   ├── apurado-01.png
-│   │   ├── apurado-02.png
-│   │   ├── apurado-03.png
-│   │   ├── apurado-04.png
-│   │   ├── apurado-05.png
-│   │   ├── apurado-06.png
-│   │   ├── apurado-07.png
-│   │   ├── apurado-08.png
-│   │   ├── apurado-09.png
-│   │   ├── celular-01.png
-│   │   ├── celular-02.png
-│   │   ├── celular-03.png
-│   │   ├── celular-04.png
-│   │   ├── celular-05.png
-│   │   ├── celular-06.png
-│   │   ├── celular-07.png
-│   │   ├── celular-08.png
-│   │   ├── celular-09.png
-│   │   ├── celular-10.png
-│   │   ├── celular-11.png
-│   │   ├── celular-12.png
-│   │   ├── celular-13.png
-│   │   ├── celular-14.png
-│   │   ├── desconfiado-01.png
-│   │   ├── desconfiado-02.png
-│   │   ├── desconfiado-03.png
-│   │   ├── desconfiado-04.png
-│   │   ├── desconfiado-05.png
-│   │   ├── desconfiado-06.png
-│   │   ├── desconfiado-07.png
-│   │   ├── desconfiado-08.png
-│   │   ├── desconfiado-09.png
-│   │   ├── desconfiado-10.png
-│   │   ├── desconfiado-11.png
-│   │   ├── desconfiado-12.png
-│   │   ├── desconfiado-13.png
-│   │   ├── desconfiado-14.png
-│   │   ├── desconfiado-15.png
-│   │   ├── desconfiado-16.png
-│   │   ├── no-ingles-01.png
-│   │   ├── no-ingles-02.png
-│   │   ├── no-ingles-03.png
-│   │   ├── no-ingles-04.png
-│   │   ├── no-ingles-05.png
-│   │   ├── no-ingles-06.png
-│   │   ├── no-ingles-07.png
-│   │   ├── no-ingles-08.png
-│   │   ├── no-ingles-09.png
-│   │   ├── no-ingles-10.png
-│   │   ├── no-ingles-11.png
-│   │   ├── no-ingles-12.png
-│   │   ├── no-ingles-13.png
-│   │   ├── no-ingles-13b.png
-│   │   ├── no-ingles-14.png
-│   │   ├── no-ingles-15.png
-│   │   ├── no-ingles-16.png
-│   │   ├── no-ingles-17.png
-│   │   ├── no-ingles-18.png
-│   │   ├── no-ingles-19.png
-│   │   ├── no-ingles-20.png
-│   │   ├── no-ingles-21.png
-│   │   ├── no-ingles-22.png
-│   │   ├── no-ingles-23.png
-│   │   ├── rompe-todo-01.png
-│   │   ├── rompe-todo-02.png
-│   │   ├── rompe-todo-03.png
-│   │   ├── rompe-todo-04.png
-│   │   ├── rompe-todo-05.png
-│   │   ├── rompe-todo-06.png
-│   │   ├── rompe-todo-07.png
-│   │   ├── rompe-todo-08.png
-│   │   ├── rompe-todo-09.png
-│   │   ├── rompe-todo-10.png
-│   │   ├── rompe-todo-11.png
-│   │   ├── rompe-todo-12.png
-│   │   ├── rompe-todo-13.png
-│   │   ├── rompe-todo-14.png
-│   │   ├── rompe-todo-15.png
-│   │   ├── rompe-todo-16.png
-│   │   ├── rompe-todo-17.png
-│   │   ├── rompe-todo-18.png
-│   │   ├── rompe-todo-19.png
-│   │   ├── rompe-todo-20.png
-│   │   ├── rompe-todo-21.png
-│   │   ├── rompe-todo-22.png
-│   │   ├── rompe-todo-23.png
-│   │   ├── rompe-todo-24.png
-│   │   ├── rompe-todo-25.png
-│   │   ├── rompe-todo-26.png
-│   │   ├── rompe-todo-27.png
-│   │   ├── rompe-todo-28.png
-│   │   ├── rompe-todo-29.png
-│   │   ├── rompe-todo-30.png
-│   │   ├── rompe-todo-31.png
-│   │   ├── rompe-todo-32.png
-│   │   ├── rompe-todo-33.png
-│   │   ├── rompe-todo-34.png
-│   │   ├── rompe-todo-35.png
-│   │   ├── rompe-todo-36.png
-│   │   ├── rompe-todo-37.png
-│   │   ├── rompe-todo-38.png
-│   │   ├── rompe-todo-39.png
-│   │   ├── rompe-todo-40.png
-│   │   ├── rompe-todo-41.png
-│   │   ├── rompe-todo-42.png
-│   │   └── rompe-todo-43.png
-│   ├── apurado.md
-│   ├── celular.md
-│   ├── desconfiado.md
-│   ├── no-ingles.md
-│   ├── RESUMEN.md
-│   └── rompe-todo.md
+├── qa-reports/  (10 archivos)
 ├── resources/
 │   ├── css/
 │   │   └── app.css

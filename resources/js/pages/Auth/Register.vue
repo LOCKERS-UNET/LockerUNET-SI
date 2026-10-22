@@ -161,7 +161,8 @@
             class="w-full h-11 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-xs"
             :class="{ 'border-[#DC2626] bg-[#FEE2E2]': errors?.password, 'border-[#A3A3A3] focus:border-[#22397A]': !errors?.password }"
             v-model="form.password">
-        <small v-if="errors?.password" class="text-red-500 text-xs">{{ errors.password }}</small>
+        <!-- "No coinciden" se muestra solo bajo la confirmación -->
+        <small v-if="errors?.password && errors.password !== 'Las contraseñas no coinciden.'" class="text-red-500 text-xs">{{ errors.password }}</small>
     </div>
 
     <!-- Confirmar Contraseña -->

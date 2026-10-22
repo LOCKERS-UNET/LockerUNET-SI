@@ -61,7 +61,8 @@
                         Código de verificación
                     </h2>
                     <p class="text-[#404040] text-sm mb-8 leading-relaxed">
-                        Se ha enviado un código de autenticación a su correo electrónico.
+                        Escribe el código de 6 dígitos que te llegó por correo. Vence en 15 minutos; si no lo ves, revisa la carpeta de spam
+                        o vuelve a pedirlo desde "¿Olvidaste tu contraseña?".
                     </p>
 
                     <!-- Mensaje de éxito -->
