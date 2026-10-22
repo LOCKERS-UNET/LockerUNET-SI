@@ -7,6 +7,7 @@ use App\Mail\ResetCodeMail;
 use App\Models\PasswordResetCode;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 
@@ -33,9 +34,12 @@ class ForgotPasswordController extends Controller
         // 'reset_iniciado' habilita /verify-code; con un correo inexistente reset_user_id queda en 0 y ningún código coincide
         session(['reset_iniciado' => true, 'reset_user_id' => $user?->id ?? 0]);
 
-        if (! $user) {
+        // Un código por minuto para cada correo (un doble clic generaba dos códigos); la respuesta es la misma
+        $clave = 'recuperar-clave:'.strtolower($request->email);
+        if (! $user || RateLimiter::tooManyAttempts($clave, 1)) {
             return redirect('/verify-code')->with('status', $mensaje);
         }
+        RateLimiter::hit($clave, 60);
 
         // Eliminar códigos anteriores no usados del mismo usuario
         PasswordResetCode::where('user_id', $user->id)

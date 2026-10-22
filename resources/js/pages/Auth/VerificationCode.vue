@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { Link, router } from '@inertiajs/vue3';
-    import { reactive } from 'vue';
+    import { reactive, ref } from 'vue';
 
     defineProps({ errors: Object, status: String });
 
@@ -8,9 +8,18 @@
         code: null,
     });
 
+    // Bloquea el botón mientras viaja la petición (un doble clic mandaba dos envíos)
+    const enviando = ref(false);
+
     const submit = () => {
+        if (enviando.value) {
+            return;
+        }
+
         router.post('/verify-code', form, {
             preserveScroll: true,
+            onStart: () => (enviando.value = true),
+            onFinish: () => (enviando.value = false),
         });
     };
 </script>
@@ -100,9 +109,10 @@
                         <div class="pt-2 flex justify-center">
                             <button
                                 type="submit"
-                                class="w-full py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95"
+                                :disabled="enviando"
+                                class="w-full py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                             >
-                                Verificar
+                                {{ enviando ? 'Verificando…' : 'Verificar' }}
                             </button>
                         </div>
 

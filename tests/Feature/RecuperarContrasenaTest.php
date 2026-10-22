@@ -55,4 +55,14 @@ class RecuperarContrasenaTest extends TestCase
         $this->post('/verify-code', ['code' => '000000'])->assertSessionHasErrors(['code']);
         $this->assertStringStartsWith('Demasiados intentos', session('errors')->first('code'));
     }
+
+    public function test_pedir_el_codigo_dos_veces_seguidas_envia_uno_solo(): void
+    {
+        User::factory()->create(['email' => 'existe@unet.edu.ve']);
+
+        $this->post('/forgot-password', ['email' => 'existe@unet.edu.ve'])->assertRedirect('/verify-code');
+        $this->post('/forgot-password', ['email' => 'existe@unet.edu.ve'])->assertRedirect('/verify-code')->assertSessionHasNoErrors();
+
+        Mail::assertSent(ResetCodeMail::class, 1);
+    }
 }
