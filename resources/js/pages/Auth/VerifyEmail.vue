@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { reactive } from 'vue';
+import { reactive, ref, watch } from 'vue';
 
 // Tipar correctamente los props
 interface Props {
@@ -20,7 +20,36 @@ const submit = () => {
     });
 };
 
+// Al pegar "123 456" o con saltos de línea se dejan solo los dígitos (antes maxlength cortaba el texto pegado)
+watch(() => form.code, (valor) => {
+    const limpio = (valor ?? '').replace(/\D/g, '').slice(0, 6);
+
+    if (limpio !== valor) {
+        form.code = limpio;
+    }
+});
+
+// El backend permite un reenvío por minuto; el botón espera lo mismo para no mandar dos códigos
+const esperaReenvio = ref(0);
+let temporizadorReenvio: ReturnType<typeof setInterval> | null = null;
+
+const iniciarEspera = () => {
+    esperaReenvio.value = 60;
+    temporizadorReenvio = setInterval(() => {
+        esperaReenvio.value--;
+
+        if (esperaReenvio.value <= 0 && temporizadorReenvio) {
+            clearInterval(temporizadorReenvio);
+        }
+    }, 1000);
+};
+
 const resendCode = () => {
+    if (esperaReenvio.value > 0) {
+        return;
+    }
+
+    iniciarEspera();
     router.post('/verify-email/resend', {}, {
         preserveScroll: true,
     });
@@ -83,7 +112,8 @@ const user = usePage().props.auth.user;
                                 id="code"
                                 name="code"
                                 placeholder="Ingresa el código de 6 dígitos"
-                                maxlength="6"
+                                inputmode="numeric"
+                                autocomplete="one-time-code"
                                 class="w-full h-10 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm tracking-widest text-center font-bold text-lg"
                                 :class="{
                                     'border-[#DC2626] bg-[#FEE2E2]': errors?.code,
@@ -105,8 +135,8 @@ const user = usePage().props.auth.user;
                     <div class="mt-6 text-center">
                         <p class="text-sm text-gray-600">
                             ¿No recibiste el código?
-                            <button @click="resendCode" class="text-[#213779] font-bold hover:underline">
-                                Reenviar código
+                            <button type="button" @click="resendCode" :disabled="esperaReenvio > 0" class="text-[#213779] font-bold hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed min-h-[44px] px-1">
+                                {{ esperaReenvio > 0 ? `Reenviar código (${esperaReenvio} s)` : 'Reenviar código' }}
                             </button>
                         </p>
                     </div>

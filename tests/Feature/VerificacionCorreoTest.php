@@ -133,4 +133,42 @@ class VerificacionCorreoTest extends TestCase
             ->get('/verify-email')
             ->assertInertia(fn ($page) => $page->component('Auth/VerifyEmail')->where('status', 'Te enviamos un código nuevo.'));
     }
+
+    public function test_el_codigo_pegado_con_espacios_funciona(): void
+    {
+        $user = $this->estudianteSinVerificar();
+        $this->post('/login', ['email' => $user->email, 'password' => 'secreto123']);
+        $codigo = EmailVerificationCode::where('user_id', $user->id)->value('token');
+
+        $this->post('/verify-email', ['code' => ' '.substr($codigo, 0, 3).' '.substr($codigo, 3)."\n"])->assertRedirect('/');
+
+        $this->assertNotNull($user->fresh()->email_verified_at);
+    }
+
+    public function test_cinco_codigos_incorrectos_bloquean_los_intentos(): void
+    {
+        $user = $this->estudianteSinVerificar();
+        $this->post('/login', ['email' => $user->email, 'password' => 'secreto123']);
+        $codigo = EmailVerificationCode::where('user_id', $user->id)->value('token');
+        $malo = $codigo === '000000' ? '111111' : '000000';
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/verify-email', ['code' => $malo])->assertSessionHasErrors(['code' => 'El código es incorrecto.']);
+        }
+
+        // Bloqueado aunque ahora mande el código correcto
+        $this->post('/verify-email', ['code' => $codigo])->assertSessionHasErrors('code');
+        $this->assertNull($user->fresh()->email_verified_at);
+    }
+
+    public function test_no_se_puede_reenviar_dos_veces_seguidas(): void
+    {
+        $user = $this->estudianteSinVerificar();
+        $this->actingAs($user);
+
+        $this->post('/verify-email/resend')->assertSessionHas('status');
+        $this->post('/verify-email/resend')->assertSessionHasErrors('email');
+
+        Mail::assertSentCount(1);
+    }
 }
