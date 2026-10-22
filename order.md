@@ -401,7 +401,7 @@ LockerUNET-SI/
 │   ├── favicon.svg
 │   ├── index.php
 │   └── robots.txt
-├── qa-reports/  (18 archivos)
+├── qa-reports/  (23 archivos)
 ├── resources/
 │   ├── css/
 │   │   └── app.css

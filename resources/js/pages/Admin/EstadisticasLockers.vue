@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import LayoutAdmin from '../Layouts/LayoutAdmin.vue';
 // Importación de Chart.js
@@ -61,6 +61,15 @@ const semestresList = computed(() => props.semestresDisponibles || []);
 const filtroCarrera = ref(props.filters?.carrera || '');
 const filtroSemestre = ref(props.filters?.semestre || '');
 const filtroMes = ref(props.filters?.mes || '');
+
+// "+ Agregar Semestre" es una opción del select: Chrome no dispara @click en un <option>,
+// así que se detecta al cambiar el valor y el select vuelve al semestre que tenía
+watch(filtroSemestre, (nuevo, anterior) => {
+    if (nuevo === '__agregar__') {
+        filtroSemestre.value = anterior;
+        abrirModalSemestre();
+    }
+});
 
 // Configuración de Datos para la Gráfica
 const chartData = computed(() => {
@@ -129,16 +138,20 @@ const aplicarFiltros = () => {
     });
 };
 
-const abrirModalSemestre = () => {
+function abrirModalSemestre() {
+    // Propone seis meses desde el actual; el fin pasa al año siguiente si hace falta (antes podía dar mes 13)
+    const hoy = new Date();
+    const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 5, 1);
+
     formSemestre.value = {
         name: '',
-        start_month: new Date().getMonth() + 1,
-        start_year: new Date().getFullYear(),
-        end_month: new Date().getMonth() + 6,
-        end_year: new Date().getFullYear(),
+        start_month: hoy.getMonth() + 1,
+        start_year: hoy.getFullYear(),
+        end_month: fin.getMonth() + 1,
+        end_year: fin.getFullYear(),
     };
     modalAbierto.value = true;
-};
+}
 
 const guardarSemestre = () => {
     router.post('/admin/semesters', formSemestre.value, {
@@ -178,7 +191,7 @@ const cerrarModal = () => {
                         <option value="">Seleccionar semestre</option>
                         <option v-for="s in semestresList" :key="s" :value="s">{{ s }}</option>
                         <option disabled>──────────</option>
-                        <option value="__agregar__" @click="abrirModalSemestre">+ Agregar Semestre</option>
+                        <option value="__agregar__">+ Agregar Semestre</option>
                     </select>
                 </div>
 
