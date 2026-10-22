@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Models\Locker;
 use App\Models\LockerAssignment;
 use App\Models\Payment;
 use App\Models\Semester;
@@ -115,6 +116,21 @@ class PagosArancelesTest extends TestCase
             ->assertSessionHasErrors('monthly_amount');
 
         $this->assertDatabaseCount('fee_rates', 0);
+    }
+
+    public function test_con_dos_aranceles_del_mismo_dia_se_cobra_el_ultimo(): void
+    {
+        $this->actingAs($this->admin)->post('/admin/fee-rates', ['locker_type' => 'small', 'monthly_amount' => 10, 'reason' => 'Primero']);
+        $this->actingAs($this->admin)->post('/admin/fee-rates', ['locker_type' => 'small', 'monthly_amount' => 20, 'reason' => 'Corrección']);
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $locker = Locker::factory()->create(['locker_type' => 'small']);
+
+        $this->actingAs($this->admin)->post('/admin/assignments', ['user_id' => $estudiante->id, 'locker_id' => $locker->locker_id])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(20.0, (float) Payment::where('user_id', $estudiante->id)->value('amount'));
+        $this->actingAs($this->admin)->get('/fee-rates')
+            ->assertInertia(fn (Assert $page) => $page->where('rates.small.monthly_amount', fn ($monto) => (float) $monto === 20.0));
     }
 
     // ---------- Generar pagos del semestre ----------

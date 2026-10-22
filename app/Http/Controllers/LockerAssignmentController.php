@@ -151,10 +151,7 @@ class LockerAssignmentController extends Controller
 
             $locker->update(['status' => 1]);
 
-            $feeRate = FeeRate::where('locker_type', $locker->locker_type)
-                ->where('effective_from', '<=', today())
-                ->orderBy('effective_from', 'desc')
-                ->first();
+            $feeRate = FeeRate::vigente($locker->locker_type);
 
             if (!$feeRate) {
                 DB::rollBack();

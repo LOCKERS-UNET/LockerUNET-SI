@@ -20,11 +20,7 @@ class FeeRateController extends Controller
         $rates = [];
 
         foreach ($types as $type) {
-            $rates[$type] = FeeRate::where('locker_type', $type)
-                ->where('effective_from', '<=', today())
-                ->orderBy('effective_from', 'desc')
-                ->orderBy('rate_id', 'desc')
-                ->first();
+            $rates[$type] = FeeRate::vigente($type);
         }
 
         // Obtener semestres activos

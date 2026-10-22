@@ -64,10 +64,7 @@ class LockerRequestController extends Controller
         $tamanos = ['small' => 'Pequeño', 'mid' => 'Mediano', 'large' => 'Grande'];
 
         // Arancel vigente para ese tamaño, para que el estudiante sepa el costo antes de pedirlo
-        $arancel = FeeRate::where('locker_type', $locker->locker_type)
-            ->where('effective_from', '<=', today())
-            ->orderBy('effective_from', 'desc')
-            ->value('monthly_amount');
+        $arancel = FeeRate::vigente($locker->locker_type)?->monthly_amount;
 
         return Inertia::render('User/SolicitudLocker', [
             'lockerData' => [
@@ -242,10 +239,7 @@ class LockerRequestController extends Controller
             ]);
 
             // 4. Buscar FeeRate
-            $feeRate = FeeRate::where('locker_type', $locker->locker_type)
-                ->where('effective_from', '<=', today())
-                ->orderBy('effective_from', 'desc')
-                ->first();
+            $feeRate = FeeRate::vigente($locker->locker_type);
 
             if (!$feeRate) {
                 DB::rollBack();

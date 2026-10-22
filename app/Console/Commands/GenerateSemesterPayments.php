@@ -6,7 +6,6 @@ use App\Models\LockerAssignment;
 use App\Models\Payment;
 use App\Models\FeeRate;
 use App\Models\Semester;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class GenerateSemesterPayments extends Command
@@ -62,10 +61,7 @@ class GenerateSemesterPayments extends Command
             }
 
             // Obtener tarifa vigente para el tipo de locker
-            $feeRate = FeeRate::where('locker_type', $assignment->locker->locker_type)
-                ->where('effective_from', '<=', Carbon::now())
-                ->orderBy('effective_from', 'desc')
-                ->first();
+            $feeRate = FeeRate::vigente($assignment->locker->locker_type);
 
             if (!$feeRate) {
                 $this->error("⊗ No hay tarifa vigente para locker tipo: {$assignment->locker->locker_type}");
