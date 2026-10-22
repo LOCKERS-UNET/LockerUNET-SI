@@ -91,6 +91,38 @@ class LockersAdminTest extends TestCase
             ->assertSessionHasErrors('locker_code');
     }
 
+    public function test_un_locker_nuevo_no_nace_ocupado(): void
+    {
+        $sector = Sector::factory()->create();
+
+        $this->actingAs($this->admin())->post('/admin/lockers', $this->datosLocker($sector, ['status' => 1]))
+            ->assertSessionHasErrors('status');
+
+        $this->assertDatabaseCount('lockers', 0);
+    }
+
+    public function test_un_locker_libre_no_se_marca_ocupado_a_mano(): void
+    {
+        $locker = Locker::factory()->create();
+
+        $this->actingAs($this->admin())->put("/admin/lockers/{$locker->locker_id}", $this->datosLocker($locker->sector, ['locker_code' => $locker->locker_code, 'status' => 1]))
+            ->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('lockers', ['locker_id' => $locker->locker_id, 'status' => 0]);
+    }
+
+    public function test_un_locker_ocupado_sin_dueno_se_puede_seguir_editando(): void
+    {
+        $locker = Locker::factory()->ocupado()->create();
+
+        $this->actingAs($this->admin())->put("/admin/lockers/{$locker->locker_id}", $this->datosLocker($locker->sector, ['locker_code' => $locker->locker_code, 'status' => 1, 'plate_number' => 'P-1']))
+            ->assertSessionHasNoErrors();
+        $this->actingAs($this->admin())->put("/admin/lockers/{$locker->locker_id}", $this->datosLocker($locker->sector, ['locker_code' => $locker->locker_code, 'status' => 0, 'plate_number' => 'P-1']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('lockers', ['locker_id' => $locker->locker_id, 'status' => 0, 'plate_number' => 'P-1']);
+    }
+
     public function test_el_admin_abre_el_formulario_de_edicion(): void
     {
         $locker = Locker::factory()->create();

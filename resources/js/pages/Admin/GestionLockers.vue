@@ -368,7 +368,8 @@ const lockersFiltrados = computed(() => {
                 <div class="relative w-full shadow-sm rounded-full h-14 mt-[22px]">
                     <select v-model="formEditar.status" class="w-full h-full px-6 border border-gray-200 rounded-[2rem] font-extrabold text-[15px] text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
                         <option :value="0">Disponible</option>
-                        <option :value="1">Ocupado</option>
+                        <!-- "Ocupado" solo se muestra si ya lo está: no se elige a mano -->
+                        <option v-if="lockerSeleccionado?.status === 1" :value="1">Ocupado</option>
                         <option :value="2">Mantenimiento</option>
                     </select>
                     <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -455,9 +456,9 @@ const lockersFiltrados = computed(() => {
 
                 <!-- Estado -->
                 <div class="relative w-full shadow-sm rounded-full h-14">
+                    <!-- Sin "Ocupado": un locker se ocupa al asignarlo desde Asignaciones -->
                     <select v-model="form.status" class="w-full h-full px-6 border border-gray-200 bg-[#f9fafb] rounded-[2rem] font-bold text-[15px] text-black appearance-none focus:outline-none focus:border-gray-400 focus:bg-white">
                         <option :value="0">Disponible</option>
-                        <option :value="1">Ocupado</option>
                         <option :value="2">Mantenimiento</option>
                     </select>
                     <div class="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">

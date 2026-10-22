@@ -123,10 +123,12 @@ class LockerController extends Controller
      */
     public function store(Request $request)
     {
+        // Un locker nuevo no puede nacer "Ocupado": ocupado significa que tiene una asignación,
+        // y esa se crea desde Asignaciones
         $request->validate([
             'locker_code' => 'required|string|max:50|unique:lockers,locker_code',
             'locker_type' => 'required|in:small,mid,large',
-            'status'      => 'required|integer|in:0,1,2',
+            'status'      => 'required|integer|in:0,2',
             'sector_id'   => 'required|exists:sectors,sector_id',
             'plate_number'=> 'nullable|string|max:20',
         ]);
@@ -166,6 +168,14 @@ class LockerController extends Controller
             'sector_id'   => 'required|exists:sectors,sector_id',
             'plate_number'=> 'nullable|string|max:20',
         ]);
+
+        // REGLA: solo se pasa a "Ocupado" con una asignación (desde Asignaciones). Los que ya
+        // estaban ocupados sin dueño (vienen así del inventario) se pueden seguir editando
+        if ((int) $request->status === 1 && $locker->status !== 1) {
+            return redirect()->back()->withErrors([
+                'status' => 'Un locker queda "Ocupado" al asignarlo desde Asignaciones, no desde aquí.'
+            ]);
+        }
 
         // REGLA: un locker con asignación vigente sigue ocupado. Antes se podía marcar como
         // disponible y volvía a "Buscar Locker" aunque el estudiante lo seguía teniendo
