@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, useForm, router } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 import debounce from 'lodash/debounce';
 import ModalComponent from '../Components/ModalComponent.vue';
 import LayoutAdmin from '../Layouts/LayoutAdmin.vue';
@@ -9,7 +9,7 @@ defineOptions({ layout: LayoutAdmin });
 
 // Props del backend
 const props = defineProps<{
-    lockers: any[];
+    lockers: { data: any[]; current_page: number; last_page: number; total: number };
     buildings: any[];
     sectors: any[];
     filters?: {
@@ -37,8 +37,9 @@ watch(searchQuery, debounce((value) => {
 }, 300));
 
 // 👇🏼 Aplicar filtros al backend
-const aplicarFiltros = () => {
+const aplicarFiltros = (pagina: number | null = null) => {
     router.get('/admin/lockers', {
+        page: pagina,
         search: searchQuery.value || null,
         sector_id: filterSector.value || null,
         locker_type: filterType.value || null,
@@ -138,14 +139,6 @@ const getNombreTipo = (tipo: string) => {
     return tipos[tipo] || tipo;
 };
 
-// 👇🏼 Lockers filtrados (frontend fallback si no hay búsqueda backend)
-const lockersFiltrados = computed(() => {
-    // Si hay búsqueda activa del backend, usar esos datos directamente
-    if (props.filters?.search || props.filters?.sector_id || props.filters?.locker_type || props.filters?.status) {
-        return props.lockers;
-    }
-    return props.lockers;
-});
 </script>
 
 <template>
@@ -189,7 +182,7 @@ const lockersFiltrados = computed(() => {
 
                     <!-- Filtro por Sector -->
                     <div class="relative">
-                        <select v-model="filterSector" @change="aplicarFiltros" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
+                        <select v-model="filterSector" @change="aplicarFiltros()" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
                             <option value="">Todos los sectores</option>
                             <option v-for="sector in sectors" :key="sector.sector_id" :value="sector.sector_id">
                                 {{ sector.sector_name }}
@@ -204,7 +197,7 @@ const lockersFiltrados = computed(() => {
 
                     <!-- Filtro por Tipo -->
                     <div class="relative">
-                        <select v-model="filterType" @change="aplicarFiltros" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
+                        <select v-model="filterType" @change="aplicarFiltros()" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
                             <option value="">Todos los tipos</option>
                             <option value="small">Pequeño</option>
                             <option value="mid">Mediano</option>
@@ -220,7 +213,7 @@ const lockersFiltrados = computed(() => {
                     <!-- Filtro por Estado + Botón limpiar -->
                     <div class="flex gap-2">
                         <div class="relative flex-1">
-                            <select v-model="filterStatus" @change="aplicarFiltros" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
+                            <select v-model="filterStatus" @change="aplicarFiltros()" class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-[#22397A] focus:ring-1 focus:ring-[#22397A] outline-none text-sm appearance-none bg-white">
                                 <option value="">Todos los estados</option>
                                 <option :value="0">Disponible</option>
                                 <option :value="1">Ocupado</option>
@@ -244,7 +237,7 @@ const lockersFiltrados = computed(() => {
 
                 <!-- Contador de resultados -->
                 <p class="text-xs text-gray-500 mt-3">
-                    Mostrando {{ lockers.length }} locker(s)
+                    {{ lockers.total }} locker(s) · página {{ lockers.current_page }} de {{ lockers.last_page }}
                     <span v-if="filters?.search || filters?.sector_id || filters?.locker_type || filters?.status">
                         (con filtros aplicados)
                     </span>
@@ -252,22 +245,26 @@ const lockersFiltrados = computed(() => {
             </div>
 
             <!-- Tabla de Lockers -->
-            <div v-if="lockers.length > 0" class="w-full overflow-x-auto">
+            <div v-if="lockers.data.length > 0" class="w-full overflow-x-auto">
                 <table class="w-full border-collapse">
                     <thead>
                         <tr class="bg-[#213779] text-white">
                             <th class="px-4 py-3 text-left font-bold">Código</th>
-                            <th class="px-4 py-3 text-left font-bold">Sector</th>
-                            <th class="px-4 py-3 text-left font-bold">Tipo</th>
+                            <th class="hidden sm:table-cell px-4 py-3 text-left font-bold">Sector</th>
+                            <th class="hidden sm:table-cell px-4 py-3 text-left font-bold">Tipo</th>
                             <th class="px-4 py-3 text-left font-bold">Estado</th>
                             <th class="px-4 py-3 text-center font-bold">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="locker in lockers" :key="locker.locker_id" class="border-b hover:bg-gray-100">
-                            <td class="px-4 py-3 text-black font-bold">{{ locker.locker_code }}</td>
-                            <td class="px-4 py-3 text-black">{{ getNombreSector(locker.sector_id) }}</td>
-                            <td class="px-4 py-3 text-black">{{ getNombreTipo(locker.locker_type) }}</td>
+                        <!-- En el celular se ocultan Sector y Tipo (van bajo el código) para que Estado y Editar quepan -->
+                        <tr v-for="locker in lockers.data" :key="locker.locker_id" class="border-b hover:bg-gray-100">
+                            <td class="px-4 py-3 text-black font-bold">
+                                {{ locker.locker_code }}
+                                <span class="sm:hidden block text-xs font-normal text-gray-600">{{ getNombreSector(locker.sector_id) }} · {{ getNombreTipo(locker.locker_type) }}</span>
+                            </td>
+                            <td class="hidden sm:table-cell px-4 py-3 text-black">{{ getNombreSector(locker.sector_id) }}</td>
+                            <td class="hidden sm:table-cell px-4 py-3 text-black">{{ getNombreTipo(locker.locker_type) }}</td>
                             <td class="px-4 py-3">
                                 <span :class="[
                                     'px-3 py-1 rounded-full text-white font-bold text-sm',
@@ -281,7 +278,7 @@ const lockersFiltrados = computed(() => {
                             <td class="px-4 py-3 text-center">
                                 <button 
                                     @click="abrirEditar(locker)"
-                                    class="bg-[#3b82f6] hover:bg-[#1d4ed8] text-white px-3 py-1 rounded text-sm mr-2"
+                                    class="bg-[#3b82f6] hover:bg-[#1d4ed8] text-white px-4 min-h-[44px] rounded text-sm"
                                 >
                                     Editar
                                 </button>
@@ -289,6 +286,14 @@ const lockersFiltrados = computed(() => {
                         </tr>
                     </tbody>
                 </table>
+
+                <nav v-if="lockers.last_page > 1" class="flex items-center justify-between gap-4 mt-6" aria-label="Paginación">
+                    <button type="button" :disabled="lockers.current_page <= 1" @click="aplicarFiltros(lockers.current_page - 1)"
+                        class="min-h-[44px] px-5 rounded-full border border-gray-300 font-bold disabled:opacity-40">← Anterior</button>
+                    <span class="text-sm font-bold text-gray-600">Página {{ lockers.current_page }} de {{ lockers.last_page }}</span>
+                    <button type="button" :disabled="lockers.current_page >= lockers.last_page" @click="aplicarFiltros(lockers.current_page + 1)"
+                        class="min-h-[44px] px-5 rounded-full border border-gray-300 font-bold disabled:opacity-40">Siguiente →</button>
+                </nav>
             </div>
             <div v-else class="text-center py-12">
                 <p class="text-gray-500 text-lg mb-4">

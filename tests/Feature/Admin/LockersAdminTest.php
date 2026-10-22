@@ -40,9 +40,20 @@ class LockersAdminTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Admin/GestionLockers')
-                ->has('lockers', 1)
-                ->where('lockers.0.locker_code', 'A-PB-001')
+                ->has('lockers.data', 1)
+                ->where('lockers.data.0.locker_code', 'A-PB-001')
                 ->where('filters.search', 'A-PB'));
+    }
+
+    public function test_la_lista_de_lockers_va_paginada(): void
+    {
+        Locker::factory()->count(30)->create();
+
+        $this->actingAs($this->admin())->get('/admin/lockers?page=2')
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('lockers.data', 5)
+                ->where('lockers.total', 30)
+                ->where('lockers.current_page', 2));
     }
 
     public function test_el_admin_filtra_lockers_por_estado(): void
@@ -52,8 +63,8 @@ class LockersAdminTest extends TestCase
 
         $this->actingAs($this->admin())->get('/admin/lockers?status=2')
             ->assertInertia(fn (Assert $page) => $page
-                ->has('lockers', 1)
-                ->where('lockers.0.locker_code', 'MANT-1'));
+                ->has('lockers.data', 1)
+                ->where('lockers.data.0.locker_code', 'MANT-1'));
     }
 
     public function test_crear_un_locker(): void

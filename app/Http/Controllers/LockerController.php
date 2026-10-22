@@ -105,7 +105,8 @@ class LockerController extends Controller
             $query->where('status', (int) $request->status);
         }
 
-        $lockers = $query->get();
+        // Paginado: antes se mandaban los ~1.150 lockers de una vez (unos 8 s en 3G)
+        $lockers = $query->orderBy('locker_code')->paginate(25)->withQueryString();
         $buildings = Building::all();
         $sectors = Sector::with('building')->get();
 
