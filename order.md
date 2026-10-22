@@ -42,7 +42,7 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 
 | Archivo | Qué hace |
 | --- | --- |
-| `LoginController.php` | Login y logout. Si el correo no está verificado, envía un código nuevo y manda a `/verify-email`. Manda a los admins a `home-admin`. |
+| `LoginController.php` | Login y logout (el logout invalida la sesión, renueva el token y limpia el historial). Si el correo no está verificado, envía un código nuevo y manda a `/verify-email`. Manda a los admins a `home-admin`. |
 | `RegisterController.php` | Registro, solo con correos `@unet.edu.ve`. Envía el código de verificación; si el correo no sale, borra el usuario. |
 | `EmailVerificationController.php` | Muestra `/verify-email`, verifica el código y lo reenvía. Marca `email_verified_at`. |
 | `ForgotPasswordController.php` | Paso 1 de la recuperación: envía el código. Responde igual exista o no el correo (sesión `reset_iniciado`). |
@@ -78,6 +78,8 @@ Cada página que se renderiza desde PHP debe existir en `resources/js/pages/`. L
 | --- | --- |
 | `HandleInertiaRequests.php` | Props compartidas con todas las páginas: `name`, `auth.user` y `flash` (`success`, `status`). |
 | `IsAdminMiddleware.php` | Protege las rutas de admin con `users.is_admin` y, si no es admin, redirige a `home`. |
+| `SinCacheConSesion.php` | Con sesión iniciada envía `Cache-Control: no-store, private` (en el grupo `web`, `bootstrap/app.php`). |
+| `CifrarHistorial.php` | Cifra el historial de Inertia en el grupo autenticado si la conexión es HTTPS o localhost; el logout lo limpia. |
 
 ### `app/Models/`
 
@@ -304,8 +306,10 @@ LockerUNET-SI/
 │   │   │   ├── StatsController.php
 │   │   │   └── UserController.php
 │   │   └── Middleware/
+│   │       ├── CifrarHistorial.php
 │   │       ├── HandleInertiaRequests.php
-│   │       └── IsAdminMiddleware.php
+│   │       ├── IsAdminMiddleware.php
+│   │       └── SinCacheConSesion.php
 │   ├── Mail/
 │   │   ├── EmailVerificationCodeMail.php
 │   │   └── ResetCodeMail.php

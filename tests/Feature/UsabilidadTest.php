@@ -151,4 +151,27 @@ class UsabilidadTest extends TestCase
             ->where('lockers.total', 1)
             ->where('lockers.data.0.locker_code', 'B-01'));
     }
+
+    public function test_las_paginas_con_sesion_no_se_guardan_en_cache_y_cifran_el_historial(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+
+        $respuesta = $this->actingAs($estudiante)->get('/profile');
+        $this->assertStringContainsString('no-store', $respuesta->headers->get('Cache-Control'));
+        $respuesta->assertInertia(fn (Assert $page) => $page->component('User/Profile'));
+        $this->assertTrue($respuesta->viewData('page')['encryptHistory']);
+    }
+
+    public function test_cerrar_sesion_invalida_la_sesion_y_limpia_el_historial(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $this->actingAs($estudiante)->get('/profile');
+        $tokenAntes = session()->token();
+
+        $this->post('/logout')->assertRedirect(route('login'))->assertSessionHas('inertia.clear_history', true);
+
+        $this->assertGuest();
+        $this->assertNotSame($tokenAntes, session()->token());
+        $this->get('/profile')->assertRedirect(route('login'));
+    }
 }

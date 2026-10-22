@@ -23,6 +23,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UserController;
 
+use App\Http\Middleware\CifrarHistorial;
 use App\Http\Middleware\IsAdminMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -30,7 +31,9 @@ use Illuminate\Support\Facades\Route;
 // RUTAS PARA USUARIOS AUTENTICADOS Y CON CORREO VERIFICADO (estudiantes y admins)
 // Sin correo verificado, 'verified' redirige a /verify-email (verification.notice)
 // ============================================================
-Route::middleware(['auth', 'verified'])->group(function () {
+// CifrarHistorial: el historial del navegador guarda los datos de cada página cifrados;
+// al cerrar sesión se limpia (Inertia::clearHistory) y 'Atrás' ya no los muestra
+Route::middleware(['auth', 'verified', CifrarHistorial::class])->group(function () {
 
     // Página de inicio
     Route::inertia('/', 'Home')->name('home');

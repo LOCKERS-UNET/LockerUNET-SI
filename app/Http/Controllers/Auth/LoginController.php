@@ -57,6 +57,11 @@ class LoginController extends Controller
 
         Auth::logout();
 
+        // Antes solo se hacía logout: la sesión y el token CSRF seguían siendo los mismos
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        Inertia::clearHistory();
+
         return to_route('login');
 
     }
