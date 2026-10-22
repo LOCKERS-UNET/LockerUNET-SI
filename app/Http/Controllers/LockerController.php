@@ -22,44 +22,32 @@ class LockerController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Locker::with(['sector.building']);
+        // Solo disponibles, filtrados y paginados en el servidor: antes se mandaban los ~1.150
+        // lockers y la página filtraba en el navegador (8-14 s en 3G, página de 44.000 px)
+        $filtros = [
+            'edificio' => (string) $request->query('edificio', ''),
+            'tamano' => (string) $request->query('tamano', ''),
+        ];
 
-        // Filtros opcionales
-        if ($request->has('sector_id') && $request->sector_id !== null && $request->sector_id !== '') {
-            $query->where('sector_id', $request->sector_id);
-        }
-        if ($request->has('locker_type') && $request->locker_type !== null && $request->locker_type !== '') {
-            $query->where('locker_type', $request->locker_type);
-        }
-        if ($request->has('status') && $request->status !== null && $request->status !== '') {
-            $query->where('status', (int) $request->status);
-        }
+        $lockers = Locker::with(['sector.building'])
+            ->where('status', 0)
+            ->when($filtros['edificio'] !== '', fn ($q) => $q->whereHas('sector.building', fn ($b) => $b->where('building_code', $filtros['edificio'])))
+            ->when($filtros['tamano'] !== '', fn ($q) => $q->where('locker_type', $filtros['tamano']))
+            ->orderBy('locker_code')
+            ->paginate(15)
+            ->withQueryString();
 
-        $lockers = $query->get();
+        // Edificios con al menos un locker disponible, para el filtro
+        $edificios = Building::withCount(['lockers as disponibles' => fn ($q) => $q->where('status', 0)])
+            ->orderBy('building_name')
+            ->get(['building_id', 'building_code', 'building_name'])
+            ->where('disponibles', '>', 0)
+            ->values();
 
-        // Disponibilidad agrupada por edificio
-        // Solo contamos los lockers disponibles (status = 0)
-        $buildings = Building::with(['sectors.lockers' => function($query) {
-            $query->where('status', 0);
-        }])->get()->map(function($building) {
-            $availableCount = $building->sectors->sum(function($sector) {
-                return $sector->lockers->count();
-            });
-            return [
-                'building_id' => $building->building_id,
-                'building_code' => $building->building_code,
-                'building_name' => $building->building_name,
-                'available_count' => $availableCount,
-            ];
-        });
-
-        $sectors = Sector::with('building')->get();
-
-        // Renderizamos la vista que ya existe para buscar
         return Inertia::render('User/BuscarLocker', [
             'lockers' => $lockers,
-            'buildings' => $buildings,
-            'sectors' => $sectors,
+            'edificios' => $edificios,
+            'filtros' => $filtros,
         ]);
     }
 

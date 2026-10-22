@@ -24,4 +24,10 @@ class Building extends Model
     {
         return $this->hasMany(Sector::class, 'building_id', 'building_id');
     }
+
+    // Lockers del edificio, a través de sus sectores
+    public function lockers()
+    {
+        return $this->hasManyThrough(Locker::class, Sector::class, 'building_id', 'sector_id', 'building_id', 'sector_id');
+    }
 }

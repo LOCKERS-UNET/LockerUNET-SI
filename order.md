@@ -54,7 +54,7 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | Archivo | Qué hace | Páginas |
 | --- | --- | --- |
 | `HomeController.php` | Inicio del estudiante. | `Home` |
-| `LockerController.php` | Busca lockers (estudiante) y los gestiona: CRUD y JSON de disponibles. Los lockers se crean desde un modal de `GestionLockers`. | `User/BuscarLocker`, `Admin/GestionLockers`, `Admin/ModificarLocker` |
+| `LockerController.php` | Busca lockers disponibles para el estudiante (filtrados por edificio y tamaño, 15 por página) y los gestiona: CRUD y JSON de disponibles. Los lockers se crean desde un modal de `GestionLockers`. | `User/BuscarLocker`, `Admin/GestionLockers`, `Admin/ModificarLocker` |
 | `LockerRequestController.php` | Muestra el formulario de solicitud con los datos del locker (`form`), crea solicitudes, muestra "mis solicitudes" y permite aprobarlas o rechazarlas. Aprobar crea la asignación y el primer pago, y necesita un arancel para ese tipo de locker. | `User/MisSolicitudes`, `Admin/GestionSolicitudes` |
 | `LockerAssignmentController.php` | Muestra "mi locker", crea asignaciones directas y lista asignaciones en JSON. Devolución en dos pasos: el estudiante la solicita (`requestReturn`, queda `return_requested`) y el admin la confirma (`release`). Pagos pendientes o multas la bloquean. | `User/MiLocker`, `Admin/Asignaciones` |
 | `PaymentController.php` | Muestra los pagos del estudiante y permite al admin marcarlos como pagados (desde `Asignaciones`). | `User/PagoArancel` |
@@ -84,7 +84,7 @@ Cada página que se renderiza desde PHP debe existir en `resources/js/pages/`. L
 | Archivo | Tabla | Notas |
 | --- | --- | --- |
 | `User.php` | `users` | Campo `is_admin`, perfil y foto. `CARRERAS` es la lista de carreras del registro y el perfil. |
-| `Building.php` | `buildings` | Edificio → sectores. |
+| `Building.php` | `buildings` | Edificio → sectores; `lockers()` llega a sus lockers a través de los sectores. |
 | `Sector.php` | `sectors` | Sector → lockers. |
 | `Locker.php` | `lockers` | PK `locker_id`. |
 | `LockerRequest.php` | `locker_requests` | Solicitud del estudiante. PK `request_id`. |
@@ -207,7 +207,7 @@ Notas sobre `web.php`:
 
 | Página | Ruta | Qué hace |
 | --- | --- | --- |
-| `BuscarLocker.vue` | `/lockers` | Buscar lockers disponibles. |
+| `BuscarLocker.vue` | `/lockers` | Buscar lockers disponibles, con filtros y paginación del servidor. |
 | `SolicitudLocker.vue` | `/solicitud-locker` | Pedir un locker y descargar el PDF de la solicitud. |
 | `MisSolicitudes.vue` | `/requests/my` | Estado de las solicitudes. |
 | `MiLocker.vue` | `/assignments/my` | El locker asignado. |

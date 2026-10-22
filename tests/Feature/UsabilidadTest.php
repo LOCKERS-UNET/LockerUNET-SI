@@ -120,4 +120,35 @@ class UsabilidadTest extends TestCase
         $this->actingAs($estudiante)->get("/solicitud-locker?locker_id={$ocupado}")->assertRedirect(route('buscar-locker'))->assertSessionHasErrors('locker');
         $this->actingAs($estudiante)->get('/solicitud-locker?locker_id=999999')->assertRedirect(route('buscar-locker'));
     }
+
+    public function test_buscar_locker_pagina_y_filtra_en_el_servidor(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $edificioA = DB::table('buildings')->insertGetId(['building_code' => 'A', 'building_name' => 'Edificio A']);
+        $edificioB = DB::table('buildings')->insertGetId(['building_code' => 'B', 'building_name' => 'Edificio B']);
+        $sectorA = DB::table('sectors')->insertGetId(['building_id' => $edificioA, 'sector_name' => 'PB']);
+        $sectorB = DB::table('sectors')->insertGetId(['building_id' => $edificioB, 'sector_name' => 'PB']);
+        for ($i = 1; $i <= 20; $i++) {
+            DB::table('lockers')->insert(['locker_code' => sprintf('A-%02d', $i), 'sector_id' => $sectorA, 'locker_type' => $i % 2 ? 'small' : 'large', 'status' => 0]);
+        }
+        DB::table('lockers')->insert(['locker_code' => 'A-OCUPADO', 'sector_id' => $sectorA, 'locker_type' => 'small', 'status' => 1]);
+        DB::table('lockers')->insert(['locker_code' => 'B-01', 'sector_id' => $sectorB, 'locker_type' => 'small', 'status' => 0]);
+
+        // Solo disponibles (21), 15 por página, con el edificio en cada locker
+        $this->actingAs($estudiante)->get('/lockers')->assertInertia(fn (Assert $page) => $page
+            ->where('lockers.total', 21)
+            ->has('lockers.data', 15)
+            ->where('lockers.last_page', 2)
+            ->has('lockers.data.0.sector.building.building_name')
+            ->has('edificios', 2));
+
+        // Filtros en el servidor
+        $this->actingAs($estudiante)->get('/lockers?edificio=A&tamano=large')->assertInertia(fn (Assert $page) => $page
+            ->where('lockers.total', 10)
+            ->where('filtros.edificio', 'A'));
+
+        $this->actingAs($estudiante)->get('/lockers?edificio=B')->assertInertia(fn (Assert $page) => $page
+            ->where('lockers.total', 1)
+            ->where('lockers.data.0.locker_code', 'B-01'));
+    }
 }
