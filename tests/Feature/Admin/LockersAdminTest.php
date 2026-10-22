@@ -280,4 +280,13 @@ class LockersAdminTest extends TestCase
             ->assertJsonCount(1, 'lockers')
             ->assertJsonPath('lockers.0.locker_id', $libre->locker_id);
     }
+
+    public function test_la_migracion_pasa_a_minusculas_los_tipos_de_locker(): void
+    {
+        $locker = Locker::factory()->create(['locker_type' => 'Large']);
+
+        (require database_path('migrations/2026_10_22_000000_normalize_locker_types.php'))->up();
+
+        $this->assertDatabaseHas('lockers', ['locker_id' => $locker->locker_id, 'locker_type' => 'large']);
+    }
 }

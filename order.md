@@ -154,6 +154,7 @@ Notas sobre `web.php`:
 | `2026_04_28_152837_add_email_verified_at_to_users_table.php` | `email_verified_at` en `users` |
 | `2026_04_28_153201_create_email_verification_codes_table.php` | `email_verification_codes` |
 | `2026_10_21_000000_mark_existing_admins_as_verified.php` | Marca como verificados a los admins existentes, que el seeder creaba sin `email_verified_at`. |
+| `2026_10_22_000000_normalize_locker_types.php` | Pasa a minúsculas los tipos de locker (`Large` → `large`), que la validación no aceptaba. |
 
 ### `seeders/`
 
@@ -379,7 +380,8 @@ LockerUNET-SI/
 │   │   ├── 2026_04_24_045310_create_semesters_table.php
 │   │   ├── 2026_04_28_152837_add_email_verified_at_to_users_table.php
 │   │   ├── 2026_04_28_153201_create_email_verification_codes_table.php
-│   │   └── 2026_10_21_000000_mark_existing_admins_as_verified.php
+│   │   ├── 2026_10_21_000000_mark_existing_admins_as_verified.php
+│   │   └── 2026_10_22_000000_normalize_locker_types.php
 │   ├── seeders/
 │   │   ├── data/  (3 archivos)
 │   │   ├── DatabaseSeeder.php
