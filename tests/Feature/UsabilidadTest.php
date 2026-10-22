@@ -237,4 +237,24 @@ class UsabilidadTest extends TestCase
         $this->actingAs($admin)->get('/admin/users?search[]=x')->assertOk();
         $this->actingAs($admin)->getJson('/admin/assignments/list?search[]=x')->assertOk();
     }
+
+    public function test_un_locker_con_solicitud_pendiente_no_se_puede_pedir(): void
+    {
+        $primero = User::factory()->create(['is_admin' => false]);
+        $segundo = User::factory()->create(['is_admin' => false]);
+        $lockerId = $this->crearLocker();
+
+        $this->actingAs($primero)->post('/requests', ['locker_id' => $lockerId])->assertSessionHasNoErrors();
+
+        // Ya no sale en la búsqueda ni se puede abrir ni pedir
+        $this->actingAs($segundo)->get('/lockers')->assertInertia(fn (Assert $page) => $page->where('lockers.total', 0));
+        $this->actingAs($segundo)->get("/solicitud-locker?locker_id={$lockerId}")->assertRedirect(route('buscar-locker'));
+        $this->actingAs($segundo)->post('/requests', ['locker_id' => $lockerId])->assertSessionHasErrors('locker');
+        $this->assertDatabaseCount('locker_requests', 1);
+
+        // Si el primero cancela, vuelve a estar disponible
+        $id = DB::table('locker_requests')->value('request_id');
+        $this->actingAs($primero)->post("/requests/{$id}/cancel");
+        $this->actingAs($segundo)->get('/lockers')->assertInertia(fn (Assert $page) => $page->where('lockers.total', 1));
+    }
 }

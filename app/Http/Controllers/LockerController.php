@@ -32,7 +32,7 @@ class LockerController extends Controller
         ];
 
         $lockers = Locker::with(['sector.building'])
-            ->where('status', 0)
+            ->solicitables()
             ->when($filtros['edificio'] !== '', fn ($q) => $q->whereHas('sector.building', fn ($b) => $b->where('building_code', $filtros['edificio'])))
             ->when($filtros['tamano'] !== '', fn ($q) => $q->where('locker_type', $filtros['tamano']))
             ->orderBy('locker_code')
@@ -40,7 +40,7 @@ class LockerController extends Controller
             ->withQueryString();
 
         // Edificios con al menos un locker disponible, para el filtro
-        $edificios = Building::withCount(['lockers as disponibles' => fn ($q) => $q->where('status', 0)])
+        $edificios = Building::withCount(['lockers as disponibles' => fn ($q) => $q->solicitables()])
             ->orderBy('building_name')
             ->get(['building_id', 'building_code', 'building_name'])
             ->where('disponibles', '>', 0)

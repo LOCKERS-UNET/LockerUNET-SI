@@ -28,9 +28,9 @@ class LockerRequestController extends Controller
     {
         // Solo un id entero: con ?locker_id[]=1 find() devolvía una colección y daba un error 500
         $lockerId = filter_var($request->query('locker_id'), FILTER_VALIDATE_INT);
-        $locker = $lockerId ? Locker::with('sector.building')->find($lockerId) : null;
+        $locker = $lockerId ? Locker::with('sector.building')->solicitables()->find($lockerId) : null;
 
-        if (! $locker || $locker->status != 0) {
+        if (! $locker) {
             return redirect()->route('buscar-locker')->withErrors(['locker' => 'Ese locker no existe o ya no está disponible. Elige otro.']);
         }
 
@@ -101,19 +101,28 @@ class LockerRequestController extends Controller
             'locker_id' => 'required|exists:lockers,locker_id',
         ]);
 
-        $locker = Locker::findOrFail($request->locker_id);
+        // Regla 3: Solo se puede solicitar un locker disponible y sin solicitud pendiente de otra persona.
+        // La fila del locker se bloquea para que dos solicitudes simultáneas no pasen las dos.
+        $creada = DB::transaction(function () use ($request, $userId) {
+            $locker = Locker::whereKey($request->locker_id)->lockForUpdate()->first();
 
-        // Regla 3: Solo se puede solicitar un locker con status = 0
-        if ($locker->status != 0) {
-            return redirect()->back()->withErrors(['locker' => 'El locker seleccionado ya no está disponible.']);
+            if (! $locker || ! Locker::solicitables()->whereKey($locker->locker_id)->exists()) {
+                return false;
+            }
+
+            LockerRequest::create([
+                'user_id' => $userId,
+                'locker_id' => $locker->locker_id,
+                'request_status' => 'pending',
+                'requested_at' => now(),
+            ]);
+
+            return true;
+        });
+
+        if (! $creada) {
+            return redirect()->route('buscar-locker')->withErrors(['locker' => 'Ese locker ya no está disponible o alguien más lo solicitó. Elige otro.']);
         }
-
-        LockerRequest::create([
-            'user_id' => $userId,
-            'locker_id' => $locker->locker_id,
-            'request_status' => 'pending',
-            'requested_at' => now(),
-        ]);
 
         NotificationHelper::send(
             $userId, 

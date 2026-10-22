@@ -88,7 +88,7 @@ Cada página que se renderiza desde PHP debe existir en `resources/js/pages/`. L
 | `User.php` | `users` | Campo `is_admin`, perfil y foto. `CARRERAS` es la lista de carreras del registro y el perfil. |
 | `Building.php` | `buildings` | Edificio → sectores; `lockers()` llega a sus lockers a través de los sectores. |
 | `Sector.php` | `sectors` | Sector → lockers. |
-| `Locker.php` | `lockers` | PK `locker_id`. |
+| `Locker.php` | `lockers` | PK `locker_id`. `solicitables()`: disponibles y sin solicitud pendiente (lo que el estudiante puede pedir). |
 | `LockerRequest.php` | `locker_requests` | Solicitud del estudiante. PK `request_id`. |
 | `LockerAssignment.php` | `locker_assignments` | Asignación aprobada. `assignment_status`: `active`, `return_requested` o `released`; `VIGENTES` agrupa las dos primeras. PK `assignment_id`. |
 | `Payment.php` | `payments` | Pago de una asignación en un semestre. |
