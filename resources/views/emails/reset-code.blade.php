@@ -17,7 +17,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔐 Lockers UNET</h1>
+            <h1> Lockers UNET</h1>
         </div>
         <div class="body">
             <p>Recibiste este correo porque solicitaste recuperar tu contraseña.<br>Usa el siguiente código de verificación:</p>
