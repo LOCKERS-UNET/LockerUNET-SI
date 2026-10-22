@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm, router,  } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
+import { formatFecha } from '@/lib/utils';
 import ModalComponent from '../Components/ModalComponent.vue';
 import LayoutAdmin from '../Layouts/LayoutAdmin.vue';
 
@@ -380,7 +381,7 @@ onMounted(() => {
                         </div>
                         <div class="flex items-center justify-between">
                             <span class="font-black text-black text-[15px]">Desde</span>
-                            <span class="font-bold text-gray-800 text-[15px]">{{ new Date(usuarioSeleccionado.locker_assignment.start_date).toLocaleDateString('es-ES') }}</span>
+                            <span class="font-bold text-gray-800 text-[15px]">{{ formatFecha(usuarioSeleccionado.locker_assignment.start_date) }}</span>
                         </div>
                     </div>
 <div v-if="usuarioSeleccionado?.locker_assignment?.payments?.length" 
@@ -400,7 +401,7 @@ onMounted(() => {
                     Bs. {{ parseFloat(pago.amount).toFixed(2) }}
                 </span>
                 <span class="text-gray-600 text-xs">
-                    Vence: {{ new Date(pago.due_date).toLocaleDateString('es-ES') }}
+                    Vence: {{ formatFecha(pago.due_date) }}
                 </span>
             </div>
             
@@ -487,7 +488,7 @@ onMounted(() => {
                         <!-- Locker / Fecha -->
                         <div class="flex flex-col items-center">
                             <span class="font-black text-[#213779] text-sm">{{ item.locker?.locker_code }}</span>
-                            <span class="text-[11px] text-gray-500 font-bold mt-1">{{ new Date(item.start_date).toLocaleDateString('es-ES') }}</span>
+                            <span class="text-[11px] text-gray-500 font-bold mt-1">{{ formatFecha(item.start_date) }}</span>
                         </div>
                         
                         <!-- Acción (Pill) -->
