@@ -27,6 +27,7 @@ const solicitudesFiltradas = computed(() => {
 // ── Modal State ──
 const modalAbierto = ref(false);
 const modalMensaje = ref('');
+const modalError = ref(false);
 const procesando = ref<number | null>(null);
 
 const procesar = (sol: any, accion: 'approve' | 'reject') => {
@@ -35,12 +36,14 @@ const procesar = (sol: any, accion: 'approve' | 'reject') => {
     router.put(`/admin/requests/${sol.request_id}/${accion}`, {}, {
         preserveScroll: true,
         onSuccess: () => {
+            modalError.value = false;
             modalMensaje.value = accion === 'approve'
                 ? '¡Solicitud aprobada! Se creó la asignación y el pago del semestre.'
                 : 'Solicitud rechazada. El estudiante fue notificado.';
             modalAbierto.value = true;
         },
         onError: (errors) => {
+            modalError.value = true;
             modalMensaje.value = Object.values(errors)[0] || 'No se pudo procesar la solicitud. Intenta de nuevo.';
             modalAbierto.value = true;
         },
@@ -140,6 +143,7 @@ const procesar = (sol: any, accion: 'approve' | 'reject') => {
         <ModalComponent
             :show="modalAbierto"
             :text="modalMensaje"
+            :error="modalError"
             title-button="Aceptar"
             url=""
             @close="modalAbierto = false"

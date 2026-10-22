@@ -28,6 +28,7 @@ const incidenciasFiltradas = computed(() => {
 // ── Modal State ──
 const modalAbierto = ref(false);
 const modalMensaje = ref('');
+const modalError = ref(false);
 const formReview = useForm({});
 
 const marcarComoRevisada = (inc: any) => {
@@ -40,10 +41,12 @@ const marcarComoRevisada = (inc: any) => {
         preserveScroll: true,
         onSuccess: () => {
             inc.status = 'reviewed';
+            modalError.value = false;
             modalMensaje.value = '¡Incidencia marcada como revisada!';
             modalAbierto.value = true;
         },
         onError: (errors) => {
+            modalError.value = true;
             modalMensaje.value = Object.values(errors)[0] || 'No se pudo actualizar la incidencia. Intenta de nuevo.';
             modalAbierto.value = true;
         }
@@ -134,6 +137,7 @@ const marcarComoRevisada = (inc: any) => {
         <ModalComponent
             :show="modalAbierto"
             :text="modalMensaje"
+            :error="modalError"
             title-button="Aceptar"
             url=""
             @close="modalAbierto = false"
