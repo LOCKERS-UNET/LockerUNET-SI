@@ -153,11 +153,21 @@ function abrirModalSemestre() {
     modalAbierto.value = true;
 }
 
+const guardandoSemestre = ref(false);
+
 const guardarSemestre = () => {
+    if (guardandoSemestre.value) {
+        return;
+    }
+
+    guardandoSemestre.value = true;
     router.post('/admin/semesters', formSemestre.value, {
         preserveScroll: true,
         onSuccess: () => {
             modalAbierto.value = false;
+        },
+        onFinish: () => {
+            guardandoSemestre.value = false;
         },
         onError: (errors) => {
             console.error('Error al crear semestre:', errors);
@@ -299,6 +309,7 @@ const cerrarModal = () => {
                     </button>
                     <button 
                         @click="guardarSemestre"
+                        :disabled="guardandoSemestre"
                         class="flex-1 px-4 py-2 bg-[#213779] text-white rounded-lg hover:bg-[#1a2b5f] transition font-bold"
                     >
                         Guardar Semestre

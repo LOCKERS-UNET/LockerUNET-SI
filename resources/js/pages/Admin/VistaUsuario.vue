@@ -69,12 +69,23 @@ const colorFondo = computed(() => {
     return colores[index];
 });
 
+// Con doble clic salían dos confirm y el segundo borrado daba una página 404
+const eliminando = ref<number | null>(null);
+
 const eliminarMulta = (id: number) => {
+    if (eliminando.value !== null) {
+        return;
+    }
+
     if (confirm('¿Estás seguro de eliminar esta multa? Esta acción no se puede deshacer.')) {
+        eliminando.value = id;
         router.delete(`/admin/fines/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
                 openModal();
+            },
+            onFinish: () => {
+                eliminando.value = null;
             },
             onError: (errors) => {
                 console.error('Error al eliminar:', errors);
@@ -208,7 +219,8 @@ const formatDate = (dateString: string) => {
                         <!-- 👇🏼 BOTÓN ELIMINAR MULTA -->
                         <button 
                             @click="eliminarMulta(fine.fine_id)"
-                            class="ml-4 cursor-pointer hover:scale-110 transition duration-200 p-2 rounded-full hover:bg-red-50"
+                            :disabled="eliminando !== null"
+                            class="ml-4 cursor-pointer hover:scale-110 transition duration-200 p-2 rounded-full hover:bg-red-50 disabled:opacity-50"
                             title="Eliminar multa"
                         >
                             <svg 

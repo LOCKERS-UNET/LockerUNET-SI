@@ -27,12 +27,12 @@ const formAsignar = useForm({
     locker_id: null as any
 });
 
-const formLiberar = useForm({
-    assignment_id: null as any
-});
-
 // 👇🏼 FUNCIÓN PARA MARCAR PAGO COMO PAGADO
 const marcarComoPagado = async (paymentId: number) => {
+    if (processingPayments.value.includes(paymentId)) {
+        return;
+    }
+
     processingPayments.value.push(paymentId);
     
     try {
@@ -200,9 +200,18 @@ const confirmarAsignacion = () => {
     });
 };
 
+// Con doble clic salían dos confirm y la segunda liberación respondía "ya fue liberado"
+const liberando = ref<number | null>(null);
+
 const confirmarLiberacion = (assignment: any) => {  // 👈🏼 Quita 'async' si no usas await
+    if (liberando.value !== null) {
+        return;
+    }
+
     const esDevolucion = assignment.assignment_status === 'return_requested';
     if (!confirm(esDevolucion ? '¿Confirmas que el estudiante entregó la llave y el locker está vacío?' : '¿Deseas liberar el locker?')) return;
+
+    liberando.value = assignment.assignment_id;
 
     router.put(  // 👈🏼 Usa router.put en lugar de formLiberar.put
         `/admin/assignments/${assignment.assignment_id}/release`,
@@ -229,6 +238,9 @@ const confirmarLiberacion = (assignment: any) => {  // 👈🏼 Quita 'async' si
                 console.error('Error al liberar:', errors);
                 const errorMsg = Object.values(errors)[0] || 'No se pudo liberar el locker';
                 alert(errorMsg);
+            },
+            onFinish: () => {
+                liberando.value = null;
             }
         }
     );
@@ -301,9 +313,10 @@ onMounted(() => {
                             </div>
                             <button
                                 @click="confirmarLiberacion(dev)"
-                                class="bg-[#0D7A5F] hover:bg-[#0a5f4a] text-white text-xs font-bold py-2 px-4 rounded-lg transition-all shadow-sm active:scale-95 shrink-0"
+                                :disabled="liberando !== null"
+                                class="bg-[#0D7A5F] hover:bg-[#0a5f4a] text-white text-xs font-bold py-2 px-4 rounded-lg transition-all shadow-sm active:scale-95 shrink-0 disabled:opacity-50"
                             >
-                                Confirmar devolución
+                                {{ liberando === dev.assignment_id ? 'Confirmando…' : 'Confirmar devolución' }}
                             </button>
                         </li>
                     </ul>
@@ -404,11 +417,11 @@ onMounted(() => {
 </div>
                     <button 
                         @click="confirmarLiberacion(usuarioSeleccionado.locker_assignment)"
-                        :disabled="formLiberar.processing"
+                        :disabled="liberando !== null"
                         class="bg-[#DC2626] hover:bg-red-700 disabled:opacity-50 text-white font-extrabold py-3.5 px-16 rounded-full flex items-center gap-3 shadow-md transition-all active:scale-95"
                     >
                         <div class="w-[5px] h-[5px] rounded-full bg-white"></div>
-                        {{ formLiberar.processing ? 'Liberando...' : (usuarioSeleccionado.locker_assignment.assignment_status === 'return_requested' ? 'Confirmar devolución' : 'Liberar') }}
+                        {{ liberando !== null ? 'Liberando...' : (usuarioSeleccionado.locker_assignment.assignment_status === 'return_requested' ? 'Confirmar devolución' : 'Liberar') }}
                     </button>
                 </template>
 

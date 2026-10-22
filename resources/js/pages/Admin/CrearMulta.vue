@@ -44,10 +44,21 @@
 
     //**Ejemplo al momento de subir formulario, 
     // debemos abrir el modal en caso de que todo este bien. */
+    // Con dos toques seguidos se creaban dos multas iguales
+    const enviando = ref(false);
+
     const submit = () => {
+        if (enviando.value) {
+            return;
+        }
+
+        enviando.value = true;
         router.post('/admin/fines', form, {
             onSuccess: () => {
                 openModal();
+            },
+            onFinish: () => {
+                enviando.value = false;
             }
         });
     }
@@ -116,9 +127,10 @@
                 <div class="pt-4 flex justify-center">
                     <button 
                         type="submit"
-                        class="w-1/2 py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95"
+                        :disabled="enviando"
+                        class="w-1/2 py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95 disabled:opacity-50"
                     >
-                        Generar Multa
+                        {{ enviando ? 'Generando…' : 'Generar Multa' }}
                     </button>
                 </div>
 
