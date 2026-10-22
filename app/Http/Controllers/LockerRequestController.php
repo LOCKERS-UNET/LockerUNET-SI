@@ -292,8 +292,11 @@ class LockerRequestController extends Controller
     /**
      * PUT /admin/requests/{id}/reject
      */
-    public function reject($id)
+    public function reject(Request $request, $id)
     {
+        // Motivo opcional: se le dice al estudiante en la notificación
+        $request->validate(['reason' => 'nullable|string|max:500']);
+
         $lockerReq = LockerRequest::findOrFail($id);
 
         if ($lockerReq->request_status !== 'pending') {
@@ -310,7 +313,9 @@ class LockerRequestController extends Controller
             $lockerReq->user_id, 
             'request_rejected', 
             'Solicitud rechazada',
-            'Tu solicitud de locker fue rechazada. Puedes contactar al Decanato para más información.'
+            'Tu solicitud de locker fue rechazada.'
+                .(filled($request->reason) ? ' Motivo: '.trim($request->reason) : '')
+                .' Puedes contactar al Decanato para más información.'
         );
 
         return redirect()->back()->with('success', 'La solicitud fue rechazada y el usuario notificado.');

@@ -34,6 +34,11 @@ const marcarComoPagado = async (paymentId: number) => {
         return;
     }
 
+    // Antes se marcaba con un solo clic, sin confirmar
+    if (!confirm('¿Confirmas que este pago se recibió en la caja del Decanato?')) {
+        return;
+    }
+
     processingPayments.value.push(paymentId);
     
     try {

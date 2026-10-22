@@ -129,6 +129,17 @@ class SolicitudesAsignacionesTest extends TestCase
         $this->assertDatabaseHas('notifications', ['user_id' => $estudiante->id, 'notification_type' => 'request_rejected']);
     }
 
+    public function test_el_motivo_del_rechazo_llega_al_estudiante(): void
+    {
+        $estudiante = $this->estudiante();
+        $id = $this->crearSolicitud($estudiante, Locker::factory()->create());
+
+        $this->actingAs($this->admin)->put("/admin/requests/{$id}/reject", ['reason' => 'Faltan los recaudos'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertStringContainsString('Motivo: Faltan los recaudos', DB::table('notifications')->where('user_id', $estudiante->id)->value('message'));
+    }
+
     public function test_una_solicitud_inexistente_responde_404(): void
     {
         $this->actingAs($this->admin)->put('/admin/requests/999/approve')->assertNotFound();

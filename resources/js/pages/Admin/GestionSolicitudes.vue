@@ -31,9 +31,25 @@ const modalError = ref(false);
 const procesando = ref<number | null>(null);
 
 const procesar = (sol: any, accion: 'approve' | 'reject') => {
+    // Aprobar y rechazar actuaban con un clic. Rechazar pide un motivo opcional para el estudiante
+    const estudiante = `${sol.user?.name ?? ''} ${sol.user?.lastname ?? ''}`.trim();
+    let reason: string | null = null;
+
+    if (accion === 'approve') {
+        if (!confirm(`¿Aprobar la solicitud de ${estudiante}? Se le asignará el locker y se generará su pago.`)) {
+            return;
+        }
+    } else {
+        reason = prompt(`¿Rechazar la solicitud de ${estudiante}?\n\nMotivo para el estudiante (opcional):`, '');
+
+        if (reason === null) {
+            return;
+        }
+    }
+
     procesando.value = sol.request_id;
 
-    router.put(`/admin/requests/${sol.request_id}/${accion}`, {}, {
+    router.put(`/admin/requests/${sol.request_id}/${accion}`, accion === 'reject' ? { reason } : {}, {
         preserveScroll: true,
         onSuccess: () => {
             modalError.value = false;
