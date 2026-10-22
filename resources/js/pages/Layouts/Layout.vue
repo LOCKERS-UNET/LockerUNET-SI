@@ -51,7 +51,7 @@ onUnmounted(() => {
                 
                 <div class="flex flex-row items-center gap-2 sm:gap-5">
                     <button @click="toggleMobileMenu" 
-                            class="block lg:hidden cursor-pointer mx-2"
+                            class="flex lg:hidden cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
                             aria-label="Abrir menú de navegación lateral">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6" aria-hidden="true">
                             <path fill-rule="evenodd" d="M3 6.75A.75.75 0 0 1 3.75 6h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 6.75ZM3 12a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 12Zm0 5.25a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
@@ -67,6 +67,7 @@ onUnmounted(() => {
                     <Link href="/assignments/my" class="hover:text-[#2E7AC0] transition">Mi Locker</Link>
                     <Link href="/" class="hover:text-[#2E7AC0] transition">Menú Inicio</Link>
                     <Link href="/lockers" class="hover:text-[#2E7AC0] transition">Buscar Locker</Link>
+                    <Link href="/requests/my" class="hover:text-[#2E7AC0] transition">Mis Solicitudes</Link>
                     <Link href="/notifications" class="hover:text-[#2E7AC0] transition">Notificaciones</Link>
                 </div>
 
@@ -75,21 +76,21 @@ onUnmounted(() => {
                         ¡Hola, <span class="text-[#2E7AC0]">{{ $page.props.auth.user.name }}</span>!
                     </p>
 
-                    <Link href="/notifications" aria-label="Ver notificaciones" class="relative">
+                    <Link href="/notifications" aria-label="Ver notificaciones" class="relative min-w-[44px] min-h-[44px] flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="sm:size-8 size-5" aria-hidden="true">
                             <path fill-rule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 4.496 0 25.057 25.057 0 0 1-4.496 0Z" clip-rule="evenodd" />
                         </svg>
                         
                         <span 
                             v-if="unreadCount > 0" 
-                            class="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border-2 border-[#1C2F5E] animate-pulse"
+                            class="absolute top-2 right-2 w-3 h-3 bg-red-500 rounded-full border-2 border-[#1C2F5E] animate-pulse"
                             :title="`${unreadCount} notificacion(es) nueva(s)`"
                         ></span>
                     </Link>
 
                     <div class="relative profile-dropdown-container">
                         <button @click="toggleProfileMenu" 
-                                class="flex items-center cursor-pointer focus:outline-none"
+                                class="min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer focus:outline-none"
                                 aria-haspopup="true"
                                 :aria-expanded="isProfileOpen"
                                 aria-label="Abrir opciones de perfil">
@@ -127,13 +128,16 @@ onUnmounted(() => {
                             <p class="font-black text-black">{{ $page.props.auth.user.name + " " + $page.props.auth.user.lastname }}</p>
                             <p class="text-black text-sm">{{ $page.props.auth.user.email }}</p>
                         </div>
-                        <button @click="isMenuOpen = false" class="text-gray-400 text-3xl" aria-label="Cerrar menú">&times;</button>
+                        <button @click="isMenuOpen = false" class="text-gray-400 text-3xl min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Cerrar menú">&times;</button>
                     </div>
                     
-                    <nav class="flex flex-col gap-6">
-                        <Link href="/assignments/my" @click="isMenuOpen = false" class="text-black font-bold">Mi Locker</Link>
-                        <Link href="/lockers" @click="isMenuOpen = false" class="text-black font-bold">Buscar Locker</Link>
-                        <Link href="/notifications" @click="isMenuOpen = false" class="text-black font-bold">Notificaciones</Link>
+                    <nav class="flex flex-col gap-2">
+                        <Link href="/" @click="isMenuOpen = false" class="text-black font-bold min-h-[44px] flex items-center">Menú Inicio</Link>
+                        <Link href="/assignments/my" @click="isMenuOpen = false" class="text-black font-bold min-h-[44px] flex items-center">Mi Locker</Link>
+                        <Link href="/lockers" @click="isMenuOpen = false" class="text-black font-bold min-h-[44px] flex items-center">Buscar Locker</Link>
+                        <Link href="/requests/my" @click="isMenuOpen = false" class="text-black font-bold min-h-[44px] flex items-center">Mis Solicitudes</Link>
+                        <Link href="/notifications" @click="isMenuOpen = false" class="text-black font-bold min-h-[44px] flex items-center">Notificaciones</Link>
+                        <Link href="/profile" @click="isMenuOpen = false" class="text-black font-bold min-h-[44px] flex items-center">Mi Perfil</Link>
                     </nav>
                 </div>
                 
@@ -149,7 +153,7 @@ onUnmounted(() => {
                         </p>
                     </div>
                     
-                <Link href="/logout" method="post" as="button" class=" flex flex-row items-center gap-2 cursor-pointer"> 
+                <Link href="/logout" method="post" as="button" class=" flex flex-row items-center gap-2 cursor-pointer min-h-[44px]"> 
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" class="size-8">
                         <path fill-rule="evenodd" d="M16.5 3.75a1.5 1.5 0 0 1 1.5 1.5v13.5a1.5 1.5 0 0 1-1.5 1.5h-6a1.5 1.5 0 0 1-1.5-1.5V15a.75.75 0 0 0-1.5 0v3.75a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V5.25a3 3 0 0 0-3-3h-6a3 3 0 0 0-3 3V9A.75.75 0 1 0 9 9V5.25a1.5 1.5 0 0 1 1.5-1.5h6ZM5.78 8.47a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 0 0 0 1.06l3 3a.75.75 0 0 0 1.06-1.06l-1.72-1.72H15a.75.75 0 0 0 0-1.5H4.06l1.72-1.72a.75.75 0 0 0 0-1.06Z" clip-rule="evenodd" />
                     </svg>
