@@ -26,7 +26,9 @@ class LockerRequestController extends Controller
      */
     public function form(Request $request)
     {
-        $locker = Locker::with('sector.building')->find($request->query('locker_id'));
+        // Solo un id entero: con ?locker_id[]=1 find() devolvía una colección y daba un error 500
+        $lockerId = filter_var($request->query('locker_id'), FILTER_VALIDATE_INT);
+        $locker = $lockerId ? Locker::with('sector.building')->find($lockerId) : null;
 
         if (! $locker || $locker->status != 0) {
             return redirect()->route('buscar-locker')->withErrors(['locker' => 'Ese locker no existe o ya no está disponible. Elige otro.']);

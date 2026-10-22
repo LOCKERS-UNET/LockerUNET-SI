@@ -64,7 +64,7 @@ class LockerAssignmentController extends Controller
             $query->where('assignment_status', $request->assignment_status);
         }
 
-        if ($request->has('search') && $request->search) {
+        if (is_string($request->search) && $request->search !== '') {
             $searchTerm = $request->search;
             $query->whereHas('user', function ($q) use ($searchTerm) {
                 // Asumiendo busqueda por nombre o apellido
@@ -93,7 +93,7 @@ class LockerAssignmentController extends Controller
             $query->where('assignment_status', $request->assignment_status);
         }
 
-        if ($request->has('search') && $request->search) {
+        if (is_string($request->search) && $request->search !== '') {
             $searchTerm = $request->search;
             $query->whereHas('user', function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', '%' . $searchTerm . '%')

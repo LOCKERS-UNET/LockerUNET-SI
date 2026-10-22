@@ -20,7 +20,7 @@ class UserController extends Controller
         $query = User::query();
 
         // Filtro de búsqueda textual
-        if ($request->has('search') && $request->search) {
+        if (is_string($request->search) && $request->search !== '') {
             $searchTerm = '%' . $request->search . '%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', $searchTerm)
@@ -67,7 +67,7 @@ class UserController extends Controller
      */
     public function searchJson(Request $request)
     {
-        $searchTerm = trim($request->input('search', ''));
+        $searchTerm = is_string($request->input('search')) ? trim($request->input('search')) : '';
 
         $users = User::when($searchTerm !== '', function ($query) use ($searchTerm) {
                 $query->where('name', 'LIKE', '%' . $searchTerm . '%')

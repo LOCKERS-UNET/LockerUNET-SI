@@ -24,9 +24,11 @@ class LockerController extends Controller
     {
         // Solo disponibles, filtrados y paginados en el servidor: antes se mandaban los ~1.150
         // lockers y la página filtraba en el navegador (8-14 s en 3G, página de 44.000 px)
+        // Solo se aceptan textos: con ?tamano[]=x llegaba un arreglo y el (string) daba un error 500
+        $texto = fn ($valor) => is_string($valor) ? $valor : '';
         $filtros = [
-            'edificio' => (string) $request->query('edificio', ''),
-            'tamano' => (string) $request->query('tamano', ''),
+            'edificio' => $texto($request->query('edificio')),
+            'tamano' => $texto($request->query('tamano')),
         ];
 
         $lockers = Locker::with(['sector.building'])
@@ -86,7 +88,7 @@ class LockerController extends Controller
     {
         $query = Locker::with(['sector.building']);
 
-        if ($request->has('search') && $request->search) {
+        if (is_string($request->search) && $request->search !== '') {
         $searchTerm = '%' . $request->search . '%';
         $query->where('locker_code', 'LIKE', $searchTerm);
     }

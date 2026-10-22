@@ -221,4 +221,20 @@ class UsabilidadTest extends TestCase
         $this->actingAs($estudiante)->get('/solicitud-locker?locker_id='.$this->crearLocker())
             ->assertInertia(fn (Assert $page) => $page->where('lockerData.arancel_mensual', fn ($monto) => (float) $monto === 150.0));
     }
+
+    public function test_parametros_en_forma_de_arreglo_no_rompen_la_pagina(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $this->crearLocker();
+
+        $this->actingAs($estudiante)->get('/lockers?tamano[]=mid&edificio[]=x')->assertOk();
+        $this->actingAs($estudiante)->get('/lockers?page[]=2')->assertOk();
+        $this->actingAs($estudiante)->get('/solicitud-locker?locker_id[]=1')->assertRedirect(route('buscar-locker'));
+        $this->actingAs($estudiante)->get('/solicitud-locker?locker_id=abc')->assertRedirect(route('buscar-locker'));
+        $this->actingAs($estudiante)->get('/notifications?search[]=x')->assertOk();
+
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($admin)->get('/admin/users?search[]=x')->assertOk();
+        $this->actingAs($admin)->getJson('/admin/assignments/list?search[]=x')->assertOk();
+    }
 }
