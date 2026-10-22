@@ -81,15 +81,15 @@ class StatsController extends Controller
     {
         // 1. Obtener filtros
         $carrera = $request->input('carrera');
-        $mesFiltro = $request->input('mes', '');
-        $semestreFiltro = $request->input('semestre', '');
+        $mesFiltro = is_string($request->input('mes')) ? $request->input('mes') : '';
+        $semestreFiltro = is_string($request->input('semestre')) ? $request->input('semestre') : '';
 
         // 2. Variables para fecha
         $mesesMap = [
             'Enero' => 1, 'Febrero' => 2, 'Marzo' => 3, 'Abril' => 4, 'Mayo' => 5, 'Junio' => 6,
             'Julio' => 7, 'Agosto' => 8, 'Septiembre' => 9, 'Octubre' => 10, 'Noviembre' => 11, 'Diciembre' => 12
         ];
-        
+
         $mesNum = Carbon::now()->month;
         $anioNum = Carbon::now()->year;
 
@@ -101,53 +101,58 @@ class StatsController extends Controller
             $anioNum = isset($partes[1]) && preg_match('/^\d{4}$/', $partes[1]) ? (int) $partes[1] : Carbon::now()->year;
         }
 
-        // 3. Query base (solo activos)
-        $queryBase = LockerAssignment::whereIn('assignment_status', LockerAssignment::VIGENTES);
+        $semestre = (empty($mesFiltro) && !empty($semestreFiltro))
+            ? Semester::where('name', $semestreFiltro)->first()
+            : null;
 
-        // 👇🏼 LÓGICA DE FILTRADO: Mes PRIORIDAD sobre Semestre
-        if (!empty($mesFiltro)) {
-            // Filtrar por mes específico
+        // Sin filtro (o con un semestre que no existe) se muestra el mes actual, y el select lo muestra elegido:
+        // antes la página abría con el mes vacío
+        if (empty($mesFiltro) && !$semestre) {
+            $mesFiltro = array_search($mesNum, $mesesMap)." {$anioNum}";
+            $semestreFiltro = '';
+        }
+
+        // 3. Asignaciones vigentes (con filtro de carrera); de ellas, las nuevas en el período
+        $vigentes = LockerAssignment::whereIn('assignment_status', LockerAssignment::VIGENTES)
+            ->when(!empty($carrera), fn ($q) => $q->whereHas('user', fn ($u) => $u->where('career', $carrera)));
+
+        $queryBase = clone $vigentes;
+
+        if ($semestre) {
+            $inicio = Carbon::create($semestre->start_year, $semestre->start_month, 1);
+            $fin = Carbon::create($semestre->end_year, $semestre->end_month, 1)->endOfMonth();
+            $queryBase->whereBetween('created_at', [$inicio, $fin]);
+        } else {
             $queryBase->whereMonth('created_at', $mesNum)
                       ->whereYear('created_at', $anioNum);
-        } elseif (!empty($semestreFiltro)) {
-            // Filtrar por rango de semestre
-            $semestre = Semester::where('name', $semestreFiltro)->first();
-            if ($semestre) {
-                $queryBase->whereBetween('created_at', [
-                    Carbon::create($semestre->start_year, $semestre->start_month, 1),
-                    Carbon::create($semestre->end_year, $semestre->end_month, 1)->endOfMonth()
-                ]);
+        }
+
+        // KPIs. La ocupación cuenta los lockers ocupados del inventario, como el panel de inicio
+        $totalCapacity = Locker::count();
+        $ocupados = Locker::where('status', 1)->count();
+        $usoEnMes = $queryBase->count();
+
+        // Gráfica: acumulado por día del mes, o por mes del semestre.
+        // Se agrupa en PHP: DAY() es de MySQL y no existe en SQLite ni en PostgreSQL
+        $fechas = (clone $queryBase)->pluck('created_at');
+        $chartPoints = [];
+        $chartLabels = [];
+        $acumulado = 0;
+
+        if ($semestre) {
+            $porMes = $fechas->countBy(fn ($fecha) => $fecha->format('Y-m'));
+            for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addMonth()) {
+                $acumulado += $porMes[$fecha->format('Y-m')] ?? 0;
+                $chartPoints[] = $acumulado;
+                $chartLabels[] = array_search($fecha->month, $mesesMap);
             }
         } else {
-            // Sin filtros → mes actual por defecto
-            $queryBase->whereMonth('created_at', $mesNum)
-                      ->whereYear('created_at', $anioNum);
-        }
-
-        // Filtro por carrera
-        if (!empty($carrera)) {
-            $queryBase->whereHas('user', fn($q) => $q->where('career', $carrera));
-        }
-
-        // KPIs
-        $totalCapacity = Locker::count();
-        $usoEnMes = $queryBase->count();
-        
-        // Gráfica
-        // Se agrupa por día en PHP: DAY() es de MySQL y no existe en SQLite ni en PostgreSQL
-        $dailyData = (clone $queryBase)
-            ->pluck('created_at')
-            ->countBy(fn ($fecha) => $fecha->day);
-
-        $chartPoints = [];
-        $acumulado = 0;
-        $diasEnMes = !empty($mesFiltro) 
-            ? Carbon::create($anioNum, $mesNum)->daysInMonth 
-            : 30; // Default para semestres
-
-        for ($i = 1; $i <= $diasEnMes; $i++) {
-            $acumulado += ($dailyData[$i] ?? 0);
-            $chartPoints[] = $acumulado;
+            $porDia = $fechas->countBy(fn ($fecha) => $fecha->day);
+            for ($i = 1; $i <= Carbon::create($anioNum, $mesNum)->daysInMonth; $i++) {
+                $acumulado += $porDia[$i] ?? 0;
+                $chartPoints[] = $acumulado;
+                $chartLabels[] = (string) $i;
+            }
         }
 
         // Datos para selects
@@ -168,10 +173,12 @@ class StatsController extends Controller
         return Inertia::render('Admin/EstadisticasLockers', [
             'stats' => [
                 'uso_proyectado'  => $usoEnMes,
+                'vigentes'        => $vigentes->count(),
+                'ocupados'        => $ocupados,
                 'capacidad_total' => $totalCapacity,
-                'crecimiento'     => "0.0",
-                'tasa_ocupacion'  => $totalCapacity > 0 ? number_format(($usoEnMes / $totalCapacity) * 100, 1) : "0.0",
+                'tasa_ocupacion'  => $totalCapacity > 0 ? number_format(($ocupados / $totalCapacity) * 100, 1) : "0.0",
                 'chart_data'      => $chartPoints,
+                'chart_labels'    => $chartLabels,
             ],
             'filters' => [
                 'carrera' => $carrera,

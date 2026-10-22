@@ -16,10 +16,12 @@ defineOptions({ layout: LayoutAdmin });
 
 interface Stats {
     uso_proyectado: number;
+    vigentes: number;
+    ocupados: number;
     capacidad_total: number;
-    crecimiento: string;
     tasa_ocupacion: string;
     chart_data: number[];
+    chart_labels: string[];
 }
 
 interface Filters {
@@ -68,8 +70,23 @@ watch(filtroSemestre, (nuevo, anterior) => {
     if (nuevo === '__agregar__') {
         filtroSemestre.value = anterior;
         abrirModalSemestre();
+
+        return;
+    }
+
+    // El mes tenía prioridad sobre el semestre y elegir un semestre no cambiaba nada: son excluyentes
+    if (nuevo) {
+        filtroMes.value = '';
     }
 });
+
+watch(filtroMes, (nuevo) => {
+    if (nuevo) {
+        filtroSemestre.value = '';
+    }
+});
+
+const tituloPeriodo = computed(() => filtroMes.value || (filtroSemestre.value ? `Semestre ${filtroSemestre.value}` : ''));
 
 // Configuración de Datos para la Gráfica
 const chartData = computed(() => {
@@ -77,9 +94,9 @@ const chartData = computed(() => {
     const dataPoints = props.stats?.chart_data || [];
     
     return {
-        labels: Array.from({ length: dataPoints.length }, (_, i) => i + 1),
+        labels: props.stats?.chart_labels ?? Array.from({ length: dataPoints.length }, (_, i) => String(i + 1)),
         datasets: [{
-            label: 'Ocupación',
+            label: 'Asignaciones nuevas (acumulado)',
             data: dataPoints,
             borderColor: '#1768B4',
             backgroundColor: 'rgba(23, 104, 180, 0.1)',
@@ -108,10 +125,10 @@ const chartOptions = computed(() => ({
     scales: {
         y: {
             beginAtZero: true,
-            // Validación de seguridad para capacidad_total
-            max: (props.stats?.capacidad_total > 0) ? props.stats.capacidad_total : 10,
+            // Escala automática: con max = capacidad (1159) unas pocas asignaciones eran una línea plana en 0
+            suggestedMax: 5,
             grid: { color: 'rgba(0,0,0,0.03)' },
-            ticks: { font: { size: 10, weight: 'bold' as const }, color: '#94a3b8' }
+            ticks: { precision: 0, font: { size: 10, weight: 'bold' as const }, color: '#94a3b8' }
         },
         x: {
             grid: { display: false },
@@ -120,10 +137,11 @@ const chartOptions = computed(() => ({
     }
 }));
 
+// "Ocupados" cuenta el inventario, igual que el panel de inicio; "vigentes" solo las asignaciones del sistema
 const kpis = computed(() => [
-    { label: 'Uso Actual', value: props.stats?.uso_proyectado ?? 0, color: 'bg-[#1768B4]' },
-    { label: 'Capacidad Total', value: props.stats?.capacidad_total ?? 0, color: 'bg-[#DC2626]' },
-    { label: 'Crecimiento Mensual', value: (parseFloat(props.stats?.crecimiento) >= 0 ? '+' : '') + (props.stats?.crecimiento ?? '0') + '%', color: 'bg-[#0D7A5F]' },
+    { label: 'Nuevas en el período', value: props.stats?.uso_proyectado ?? 0, color: 'bg-[#1768B4]' },
+    { label: 'Asignaciones vigentes', value: props.stats?.vigentes ?? 0, color: 'bg-[#0D7A5F]' },
+    { label: 'Lockers ocupados / total', value: `${props.stats?.ocupados ?? 0} / ${props.stats?.capacidad_total ?? 0}`, color: 'bg-[#DC2626]' },
     { label: 'Tasa de Ocupación', value: (props.stats?.tasa_ocupacion ?? '0') + '%', color: 'bg-[#F97316]' }
 ]);
 
@@ -219,7 +237,7 @@ const cerrarModal = () => {
             <div class="flex flex-col lg:flex-row gap-8">
                 <div class="w-full lg:w-3/4 bg-white p-8 rounded-3xl shadow-sm border border-gray-50">
                     <h3 class="text-center font-black text-gray-400 mb-8 uppercase tracking-widest text-sm">
-                        Curva de Ocupación Acumulada - {{ filtroMes }}
+                        Asignaciones nuevas (acumulado) - {{ tituloPeriodo }}
                     </h3>
                     
                     <div class="h-[300px] w-full relative">
@@ -228,10 +246,10 @@ const cerrarModal = () => {
 
                     <div class="flex justify-center gap-8 mt-10">
                         <div class="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase">
-                            <span class="w-6 h-1.5 bg-[#1768B4] rounded-full"></span> Uso Real Acumulado
+                            <span class="w-6 h-1.5 bg-[#1768B4] rounded-full"></span> Asignaciones nuevas (acumulado)
                         </div>
                         <div class="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase">
-                            <span class="w-6 h-0.5 border-t border-dashed border-gray-300"></span> Eje de Tiempo (Días)
+                            <span class="w-6 h-0.5 border-t border-dashed border-gray-300"></span> {{ filtroSemestre ? 'Meses del semestre' : 'Días del mes' }}
                         </div>
                     </div>
                 </div>

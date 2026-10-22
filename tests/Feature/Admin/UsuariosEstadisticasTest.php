@@ -128,6 +128,38 @@ class UsuariosEstadisticasTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_sin_filtro_se_muestra_el_mes_actual_y_las_vigentes(): void
+    {
+        Carbon::setTestNow('2026-10-20 12:00:00');
+        LockerAssignment::factory()->create(['created_at' => '2026-10-03 09:00:00']);
+        LockerAssignment::factory()->devolucionSolicitada()->create(['created_at' => '2026-08-03 09:00:00']);
+        Locker::factory()->ocupado()->count(2)->create(); // ocupados del inventario, sin asignación
+
+        $this->actingAs($this->admin)->get('/estadisticas-lockers')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('filters.mes', 'Octubre 2026')
+                ->where('stats.uso_proyectado', 1)
+                ->where('stats.vigentes', 2)
+                ->where('stats.ocupados', 4)
+                ->where('stats.capacidad_total', 4)
+                ->where('stats.tasa_ocupacion', '100.0')
+                ->has('stats.chart_labels', 31));
+
+        Carbon::setTestNow();
+    }
+
+    public function test_el_semestre_grafica_por_mes(): void
+    {
+        Semester::create(['name' => '2026-1', 'start_month' => 1, 'start_year' => 2026, 'end_month' => 6, 'end_year' => 2026, 'is_active' => true]);
+        LockerAssignment::factory()->create(['created_at' => '2026-02-15 09:00:00']);
+        LockerAssignment::factory()->create(['created_at' => '2026-05-15 09:00:00']);
+
+        $this->actingAs($this->admin)->get('/estadisticas-lockers?semestre=2026-1')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('stats.chart_labels', ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'])
+                ->where('stats.chart_data', [0, 1, 1, 1, 2, 2]));
+    }
+
     public function test_un_mes_con_un_ano_invalido_usa_el_ano_actual(): void
     {
         foreach (['Octubre%20abc', 'Octubre%2099999', 'Foo', 'Octubre%20'] as $mes) {
