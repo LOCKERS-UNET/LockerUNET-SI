@@ -171,4 +171,21 @@ class VerificacionCorreoTest extends TestCase
 
         Mail::assertSentCount(1);
     }
+
+    public function test_pedir_un_codigo_nuevo_libera_el_bloqueo(): void
+    {
+        $user = $this->estudianteSinVerificar();
+        $this->post('/login', ['email' => $user->email, 'password' => 'secreto123']);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/verify-email', ['code' => '000000']);
+        }
+        $this->post('/verify-email', ['code' => '000000'])->assertSessionHasErrors('code');
+
+        $this->post('/verify-email/resend')->assertSessionHas('status');
+        $codigo = EmailVerificationCode::where('user_id', $user->id)->where('used', false)->value('token');
+
+        $this->post('/verify-email', ['code' => $codigo])->assertRedirect('/');
+        $this->assertNotNull($user->fresh()->email_verified_at);
+    }
 }

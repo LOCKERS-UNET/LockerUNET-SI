@@ -72,6 +72,9 @@ class ForgotPasswordController extends Controller
             ]);
         }
 
+        // Código nuevo, intentos nuevos (misma clave que VerificationCodeController@verify)
+        RateLimiter::clear('reset-codigo:'.$user->id.'|'.$request->ip());
+
         return redirect('/verify-code')->with('status', $mensaje);
     }
 }

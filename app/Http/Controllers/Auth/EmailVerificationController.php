@@ -50,6 +50,10 @@ class EmailVerificationController extends Controller
             ]);
         }
 
+        // Código nuevo, intentos nuevos (antes el bloqueo de 5 minutos seguía aunque pidieras otro código).
+        // El reenvío está limitado a 1 por minuto, así que son como mucho 5 intentos por minuto.
+        RateLimiter::clear('verificar-correo:'.$user->id);
+
         return back()->with('status', 'Se ha enviado un nuevo código de verificación a tu correo.');
     }
 
