@@ -250,7 +250,8 @@ Notas sobre `web.php`:
 | Ruta | Qué hace |
 | --- | --- |
 | `bootstrap/` | `app.php` (rutas, middleware y excepciones) y `providers.php`. |
-| `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. |
+| `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. `app.locale` está fijo en `es`. |
+| `lang/es/validation.php` | Mensajes de validación en español y nombres de los campos (`card_code` → "carnet", etc.). |
 | `storage/` | Logs, caché y archivos subidos. En git solo están sus `.gitignore`. |
 | `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
 | `.github/workflows/` | CI: `lint.yml` y `tests.yml`. |
@@ -375,6 +376,9 @@ LockerUNET-SI/
 │   │   ├── LockerSeeder.php
 │   │   └── UsersSeeder.php
 │   └── .gitignore
+├── lang/
+│   └── es/
+│       └── validation.php
 ├── public/
 │   ├── docs/
 │   │   └── Solicitud_de_Locker.pdf

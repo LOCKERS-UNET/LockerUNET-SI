@@ -36,4 +36,14 @@ class UsabilidadTest extends TestCase
             ->get('/requests/my')
             ->assertInertia(fn (Assert $page) => $page->where('flash.success', 'Solicitud enviada.'));
     }
+
+    public function test_los_errores_de_validacion_salen_en_espanol(): void
+    {
+        $this->post('/register', ['email' => 'alguien@gmail.com', 'card_code' => ''])
+            ->assertSessionHasErrors([
+                'lastname' => 'El campo apellido es obligatorio.',
+                'card_code' => 'El campo carnet es obligatorio.',
+                'email' => 'Usa tu correo institucional (termina en @unet.edu.ve).',
+            ]);
+    }
 }
