@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
+import { formatFechaHora } from '@/lib/utils';
 import Layout from '../Layouts/Layout.vue';
 
 defineOptions({ layout: Layout });
@@ -68,7 +69,7 @@ const tipoLabel: Record<string, string> = {
                         <span class="font-bold">Sector:</span> {{ solicitud.locker.sector.building.building_name }} - {{ solicitud.locker.sector.sector_name }}
                     </p>
                     <p class="text-black text-md">
-                        <span class="font-bold">Fecha:</span> {{ solicitud.requested_at }}
+                        <span class="font-bold">Fecha:</span> {{ formatFechaHora(solicitud.requested_at) }}
                     </p>
                     <p class="text-md font-bold" :class="estadoColor[solicitud.request_status] ?? 'text-gray-500'">
                         Estado: {{ estadoLabel[solicitud.request_status] ?? solicitud.request_status }}

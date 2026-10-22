@@ -46,4 +46,14 @@ class UsabilidadTest extends TestCase
                 'email' => 'Usa tu correo institucional (termina en @unet.edu.ve).',
             ]);
     }
+
+    public function test_la_fecha_de_la_solicitud_se_envia_con_zona_horaria(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        DB::table('locker_requests')->insert(['user_id' => $estudiante->id, 'locker_id' => $this->crearLocker(), 'request_status' => 'pending', 'requested_at' => '2026-10-22 05:37:23']);
+
+        // ISO con zona: el navegador la convierte a hora local (antes llegaba "2026-10-22 05:37:23" y se mostraba en UTC)
+        $this->actingAs($estudiante)->get('/requests/my')
+            ->assertInertia(fn (Assert $page) => $page->where('solicitudes.0.requested_at', '2026-10-22T05:37:23.000000Z'));
+    }
 }
