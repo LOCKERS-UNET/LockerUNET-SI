@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Layout from '../Layouts/Layout.vue';
 
@@ -20,6 +20,7 @@ const props = defineProps<{
     lockers: { data: Locker[]; current_page: number; last_page: number; total: number };
     edificios: Array<{ building_code: string; building_name: string; disponibles: number }>;
     filtros: { edificio: string; tamano: string };
+    bloqueo: { mensaje: string; enlace: string; texto_enlace: string } | null; // ya tiene un locker o una solicitud pendiente
 }>();
 
 // Mapeamos los tipos a texto legible
@@ -103,6 +104,11 @@ const irASolicitud = (locker: Locker) => {
 
                 </div>
 
+                <div v-if="bloqueo" class="w-full max-w-2xl mb-6 bg-[#FEF3C7] border border-[#F59E0B] text-[#92400E] font-semibold p-4 text-center rounded-2xl text-sm">
+                    {{ bloqueo.mensaje }}
+                    <Link :href="bloqueo.enlace" class="block mt-2 underline font-bold min-h-[44px] leading-[44px]">{{ bloqueo.texto_enlace }}</Link>
+                </div>
+
                 <div v-if="errorLocker" class="w-full max-w-2xl mb-6 bg-[#FEE2E2] border border-[#DC2626] text-[#DC2626] font-semibold p-3 text-center rounded-2xl text-sm">
                     {{ errorLocker }}
                 </div>
@@ -138,7 +144,9 @@ const irASolicitud = (locker: Locker) => {
                                     <!-- 👇 BOTÓN SIEMPRE visible (porque todos están disponibles) -->
                                     <button 
                                         @click="irASolicitud(locker)"
-                                        class="bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold py-3 px-8 min-h-[44px] rounded-xl shadow-md transition duration-300 active:scale-95 text-sm"
+                                        :disabled="!!bloqueo"
+                                        :title="bloqueo?.mensaje"
+                                        class="bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold py-3 px-8 min-h-[44px] rounded-xl shadow-md transition duration-300 active:scale-95 text-sm disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:shadow-none"
                                     >
                                         Solicitar
                                     </button>

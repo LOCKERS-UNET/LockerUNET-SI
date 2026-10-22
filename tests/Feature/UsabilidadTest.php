@@ -257,4 +257,20 @@ class UsabilidadTest extends TestCase
         $this->actingAs($primero)->post("/requests/{$id}/cancel");
         $this->actingAs($segundo)->get('/lockers')->assertInertia(fn (Assert $page) => $page->where('lockers.total', 1));
     }
+
+    public function test_buscar_locker_avisa_si_ya_tiene_una_solicitud_pendiente(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $this->crearLocker();
+        $otro = $this->crearLocker();
+
+        $this->actingAs($estudiante)->get('/lockers')->assertInertia(fn (Assert $page) => $page->where('bloqueo', null));
+
+        $this->actingAs($estudiante)->post('/requests', ['locker_id' => $otro]);
+
+        $this->actingAs($estudiante)->get('/lockers')->assertInertia(fn (Assert $page) => $page
+            ->where('bloqueo.enlace', '/requests/my')
+            ->where('bloqueo.mensaje', fn ($m) => str_contains($m, 'Ya tienes una solicitud pendiente')));
+        $this->actingAs($estudiante)->get('/solicitud-locker?locker_id='.$this->crearLocker())->assertRedirect(route('buscar-locker'));
+    }
 }

@@ -20,12 +20,39 @@ class LockerRequestController extends Controller
     // ==========================================
 
     /**
+     * Si el estudiante ya tiene un locker o una solicitud pendiente, el aviso a mostrar
+     * (['mensaje', 'enlace', 'texto_enlace']) o null.
+     * Antes solo se avisaba al final, después de elegir el locker y marcar la casilla.
+     */
+    public static function bloqueoParaSolicitar(int $userId): ?array
+    {
+        $asignacion = LockerAssignment::with('locker')->where('user_id', $userId)
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)->first();
+        if ($asignacion) {
+            return ['mensaje' => "Ya tienes asignado el locker {$asignacion->locker?->locker_code}.", 'enlace' => '/assignments/my', 'texto_enlace' => 'Ir a Mi Locker'];
+        }
+
+        $pendiente = LockerRequest::with('locker')->where('user_id', $userId)
+            ->where('request_status', 'pending')->first();
+        if ($pendiente) {
+            return ['mensaje' => "Ya tienes una solicitud pendiente del locker {$pendiente->locker?->locker_code}. Puedes verla o cancelarla en Mis Solicitudes.", 'enlace' => '/requests/my', 'texto_enlace' => 'Ir a Mis Solicitudes'];
+        }
+
+        return null;
+    }
+
+    /**
      * GET /solicitud-locker?locker_id=
      * Formulario de solicitud. Los datos del locker salen de la base: antes se
      * mostraban los que venían en la URL (se podía ver un locker y pedir otro).
      */
     public function form(Request $request)
     {
+        // Buscar Locker ya muestra el motivo del bloqueo
+        if (self::bloqueoParaSolicitar(Auth::id()) !== null) {
+            return redirect()->route('buscar-locker');
+        }
+
         // Solo un id entero: con ?locker_id[]=1 find() devolvía una colección y daba un error 500
         $lockerId = filter_var($request->query('locker_id'), FILTER_VALIDATE_INT);
         $locker = $lockerId ? Locker::with('sector.building')->solicitables()->find($lockerId) : null;

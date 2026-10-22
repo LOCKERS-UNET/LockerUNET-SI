@@ -50,6 +50,8 @@ class LockerController extends Controller
             'lockers' => $lockers,
             'edificios' => $edificios,
             'filtros' => $filtros,
+            // Si ya tiene un locker o una solicitud pendiente, se avisa aquí y no se deja solicitar
+            'bloqueo' => LockerRequestController::bloqueoParaSolicitar($request->user()->id),
         ]);
     }
 
