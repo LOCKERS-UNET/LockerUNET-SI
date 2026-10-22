@@ -69,6 +69,18 @@ class UsuariosEstadisticasTest extends TestCase
             ->assertJsonMissingPath('0.password');
     }
 
+    public function test_la_busqueda_json_no_trae_admins_ni_busca_vacio(): void
+    {
+        $this->estudiante(['name' => 'Adminia']);
+
+        $this->actingAs($this->admin)->getJson('/admin/users/search?search=%20%20')
+            ->assertOk()
+            ->assertExactJson([]);
+        $this->actingAs($this->admin)->getJson('/admin/users/search?search=Admin')
+            ->assertJsonCount(1)
+            ->assertJsonPath('0.name', 'Adminia');
+    }
+
     public function test_el_detalle_muestra_multas_y_pagos_pendientes(): void
     {
         $asignacion = LockerAssignment::factory()->create();

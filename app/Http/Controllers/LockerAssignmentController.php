@@ -7,6 +7,7 @@ use App\Models\Locker;
 use App\Models\FeeRate;
 use App\Models\Fine;
 use App\Models\Payment;
+use App\Models\User;
 use App\Helpers\NotificationHelper;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -121,6 +122,10 @@ class LockerAssignmentController extends Controller
         ]);
 
         $userId = $request->user_id;
+
+        if (User::whereKey($userId)->value('is_admin')) {
+            return redirect()->back()->withErrors(['user' => 'No se le asigna un locker a un administrador.']);
+        }
 
         // Regla 1
         $hasActiveAssignment = LockerAssignment::where('user_id', $userId)

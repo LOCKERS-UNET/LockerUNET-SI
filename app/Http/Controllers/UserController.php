@@ -69,7 +69,14 @@ class UserController extends Controller
     {
         $searchTerm = is_string($request->input('search')) ? trim($request->input('search')) : '';
 
-        $users = User::when($searchTerm !== '', function ($query) use ($searchTerm) {
+        // Sin texto no se busca: con solo espacios devolvía a todos, admins incluidos
+        if ($searchTerm === '') {
+            return response()->json([]);
+        }
+
+        // Solo estudiantes: a un admin no se le asigna locker
+        $users = User::where('is_admin', false)
+            ->where(function ($query) use ($searchTerm) {
                 $query->where('name', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('lastname', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('card_code', 'LIKE', '%' . $searchTerm . '%');

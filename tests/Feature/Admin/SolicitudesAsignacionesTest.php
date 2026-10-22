@@ -222,6 +222,17 @@ class SolicitudesAsignacionesTest extends TestCase
         $this->assertDatabaseCount('locker_assignments', 0);
     }
 
+    public function test_no_se_asigna_un_locker_a_un_admin(): void
+    {
+        $this->crearArancel();
+        $locker = Locker::factory()->create();
+
+        $this->actingAs($this->admin)->post('/admin/assignments', ['user_id' => $this->admin->id, 'locker_id' => $locker->locker_id])
+            ->assertSessionHasErrors('user');
+
+        $this->assertDatabaseCount('locker_assignments', 0);
+    }
+
     public function test_asignacion_directa_valida_usuario_y_locker(): void
     {
         $this->actingAs($this->admin)->post('/admin/assignments', ['user_id' => 999, 'locker_id' => 999])
