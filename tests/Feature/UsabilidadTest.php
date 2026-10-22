@@ -302,4 +302,18 @@ class UsabilidadTest extends TestCase
     {
         $this->get('/no-existe-esta-pagina')->assertNotFound()->assertSee('Página no encontrada')->assertSee('Volver al inicio');
     }
+
+    public function test_el_login_bloquea_tras_5_intentos_fallidos(): void
+    {
+        User::factory()->create(['email' => 'yo@unet.edu.ve', 'password' => 'correcta123', 'is_admin' => false]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['email' => 'yo@unet.edu.ve', 'password' => 'mala'])->assertSessionHasErrors(['auth' => 'Credenciales Incorrectas.']);
+        }
+
+        // Bloqueado aunque ahora ponga la contraseña correcta
+        $this->post('/login', ['email' => 'yo@unet.edu.ve', 'password' => 'correcta123'])->assertSessionHasErrors('auth');
+        $this->assertGuest();
+        $this->assertStringStartsWith('Demasiados intentos fallidos', session('errors')->first('auth'));
+    }
 }

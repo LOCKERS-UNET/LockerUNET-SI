@@ -395,7 +395,7 @@ LockerUNET-SI/
 │   ├── favicon.svg
 │   ├── index.php
 │   └── robots.txt
-├── qa-reports/  (12 archivos)
+├── qa-reports/  (17 archivos)
 ├── resources/
 │   ├── css/
 │   │   └── app.css
@@ -479,13 +479,22 @@ LockerUNET-SI/
 │   │   ├── ExampleTest.php
 │   │   └── PaginasInertiaExistenTest.php
 │   └── TestCase.php
+├── .bash_profile
+├── .bashrc
 ├── .editorconfig
 ├── .env.example
 ├── .gitattributes
+├── .gitconfig
 ├── .gitignore
+├── .gitmodules
+├── .mcp.json
 ├── .npmrc
 ├── .prettierignore
 ├── .prettierrc
+├── .profile
+├── .ripgreprc
+├── .zprofile
+├── .zshrc
 ├── artisan
 ├── CLAUDE.md
 ├── composer.json
