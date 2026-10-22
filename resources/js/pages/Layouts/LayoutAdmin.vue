@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { Link } from '@inertiajs/vue3';
     import { ref, onMounted, onUnmounted } from 'vue';
+    import FlashMessage from '../Components/FlashMessage.vue';
 
     const isMenuOpen = ref(false);
     
@@ -215,6 +216,8 @@
             </aside>
 
         </header>
+
+        <FlashMessage con-errores />
 
         <main>
             <slot></slot>

@@ -191,7 +191,7 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 **`Components/`**
 
 - `ModalComponent.vue`: modal reutilizable.
-- `FlashMessage.vue`: aviso flotante con los mensajes `success`/`status` del backend; lo usa `Layout.vue`.
+- `FlashMessage.vue`: aviso flotante con los mensajes `success`/`status` del backend; lo usa `Layout.vue`. En `LayoutAdmin.vue` va con `con-errores` y también muestra el primer error de validación, en rojo.
 
 **`Auth/`**
 
