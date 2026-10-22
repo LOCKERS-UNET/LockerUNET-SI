@@ -62,7 +62,19 @@ class RecuperarContrasenaTest extends TestCase
 
         $this->post('/forgot-password', ['email' => 'existe@unet.edu.ve'])->assertRedirect('/verify-code');
         $this->post('/forgot-password', ['email' => 'existe@unet.edu.ve'])->assertRedirect('/verify-code')->assertSessionHasNoErrors();
+        $this->assertStringStartsWith('Ya pediste un código hace menos de un minuto', session('status'));
+
+        // Con un correo inexistente pasa exactamente lo mismo (no revela si existe)
+        $this->post('/forgot-password', ['email' => 'nadie@unet.edu.ve']);
+        $this->post('/forgot-password', ['email' => 'nadie@unet.edu.ve']);
+        $this->assertStringStartsWith('Ya pediste un código hace menos de un minuto', session('status'));
 
         Mail::assertSent(ResetCodeMail::class, 1);
+    }
+
+    public function test_solo_acepta_correos_institucionales(): void
+    {
+        $this->post('/forgot-password', ['email' => 'alguien@gmail.com'])
+            ->assertSessionHasErrors(['email' => 'Usa tu correo institucional (termina en @unet.edu.ve).']);
     }
 }
