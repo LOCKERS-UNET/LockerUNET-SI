@@ -97,6 +97,18 @@ class MultasIncidenciasTest extends TestCase
         $this->assertDatabaseCount('fines', 0);
     }
 
+    public function test_una_multa_con_coma_decimal_se_guarda_bien_y_tiene_tope(): void
+    {
+        $asignacion = LockerAssignment::factory()->create();
+
+        $this->actingAs($this->admin)->post('/admin/fines', ['user_id' => $asignacion->user_id, 'amount' => '12,50', 'reason' => 'Con coma'])
+            ->assertSessionHasNoErrors();
+        $this->actingAs($this->admin)->post('/admin/fines', ['user_id' => $asignacion->user_id, 'amount' => '1e9', 'reason' => 'Enorme'])
+            ->assertSessionHasErrors('amount');
+
+        $this->assertSame([12.5], Fine::pluck('amount')->map(fn ($monto) => (float) $monto)->all());
+    }
+
     public function test_eliminar_una_multa_notifica_al_estudiante(): void
     {
         $asignacion = LockerAssignment::factory()->create();

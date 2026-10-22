@@ -82,9 +82,11 @@ public function show($id)
      */
     public function store(Request $request)
     {
+        $request->merge(['amount' => FeeRateController::montoConPunto($request->amount)]);
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'amount'  => 'required|numeric|min:0.01',
+            'amount'  => 'required|numeric|min:0.01|max:99999999.99',
             'reason'  => 'required|string|max:500',
         ]);
 

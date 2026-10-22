@@ -74,13 +74,13 @@
                     <label for="monto" class="block text-[#404040] font-semibold ml-1">
                         Monto
                     </label>
+                    <!-- type="text": con type="number" el navegador descartaba la coma y 12,50 llegaba como 1250 -->
                     <input 
-                        type="number"
-                        step="1"
-                        min="1"
+                        type="text"
+                        inputmode="decimal"
                         name="monto" 
                         id="monto"
-                        placeholder="Ej. BS.1000"
+                        placeholder="Ej. 1000 o 12,50"
                         class="w-full h-10 px-5 py-3 rounded-full bg-gray-100  border-3  focus:bg-white focus:outline-none text-[#404040] transition duration-200
                             placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
                         :class="{

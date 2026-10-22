@@ -21,7 +21,7 @@ const props = defineProps<{
 
 const form = useForm({
     locker_type: 'small',
-    monthly_amount: null as number | null,
+    monthly_amount: '',
     reason: ''
 });
 
@@ -133,10 +133,12 @@ const generarPagosSemestre = () => {
 
                         <div class="flex flex-col gap-2">
                             <label class="font-extrabold text-black text-sm">Monto mensual (Bs.)</label>
+                            <!-- type="text": con type="number" el navegador descartaba la coma y 12,50 llegaba como 1250 -->
                             <input
-                                type="number"
+                                type="text"
+                                inputmode="decimal"
                                 v-model="form.monthly_amount"
-                                placeholder="Ej. 150"
+                                placeholder="Ej. 150 o 12,50"
                                 class="w-full h-12 px-4 border border-gray-200 rounded-xl bg-[#f3f4f6] focus:outline-none focus:border-gray-300"
                             />
                         </div>

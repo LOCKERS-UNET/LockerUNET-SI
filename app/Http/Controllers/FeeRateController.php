@@ -41,9 +41,11 @@ class FeeRateController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge(['monthly_amount' => self::montoConPunto($request->monthly_amount)]);
+
         $request->validate([
             'locker_type'    => 'required|in:small,mid,large',
-            'monthly_amount' => 'required|numeric|gt:0',
+            'monthly_amount' => 'required|numeric|gt:0|max:99999999.99',
             'reason'         => 'required|string|max:500',
         ]);
 
@@ -56,6 +58,15 @@ class FeeRateController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Nuevo arancel registrado correctamente.');
+    }
+
+    /**
+     * "12,50" → "12.50". En Venezuela se escribe la coma decimal; el campo era type="number" y el
+     * navegador descartaba la coma, así que se guardaba 1250. Lo usa también FineController.
+     */
+    public static function montoConPunto(mixed $monto): mixed
+    {
+        return is_string($monto) ? str_replace(',', '.', trim($monto)) : $monto;
     }
 
     /**

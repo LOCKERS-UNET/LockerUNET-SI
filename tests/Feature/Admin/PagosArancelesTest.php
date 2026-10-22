@@ -118,6 +118,24 @@ class PagosArancelesTest extends TestCase
         $this->assertDatabaseCount('fee_rates', 0);
     }
 
+    public function test_un_arancel_con_coma_decimal_se_guarda_bien(): void
+    {
+        $this->actingAs($this->admin)->post('/admin/fee-rates', ['locker_type' => 'small', 'monthly_amount' => '12,50', 'reason' => 'Con coma'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(12.5, (float) DB::table('fee_rates')->value('monthly_amount'));
+    }
+
+    public function test_un_arancel_enorme_es_un_error_de_validacion(): void
+    {
+        foreach (['1e9', '99999999999999999999', '1.250,50'] as $monto) {
+            $this->actingAs($this->admin)->post('/admin/fee-rates', ['locker_type' => 'small', 'monthly_amount' => $monto, 'reason' => 'x'])
+                ->assertSessionHasErrors('monthly_amount');
+        }
+
+        $this->assertDatabaseCount('fee_rates', 0);
+    }
+
     public function test_con_dos_aranceles_del_mismo_dia_se_cobra_el_ultimo(): void
     {
         $this->actingAs($this->admin)->post('/admin/fee-rates', ['locker_type' => 'small', 'monthly_amount' => 10, 'reason' => 'Primero']);

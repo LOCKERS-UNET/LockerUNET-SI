@@ -124,7 +124,7 @@ class LockerController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'locker_code' => 'required|string|unique:lockers,locker_code',
+            'locker_code' => 'required|string|max:50|unique:lockers,locker_code',
             'locker_type' => 'required|in:small,mid,large',
             'status'      => 'required|integer|in:0,1,2',
             'sector_id'   => 'required|exists:sectors,sector_id',
@@ -160,7 +160,7 @@ class LockerController extends Controller
         $locker = Locker::findOrFail($id);
 
         $request->validate([
-            'locker_code' => 'required|string|unique:lockers,locker_code,'.$id.',locker_id',
+            'locker_code' => 'required|string|max:50|unique:lockers,locker_code,'.$id.',locker_id',
             'locker_type' => 'required|in:small,mid,large',
             'status'      => 'required|integer|in:0,1,2',
             'sector_id'   => 'required|exists:sectors,sector_id',
