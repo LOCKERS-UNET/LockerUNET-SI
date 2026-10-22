@@ -61,8 +61,10 @@ class LockerController extends Controller
      */
     public function availableJson(Request $request)
     {
+        // Los mismos que puede pedir un estudiante: libres y sin una solicitud pendiente de otro
         $query = Locker::with(['sector.building'])
-            ->where('status', 0);
+            ->solicitables()
+            ->orderBy('locker_code');
 
         if ($request->has('sector_id') && $request->sector_id !== null && $request->sector_id !== '') {
             $query->where('sector_id', $request->sector_id);

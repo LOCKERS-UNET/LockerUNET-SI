@@ -267,11 +267,13 @@ class LockersAdminTest extends TestCase
         $this->actingAs($admin)->delete('/admin/lockers/999')->assertNotFound();
     }
 
-    public function test_lockers_disponibles_en_json_solo_trae_los_libres(): void
+    public function test_lockers_disponibles_en_json_solo_trae_los_libres_y_sin_solicitud(): void
     {
         $libre = Locker::factory()->create();
         Locker::factory()->ocupado()->create();
         Locker::factory()->enMantenimiento()->create();
+        $pedido = Locker::factory()->create();
+        DB::table('locker_requests')->insert(['user_id' => User::factory()->create(['is_admin' => false])->id, 'locker_id' => $pedido->locker_id, 'request_status' => 'pending']);
 
         $this->actingAs($this->admin())->getJson('/admin/lockers/available')
             ->assertOk()
