@@ -64,12 +64,8 @@ const irASolicitud = (locker: typeof props.lockers[0]) => {
         return;
     }
     
-    router.get('/solicitud-locker', {
-        locker_id: locker.locker_id,
-        codigo:    locker.locker_code,
-        tamano:    tipoLabel[locker.locker_type] ?? locker.locker_type,
-        edificio:  `${locker.sector.building.building_name} - ${locker.sector.sector_name}`,
-    });
+    // Solo el id: la página de solicitud carga el resto desde la base
+    router.get('/solicitud-locker', { locker_id: locker.locker_id });
 };
 </script>
 

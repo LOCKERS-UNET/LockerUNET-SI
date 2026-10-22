@@ -97,4 +97,27 @@ class UsabilidadTest extends TestCase
 
         $this->assertSame('Ana', $estudiante->fresh()->name);
     }
+
+    public function test_la_pagina_de_solicitud_usa_los_datos_del_locker_de_la_base(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $lockerId = $this->crearLocker();
+        $codigo = DB::table('lockers')->where('locker_id', $lockerId)->value('locker_code');
+
+        // Datos falsos en la URL: se ignoran
+        $this->actingAs($estudiante)->get("/solicitud-locker?locker_id={$lockerId}&codigo=A-FALSO-001&edificio=Edificio+A")
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('lockerData.codigo', $codigo)
+                ->where('lockerData.tamano', 'Pequeño')
+                ->where('lockerData.edificio', 'Edificio de prueba - Planta Baja'));
+    }
+
+    public function test_un_locker_ocupado_o_inexistente_vuelve_a_la_busqueda(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        $ocupado = $this->crearLocker(1);
+
+        $this->actingAs($estudiante)->get("/solicitud-locker?locker_id={$ocupado}")->assertRedirect(route('buscar-locker'))->assertSessionHasErrors('locker');
+        $this->actingAs($estudiante)->get('/solicitud-locker?locker_id=999999')->assertRedirect(route('buscar-locker'));
+    }
 }

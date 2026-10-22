@@ -6,8 +6,8 @@ defineOptions({ layout: Layout });
 
 // ─────────────────────────────────────────────
 // DATOS REALES DEL BACKEND
-// Vienen de BuscarLocker cuando el usuario hace clic en "Solicitar"
-// La ruta /solicitud-locker recibe los datos como query params
+// LockerRequestController@form los carga de la base a partir del locker_id
+// que manda BuscarLocker al hacer clic en "Solicitar"
 // ─────────────────────────────────────────────
 const props = defineProps<{
     lockerData: {
@@ -63,7 +63,12 @@ const enviarSolicitud = () => {
             <div class="w-full flex flex-col items-center mb-16">
                 <p class="text-2xl font-bold text-gray-600 mb-6 text-center">Descargar Formulario CBE-102</p>
                 
-                <div class="w-full max-w-sm bg-[#F3F4F6] rounded-2xl p-6 flex items-center justify-between shadow-sm border border-gray-100">
+                <!-- Todo el bloque descarga (antes solo el ícono pequeño) -->
+                <a
+                    :href="urlFormulario"
+                    download="Solicitud_Locker_UNET.pdf"
+                    class="w-full max-w-sm bg-[#F3F4F6] hover:bg-[#E5E7EB] rounded-2xl p-6 flex items-center justify-between shadow-sm border border-gray-100 transition-colors"
+                >
                     <div class="flex items-center gap-4">
                         <div class="bg-white p-3 rounded-xl shadow-inner" aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#EF5350" class="size-8">
@@ -74,16 +79,12 @@ const enviarSolicitud = () => {
                         <span class="text-2xl font-bold text-black">Descargar Archivo</span>
                     </div>
                     
-<a 
-    :href="urlFormulario" 
-    download="Solicitud_Locker_UNET.pdf"
-    class="bg-transparent border border-gray-300 rounded-full p-2.5 hover:bg-white transition-colors"
->
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-gray-700">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 12l4.5 4.5m0 0l4.5-4.5M12 3v13.5" />
-    </svg>
-</a>
-                </div>
+                    <span class="bg-transparent border border-gray-300 rounded-full p-2.5" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-gray-700">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 12l4.5 4.5m0 0l4.5-4.5M12 3v13.5" />
+                        </svg>
+                    </span>
+                </a>
             </div>
 
             <!-- Dirección -->
@@ -124,6 +125,7 @@ const enviarSolicitud = () => {
                 >
                     {{ enviando ? 'Enviando…' : 'Enviar Solicitud' }}
                 </button>
+                <p v-if="!confirmado" class="text-center text-sm text-gray-500 -mt-2">Marca la casilla de arriba para poder enviar la solicitud.</p>
 
                 <button 
                     @click="router.visit('/')"

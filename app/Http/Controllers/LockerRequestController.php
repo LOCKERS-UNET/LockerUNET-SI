@@ -20,6 +20,31 @@ class LockerRequestController extends Controller
     // ==========================================
 
     /**
+     * GET /solicitud-locker?locker_id=
+     * Formulario de solicitud. Los datos del locker salen de la base: antes se
+     * mostraban los que venían en la URL (se podía ver un locker y pedir otro).
+     */
+    public function form(Request $request)
+    {
+        $locker = Locker::with('sector.building')->find($request->query('locker_id'));
+
+        if (! $locker || $locker->status != 0) {
+            return redirect()->route('buscar-locker')->withErrors(['locker' => 'Ese locker no existe o ya no está disponible. Elige otro.']);
+        }
+
+        $tamanos = ['small' => 'Pequeño', 'mid' => 'Mediano', 'large' => 'Grande'];
+
+        return Inertia::render('User/SolicitudLocker', [
+            'lockerData' => [
+                'locker_id' => $locker->locker_id,
+                'codigo' => $locker->locker_code,
+                'tamano' => $tamanos[$locker->locker_type] ?? $locker->locker_type,
+                'edificio' => $locker->sector->building->building_name.' - '.$locker->sector->sector_name,
+            ],
+        ]);
+    }
+
+    /**
      * POST /requests
      * Crear una solicitud de locker
      */

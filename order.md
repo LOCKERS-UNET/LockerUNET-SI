@@ -55,7 +55,7 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | --- | --- | --- |
 | `HomeController.php` | Inicio del estudiante. | `Home` |
 | `LockerController.php` | Busca lockers (estudiante) y los gestiona: CRUD y JSON de disponibles. Los lockers se crean desde un modal de `GestionLockers`. | `User/BuscarLocker`, `Admin/GestionLockers`, `Admin/ModificarLocker` |
-| `LockerRequestController.php` | Crea solicitudes, muestra "mis solicitudes" y permite aprobarlas o rechazarlas. Aprobar crea la asignación y el primer pago, y necesita un arancel para ese tipo de locker. | `User/MisSolicitudes`, `Admin/GestionSolicitudes` |
+| `LockerRequestController.php` | Muestra el formulario de solicitud con los datos del locker (`form`), crea solicitudes, muestra "mis solicitudes" y permite aprobarlas o rechazarlas. Aprobar crea la asignación y el primer pago, y necesita un arancel para ese tipo de locker. | `User/MisSolicitudes`, `Admin/GestionSolicitudes` |
 | `LockerAssignmentController.php` | Muestra "mi locker", crea asignaciones directas y lista asignaciones en JSON. Devolución en dos pasos: el estudiante la solicita (`requestReturn`, queda `return_requested`) y el admin la confirma (`release`). Pagos pendientes o multas la bloquean. | `User/MiLocker`, `Admin/Asignaciones` |
 | `PaymentController.php` | Muestra los pagos del estudiante y permite al admin marcarlos como pagados (desde `Asignaciones`). | `User/PagoArancel` |
 | `FeeRateController.php` | Tarifas (aranceles) y generación de pagos del semestre. | `Admin/Aranceles` |
@@ -124,7 +124,7 @@ Notas sobre `web.php`:
 - `/fee-rates` (`aranceles-admin`) está dentro del grupo admin, aunque su URL no empiece con `/admin`.
 - `POST /devolucion-locker/{id}` (estudiante, solo su asignación) solicita la devolución; `PUT /admin/assignments/{id}/release` (admin) la confirma o libera directamente.
 - Las rutas de estadísticas, semestres y generación de pagos están dentro del grupo admin, aunque su indentación no lo parezca.
-- Varias páginas se renderizan desde closures en la misma ruta: `User/SolicitudLocker`, `User/ReporteIncidencia` y `User/DevolucionLocker`.
+- Algunas páginas se renderizan desde closures en la misma ruta: `User/ReporteIncidencia` y `User/DevolucionLocker`. `User/SolicitudLocker` la arma `LockerRequestController@form` desde el `locker_id`.
 
 ## `database/`
 

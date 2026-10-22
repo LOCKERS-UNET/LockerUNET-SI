@@ -50,9 +50,7 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
     Route::get('/', [HomeController::class, 'index'])->name('home');
 
     // Hacer una solicitud de locker
-    Route::match(['get', 'head'], '/solicitud-locker', function () {
-        return inertia('User/SolicitudLocker', ['lockerData' => request()->all()]);
-    })->name('solicitud-locker');
+    Route::get('/solicitud-locker', [LockerRequestController::class, 'form'])->name('solicitud-locker');
     Route::match(['post'], '/solicitud-locker', [LockerRequestController::class, 'store'])->name('solicitud-locker.store');
     Route::post('/requests', [LockerRequestController::class, 'store']);
 
