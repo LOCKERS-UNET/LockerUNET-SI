@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 // Este modelo representa un edificio (ej: Edificio A, Edificio 6)
 class Building extends Model
 {
+    use HasFactory;
+
     // Le decimos a Laravel el nombre de la clave primaria (por defecto espera "id")
     protected $primaryKey = 'building_id';
 

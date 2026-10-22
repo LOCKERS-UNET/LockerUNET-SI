@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 // Este modelo representa una asignación de locker (cuando ya fue aprobada y asignada)
 class LockerAssignment extends Model
 {
+    use HasFactory;
+
     protected $table = 'locker_assignments';
 
     protected $primaryKey = 'assignment_id';

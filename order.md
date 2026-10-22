@@ -165,7 +165,7 @@ Notas sobre `web.php`:
 | `FeeRateSeeder.php` | Tarifas iniciales. |
 | `data/Buildings.csv`, `data/sectors.csv`, `data/Lockers.csv` | El inventario real de la UNET. |
 
-`factories/UserFactory.php` se usa en las pruebas.
+Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `BuildingFactory.php`, `SectorFactory.php`, `LockerFactory.php` (estados `ocupado` y `enMantenimiento`) y `LockerAssignmentFactory.php` (activa, `devolucionSolicitada` o `liberada`).
 
 ## `resources/`: frontend
 
@@ -256,7 +256,7 @@ Notas sobre `web.php`:
 | `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. `app.locale` está fijo en `es`. |
 | `lang/es/validation.php` | Mensajes de validación en español y nombres de los campos (`card_code` → "carnet", etc.). |
 | `storage/` | Logs, caché y archivos subidos. En git solo están sus `.gitignore`. |
-| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/RecuperarContrasenaTest.php`: recuperar contraseña sin revelar cuentas y con límite de intentos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
+| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/RecuperarContrasenaTest.php`: recuperar contraseña sin revelar cuentas y con límite de intentos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Feature/Admin/`: el panel admin. `PermisosAdminTest` recorre todas las rutas de admin (estudiante → inicio, invitado → login, el admin abre cada GET sin error 500); `LockersAdminTest`, `SolicitudesAsignacionesTest`, `PagosArancelesTest`, `MultasIncidenciasTest` y `UsuariosEstadisticasTest` cubren cada flujo.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
 | `.github/workflows/` | CI: `lint.yml` y `tests.yml`. |
 | `scripts/actualizar-order.php` | Regenera el árbol de este archivo. |
 | `qa-reports/` | Reportes de las pruebas de usabilidad con subagentes (`RESUMEN.md`, uno por persona y por ronda). Las capturas están en el gitignore. |
@@ -353,6 +353,10 @@ LockerUNET-SI/
 │   └── session.php
 ├── database/
 │   ├── factories/
+│   │   ├── BuildingFactory.php
+│   │   ├── LockerAssignmentFactory.php
+│   │   ├── LockerFactory.php
+│   │   ├── SectorFactory.php
 │   │   └── UserFactory.php
 │   ├── migrations/
 │   │   ├── 0001_01_01_000000_create_users_table.php
@@ -468,6 +472,13 @@ LockerUNET-SI/
 ├── storage/  (10 archivos)
 ├── tests/
 │   ├── Feature/
+│   │   ├── Admin/
+│   │   │   ├── LockersAdminTest.php
+│   │   │   ├── MultasIncidenciasTest.php
+│   │   │   ├── PagosArancelesTest.php
+│   │   │   ├── PermisosAdminTest.php
+│   │   │   ├── SolicitudesAsignacionesTest.php
+│   │   │   └── UsuariosEstadisticasTest.php
 │   │   ├── DevolucionLockerTest.php
 │   │   ├── ExampleTest.php
 │   │   ├── GestionSolicitudesTest.php

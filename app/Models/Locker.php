@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 // Este modelo representa un locker físico
 class Locker extends Model
 {
+    use HasFactory;
+
     protected $primaryKey = 'locker_id';
 
     protected $fillable = [
