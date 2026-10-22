@@ -202,6 +202,14 @@ class LockerController extends Controller
             ]);
         }
 
+        // REGLA: las solicitudes se borran en cascada con el locker; si hay pendientes,
+        // el estudiante se quedaría sin su solicitud y sin aviso
+        if ($locker->requests()->where('request_status', 'pending')->exists()) {
+            return redirect()->back()->withErrors([
+                'locker' => 'No se puede eliminar: tiene solicitudes pendientes. Recházalas primero desde Solicitudes.'
+            ]);
+        }
+
         // REGLA: Solo se pueden eliminar si status = 0 (disponible)
         if ($locker->status != 0) {
             return redirect()->back()->withErrors([

@@ -7,6 +7,7 @@ use App\Models\LockerAssignment;
 use App\Models\Sector;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -179,6 +180,19 @@ class LockersAdminTest extends TestCase
             ->assertSessionHasErrors('locker');
 
         $this->assertDatabaseHas('lockers', ['locker_id' => $asignacion->locker_id]);
+    }
+
+    public function test_no_se_elimina_un_locker_con_solicitudes_pendientes(): void
+    {
+        $locker = Locker::factory()->create();
+        $estudiante = User::factory()->create(['is_admin' => false]);
+        DB::table('locker_requests')->insert(['user_id' => $estudiante->id, 'locker_id' => $locker->locker_id, 'request_status' => 'pending']);
+
+        $this->actingAs($this->admin())->delete("/admin/lockers/{$locker->locker_id}")
+            ->assertSessionHasErrors('locker');
+
+        $this->assertDatabaseHas('lockers', ['locker_id' => $locker->locker_id]);
+        $this->assertDatabaseCount('locker_requests', 1);
     }
 
     public function test_no_se_elimina_un_locker_en_mantenimiento(): void
