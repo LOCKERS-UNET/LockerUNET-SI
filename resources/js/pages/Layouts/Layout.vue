@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
+import FlashMessage from '../Components/FlashMessage.vue';
 
 const isMenuOpen = ref(false);
 const isProfileOpen = ref(false);
@@ -158,6 +159,8 @@ onUnmounted(() => {
                 </div>
             </aside>
         </header>
+
+        <FlashMessage />
 
         <main>
             <slot></slot>

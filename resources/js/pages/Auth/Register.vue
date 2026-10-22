@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { Link, router } from '@inertiajs/vue3';
-    import { reactive } from 'vue';
+    import { reactive, ref } from 'vue';
 
     defineProps({ errors: Object });
 
@@ -16,10 +16,16 @@
 
     })
 
+    // Bloquea el botón mientras viaja la petición (un doble clic creaba la cuenta y mostraba "ya registrado")
+    const enviando = ref(false)
+
     const submit = () =>{
+        if (enviando.value) return
 
         router.post('/register',form,{
             preserveScroll:true,
+            onStart: () => (enviando.value = true),
+            onFinish: () => (enviando.value = false),
             onError:() => {
                 form.password=null;
                 form.password_confirmation=null;
@@ -181,9 +187,9 @@
     </p>
 
     <div class="pt-2">
-        <button type="submit"
-            class="w-full py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95">
-            Crear Cuenta
+        <button type="submit" :disabled="enviando"
+            class="w-full py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95 disabled:opacity-60 disabled:cursor-wait">
+            {{ enviando ? 'Creando cuenta…' : 'Crear Cuenta' }}
         </button>
     </div>
 </form>

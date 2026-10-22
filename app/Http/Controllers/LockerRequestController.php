@@ -68,7 +68,8 @@ class LockerRequestController extends Controller
             'Tu solicitud de locker fue enviada. Dirígete al Decanato de Desarrollo Estudiantil.'
         );
 
-        return redirect()->route('home')->with('success', 'Solicitud creada con éxito.');
+        // A 'Mis Solicitudes' para que vea su solicitud en estado Pendiente junto al aviso
+        return redirect()->route('mis-solicitudes')->with('success', 'Solicitud enviada. Te avisaremos cuando el administrador la revise.');
     }
 
     /**

@@ -19,15 +19,20 @@ const props = defineProps<{
 }>();
 
 const confirmado = ref(false);
+const enviando = ref(false);
 const urlFormulario = '/docs/Solicitud_de_Locker.pdf';
 
 // Enviamos la solicitud real al backend (POST /solicitud-locker)
 // El controlador LockerRequestController@store lo procesa
+// 'enviando' bloquea el botón mientras viaja la petición (evita doble envío)
 const enviarSolicitud = () => {
-    if (!confirmado.value) return;
-    
+    if (!confirmado.value || enviando.value) return;
+
     router.post('/requests', {
         locker_id: props.lockerData.locker_id
+    }, {
+        onStart: () => (enviando.value = true),
+        onFinish: () => (enviando.value = false),
     });
 };
 </script>
@@ -112,12 +117,12 @@ const enviarSolicitud = () => {
                 <!-- Botón Enviar: solo activo si el checkbox está marcado -->
                 <button 
                     @click="enviarSolicitud"
-                    :disabled="!confirmado"
+                    :disabled="!confirmado || enviando"
                     class="w-full font-bold py-5 rounded-3xl text-2xl transition-all shadow-lg active:scale-[0.98]"
-                    :class="confirmado ? 'bg-[#213779] text-white hover:bg-[#1a2b5f]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
+                    :class="confirmado && !enviando ? 'bg-[#213779] text-white hover:bg-[#1a2b5f]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
                     aria-label="Enviar solicitud de locker"
                 >
-                    Enviar Solicitud
+                    {{ enviando ? 'Enviando…' : 'Enviar Solicitud' }}
                 </button>
 
                 <button 
