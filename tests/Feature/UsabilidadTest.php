@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -296,6 +297,12 @@ class UsabilidadTest extends TestCase
 
         $this->post('/register', ['email' => 'existe@unet.edu.ve'])
             ->assertSessionHasErrors(['email' => 'Demasiados intentos con correos o carnets ya registrados. Intenta de nuevo en una hora.']);
+        // Un registro con datos nuevos desde la misma IP (otro estudiante de la misma red) sí pasa
+        Mail::fake();
+        $this->post('/register', [
+            'name' => 'Otra', 'lastname' => 'Persona', 'email' => 'nueva@unet.edu.ve', 'card_code' => '54321',
+            'career' => 'Civil', 'password' => 'secreto123', 'password_confirmation' => 'secreto123',
+        ])->assertRedirect('/verify-email');
     }
 
     public function test_la_pagina_404_esta_en_espanol(): void

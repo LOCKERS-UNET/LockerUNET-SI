@@ -33,13 +33,15 @@ class RegisterController extends Controller
     {
         // El "ya está registrado" permite averiguar qué correos/carnets tienen cuenta. Solo se cuentan
         // esos choques (no todos los registros: en la universidad muchos comparten la misma IP).
+        // El límite se revisa solo en los intentos duplicados: un registro con datos nuevos siempre pasa
+        // (antes, tras 20 choques desde una IP, nadie de esa red podía registrarse).
         $clave = 'registro-duplicado:'.$request->ip();
-        if (RateLimiter::tooManyAttempts($clave, 20)) {
-            return back()->withErrors(['email' => 'Demasiados intentos con correos o carnets ya registrados. Intenta de nuevo en una hora.']);
-        }
         $correo = is_string($request->email) ? $request->email : '';
         $carnet = is_string($request->card_code) || is_int($request->card_code) ? (string) $request->card_code : '';
         if (User::where('email', $correo)->orWhere('card_code', $carnet)->exists()) {
+            if (RateLimiter::tooManyAttempts($clave, 20)) {
+                return back()->withErrors(['email' => 'Demasiados intentos con correos o carnets ya registrados. Intenta de nuevo en una hora.']);
+            }
             RateLimiter::hit($clave, 3600);
         }
 
