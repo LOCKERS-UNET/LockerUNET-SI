@@ -20,7 +20,7 @@ class ProfileController extends Controller
         
         $assignment = LockerAssignment::with(['locker.sector.building'])
             ->where('user_id', $user->id)
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->first();
 
         // En caso de que se necesiten ambos

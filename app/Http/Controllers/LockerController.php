@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LockerAssignment;
 use App\Models\Locker;
 use App\Models\Building;
 use App\Models\Sector;
@@ -178,7 +179,7 @@ class LockerController extends Controller
         if ($request->status == 2) {
             // Revisamos si tiene asignaciones activas
             $hasActive = $locker->assignments()
-                                ->where('assignment_status', 'active')
+                                ->whereIn('assignment_status', LockerAssignment::VIGENTES)
                                 ->exists();
                                 
             if ($hasActive) {

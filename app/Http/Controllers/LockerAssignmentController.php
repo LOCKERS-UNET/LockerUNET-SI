@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LockerAssignment;
 use App\Models\Locker;
 use App\Models\FeeRate;
+use App\Models\Fine;
 use App\Models\Payment;
 use App\Helpers\NotificationHelper;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -30,7 +31,7 @@ class LockerAssignmentController extends Controller
 
         $assignment = LockerAssignment::with(['locker.sector.building', 'payments'])
             ->where('user_id', $userId)
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->first();
 
         $nextPayment = null;
@@ -123,7 +124,7 @@ class LockerAssignmentController extends Controller
 
         // Regla 1
         $hasActiveAssignment = LockerAssignment::where('user_id', $userId)
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->exists();
         if ($hasActiveAssignment) {
             return redirect()->back()->withErrors(['user' => 'El usuario ya posee una asignación activa.']);
@@ -193,9 +194,79 @@ class LockerAssignmentController extends Controller
     }
 
     /**
-     * PUT /admin/assignments/{id}/release  (admin: cualquier asignación)
-     * POST /devolucion-locker/{id}         (estudiante: solo la suya)
-     * Libera el locker si no hay pagos pendientes o vencidos
+     * Pagos pendientes/vencidos o multas sin resolver impiden devolver el locker.
+     * Las multas no tienen estado: el admin las elimina cuando se pagan.
+     * Devuelve el error a mostrar, o null si se puede devolver.
+     */
+    private function bloqueoDeDevolucion(LockerAssignment $assignment): ?array
+    {
+        $hasDebts = Payment::where('assignment_id', $assignment->assignment_id)
+            ->whereIn('payment_status', ['pending', 'overdue'])
+            ->exists();
+
+        if ($hasDebts) {
+            return ['payments' => 'No se puede devolver: hay pagos pendientes o vencidos vinculados a este locker.'];
+        }
+
+        if (Fine::where('assignment_id', $assignment->assignment_id)->exists()) {
+            return ['fines' => 'No se puede devolver: hay multas sin pagar vinculadas a este locker.'];
+        }
+
+        return null;
+    }
+
+    /**
+     * POST /devolucion-locker/{id}
+     * El estudiante solicita devolver su locker. El locker sigue ocupado
+     * hasta que un admin confirme la entrega con release().
+     */
+    public function requestReturn($id)
+    {
+        try {
+            return DB::transaction(function () use ($id) {
+                $assignment = LockerAssignment::whereKey($id)->lockForUpdate()->firstOrFail();
+
+                // Solo el dueño puede solicitar la devolución
+                if ((int) $assignment->user_id !== (int) auth()->id()) {
+                    abort(403);
+                }
+
+                if ($assignment->assignment_status === 'return_requested') {
+                    return redirect()->back()->withErrors(['assignment' => 'Ya solicitaste la devolución. Entrega la llave en el Decanato para completarla.']);
+                }
+
+                if ($assignment->assignment_status !== 'active') {
+                    return redirect()->back()->withErrors(['assignment' => 'Este locker ya fue devuelto.']);
+                }
+
+                if ($error = $this->bloqueoDeDevolucion($assignment)) {
+                    return redirect()->back()->withErrors($error);
+                }
+
+                $assignment->update(['assignment_status' => 'return_requested']);
+
+                NotificationHelper::send(
+                    $assignment->user_id,
+                    'return_requested',
+                    'Devolución solicitada',
+                    'Entrega la llave en el Decanato. Tu locker quedará liberado cuando el administrador confirme la devolución.'
+                );
+
+                return redirect()->back()->with('success', 'Devolución solicitada. Entrega la llave en el Decanato para completarla.');
+            });
+        } catch (HttpExceptionInterface|ModelNotFoundException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            report($e);
+
+            return redirect()->back()->withErrors(['error' => 'No se pudo solicitar la devolución. Intenta de nuevo.']);
+        }
+    }
+
+    /**
+     * PUT /admin/assignments/{id}/release
+     * El admin libera el locker: confirma una devolución solicitada o libera
+     * directamente una asignación activa. Bloqueado por pagos o multas pendientes.
      */
     public function release($id)
     {
@@ -204,8 +275,8 @@ class LockerAssignmentController extends Controller
                 // Bloquear la fila evita que dos liberaciones simultáneas pasen las validaciones
                 $assignment = LockerAssignment::whereKey($id)->lockForUpdate()->firstOrFail();
 
-                // Un estudiante solo puede devolver su propio locker
-                if (! auth()->user()->is_admin && (int) $assignment->user_id !== (int) auth()->id()) {
+                // La ruta ya está en el grupo admin; se comprueba también aquí por si se reutiliza
+                if (! auth()->user()->is_admin) {
                     abort(403);
                 }
 
@@ -213,13 +284,9 @@ class LockerAssignmentController extends Controller
                     return redirect()->back()->withErrors(['assignment' => 'Este locker ya fue liberado anteriormente.']);
                 }
 
-                // 1. Verificar pagos pending o overdue
-                $hasDebts = Payment::where('assignment_id', $assignment->assignment_id)
-                    ->whereIn('payment_status', ['pending', 'overdue'])
-                    ->exists();
-
-                if ($hasDebts) {
-                    return redirect()->back()->withErrors(['payments' => 'No se puede liberar: el usuario tiene pagos pendientes o vencidos vinculados a este locker.']);
+                // 1. Verificar pagos pendientes/vencidos y multas
+                if ($error = $this->bloqueoDeDevolucion($assignment)) {
+                    return redirect()->back()->withErrors($error);
                 }
 
                 // 2. Liberar assignment

@@ -102,7 +102,7 @@ class StatsController extends Controller
         }
 
         // 3. Query base (solo activos)
-        $queryBase = LockerAssignment::where('assignment_status', 'active');
+        $queryBase = LockerAssignment::whereIn('assignment_status', LockerAssignment::VIGENTES);
 
         // 👇🏼 LÓGICA DE FILTRADO: Mes PRIORIDAD sobre Semestre
         if (!empty($mesFiltro)) {

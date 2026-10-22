@@ -11,6 +11,10 @@ class LockerAssignment extends Model
 
     protected $primaryKey = 'assignment_id';
 
+    // assignment_status: active | return_requested | released
+    // return_requested = el estudiante pidió devolverlo; sigue ocupando el locker hasta que el admin confirme
+    public const VIGENTES = ['active', 'return_requested'];
+
     protected $fillable = [
         'user_id',
         'locker_id',

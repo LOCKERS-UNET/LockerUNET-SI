@@ -113,7 +113,7 @@ const buscarUsuario = async () => {
                 if (assignmentsResponse.ok) {
                     const assignmentsData = await assignmentsResponse.json();
                     const activeAssignment = assignmentsData.asignaciones?.find((a: any) => 
-                        a.user_id === user.id && a.assignment_status === 'active'
+                        a.user_id === user.id && ['active', 'return_requested'].includes(a.assignment_status)
                     );
                     
                     user.locker_assignment = activeAssignment || null;
@@ -165,6 +165,11 @@ const fetchAsignaciones = async () => {
 };
 const processingPayments = ref<number[]>([]);
 
+// Devoluciones que el estudiante solicitó y faltan por confirmar (entrega de la llave)
+const devolucionesPendientes = computed(() =>
+    asignacionesList.value.filter((a: any) => a.assignment_status === 'return_requested')
+);
+
 const tienePagosPendientes = computed(() => {
     return usuarioSeleccionado.value?.locker_assignment?.payments?.some((p: any) => 
         ['pending', 'overdue'].includes(p.payment_status)
@@ -196,7 +201,8 @@ const confirmarAsignacion = () => {
 };
 
 const confirmarLiberacion = (assignment: any) => {  // 👈🏼 Quita 'async' si no usas await
-    if (!confirm('¿Deseas liberar el locker?')) return;
+    const esDevolucion = assignment.assignment_status === 'return_requested';
+    if (!confirm(esDevolucion ? '¿Confirmas que el estudiante entregó la llave y el locker está vacío?' : '¿Deseas liberar el locker?')) return;
 
     router.put(  // 👈🏼 Usa router.put en lugar de formLiberar.put
         `/admin/assignments/${assignment.assignment_id}/release`,
@@ -204,7 +210,7 @@ const confirmarLiberacion = (assignment: any) => {  // 👈🏼 Quita 'async' si
         {
             preserveScroll: true,
             onSuccess: () => {
-                modalMensaje.value = '¡Locker liberado con éxito!';
+                modalMensaje.value = esDevolucion ? '¡Devolución confirmada! El locker quedó disponible.' : '¡Locker liberado con éxito!';
                 modalAbierto.value = true;
 
                 if (usuarioSeleccionado.value) {
@@ -283,7 +289,26 @@ onMounted(() => {
 
             <!-- Contenido Tab Principal -->
             <div v-if="tabActual === 'asignar_liberar'" class="w-full flex flex-col items-center">
-                
+
+                <!-- Devoluciones por confirmar -->
+                <div v-if="devolucionesPendientes.length" class="w-full max-w-[500px] mb-10 p-5 bg-[#FEF3C7] rounded-xl border-2 border-[#F59E0B] shadow-md">
+                    <h3 class="font-black text-[#92400E] text-base mb-4 text-center">Devoluciones por confirmar ({{ devolucionesPendientes.length }})</h3>
+                    <ul class="space-y-3">
+                        <li v-for="dev in devolucionesPendientes" :key="dev.assignment_id" class="flex items-center justify-between gap-3 bg-white p-3 rounded-lg border border-[#FCD34D]">
+                            <div class="flex flex-col">
+                                <span class="font-extrabold text-black text-sm">{{ dev.user?.name }} {{ dev.user?.lastname }}</span>
+                                <span class="text-xs text-gray-600 font-bold">{{ getLockerDisplay(dev.locker) }}</span>
+                            </div>
+                            <button
+                                @click="confirmarLiberacion(dev)"
+                                class="bg-[#0D7A5F] hover:bg-[#0a5f4a] text-white text-xs font-bold py-2 px-4 rounded-lg transition-all shadow-sm active:scale-95 shrink-0"
+                            >
+                                Confirmar devolución
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
                 <!-- Buscador -->
                 <div class="w-full max-w-sm relative mb-10">
                     <div class="absolute inset-y-0 left-6 flex items-center pointer-events-none">
@@ -328,6 +353,9 @@ onMounted(() => {
                 <template v-if="usuarioSeleccionado && usuarioSeleccionado.locker_assignment">
                     <div class="w-full max-w-[500px] border-[2px] border-[#213779] shadow-[0_4px_10px_rgba(33,55,121,0.2)] rounded-[4px] p-6 mb-10 bg-white flex flex-col gap-4">
                         <h3 class="font-black text-[#213779] text-xl mb-2">Locker Actual</h3>
+                        <p v-if="usuarioSeleccionado.locker_assignment.assignment_status === 'return_requested'" class="bg-[#FEF3C7] text-[#92400E] font-bold text-sm rounded-lg px-3 py-2 -mt-2">
+                            El estudiante solicitó la devolución. Confirma cuando entregue la llave.
+                        </p>
                         
                         <div class="flex items-center justify-between">
                             <span class="font-black text-black text-[15px]">Código</span>
@@ -380,7 +408,7 @@ onMounted(() => {
                         class="bg-[#DC2626] hover:bg-red-700 disabled:opacity-50 text-white font-extrabold py-3.5 px-16 rounded-full flex items-center gap-3 shadow-md transition-all active:scale-95"
                     >
                         <div class="w-[5px] h-[5px] rounded-full bg-white"></div>
-                        {{ formLiberar.processing ? 'Liberando...' : 'Liberar' }}
+                        {{ formLiberar.processing ? 'Liberando...' : (usuarioSeleccionado.locker_assignment.assignment_status === 'return_requested' ? 'Confirmar devolución' : 'Liberar') }}
                     </button>
                 </template>
 
@@ -450,10 +478,12 @@ onMounted(() => {
                         </div>
                         
                         <!-- Acción (Pill) -->
-                        <div class="w-[80px] flex justify-end">
-                            <span :class="['font-extrabold text-[11px] px-3 py-1 rounded-full text-center', 
-                                item.assignment_status === 'active' ? 'bg-[#dcfce7] text-[#0D7A5F]' : 'bg-[#fee2e2] text-red-600']">
-                                {{ item.assignment_status === 'active' ? 'Activo' : 'Completado' }}
+                        <div class="w-[100px] flex justify-end">
+                            <span :class="['font-extrabold text-[11px] px-3 py-1 rounded-full text-center',
+                                item.assignment_status === 'active' ? 'bg-[#dcfce7] text-[#0D7A5F]'
+                                    : item.assignment_status === 'return_requested' ? 'bg-[#FEF3C7] text-[#92400E]'
+                                    : 'bg-[#fee2e2] text-red-600']">
+                                {{ item.assignment_status === 'active' ? 'Activo' : item.assignment_status === 'return_requested' ? 'Por devolver' : 'Completado' }}
                             </span>
                         </div>
                     </div>

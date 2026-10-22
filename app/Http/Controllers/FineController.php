@@ -39,7 +39,7 @@ public function show($id)
 
     $assignment = LockerAssignment::with(['locker.sector.building'])
         ->where('user_id', $id)
-        ->where('assignment_status', 'active')
+        ->whereIn('assignment_status', LockerAssignment::VIGENTES)
         ->first();
 
     // 👇🏼 OBTENER TODAS LAS MULTAS (no solo una)
@@ -90,7 +90,7 @@ public function show($id)
 
         // Buscamos la assignment activa del usuario a quien multan
         $activeAssignment = LockerAssignment::where('user_id', $request->user_id)
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->first();
 
         if (!$activeAssignment) {

@@ -29,7 +29,7 @@ class LockerRequestController extends Controller
 
         // Regla 1: Un user solo puede tener UNA assignment activa
         $hasActiveAssignment = LockerAssignment::where('user_id', $userId)
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->exists();
         if ($hasActiveAssignment) {
             return redirect()->back()->withErrors(['request' => 'Ya posees un locker asignado físicamente de forma activa.']);

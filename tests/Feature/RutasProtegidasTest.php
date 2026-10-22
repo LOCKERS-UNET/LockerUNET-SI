@@ -65,7 +65,7 @@ class RutasProtegidasTest extends TestCase
         $this->assertSame('active', LockerAssignment::find($id)->assignment_status);
     }
 
-    public function test_un_estudiante_puede_devolver_su_propio_locker(): void
+    public function test_un_estudiante_puede_solicitar_la_devolucion_de_su_locker(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $dueno = User::factory()->create(['is_admin' => false]);
@@ -73,9 +73,10 @@ class RutasProtegidasTest extends TestCase
 
         $this->actingAs($dueno)->post("/devolucion-locker/{$id}")->assertRedirect()->assertSessionHasNoErrors();
 
+        // Queda pendiente: el locker sigue ocupado hasta que el admin confirme (DevolucionLockerTest)
         $asignacion = LockerAssignment::find($id);
-        $this->assertSame('released', $asignacion->assignment_status);
-        $this->assertDatabaseHas('lockers', ['locker_id' => $asignacion->locker_id, 'status' => 0]);
+        $this->assertSame('return_requested', $asignacion->assignment_status);
+        $this->assertDatabaseHas('lockers', ['locker_id' => $asignacion->locker_id, 'status' => 1]);
     }
 
     public function test_un_admin_puede_liberar_cualquier_asignacion(): void
@@ -91,15 +92,16 @@ class RutasProtegidasTest extends TestCase
         $this->assertDatabaseHas('lockers', ['locker_id' => $asignacion->locker_id, 'status' => 0]);
     }
 
-    public function test_un_admin_puede_liberar_por_la_ruta_de_devolucion(): void
+    public function test_la_ruta_de_devolucion_es_solo_para_el_dueno_aunque_sea_admin(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
         $estudiante = User::factory()->create(['is_admin' => false]);
         $id = $this->crearAsignacion($estudiante, $admin);
 
-        $this->actingAs($admin)->post("/devolucion-locker/{$id}")->assertRedirect()->assertSessionHasNoErrors();
+        // El admin libera por PUT /admin/assignments/{id}/release
+        $this->actingAs($admin)->post("/devolucion-locker/{$id}")->assertForbidden();
 
-        $this->assertSame('released', LockerAssignment::find($id)->assignment_status);
+        $this->assertSame('active', LockerAssignment::find($id)->assignment_status);
     }
 
     public function test_no_se_puede_devolver_con_pagos_pendientes_o_vencidos(): void

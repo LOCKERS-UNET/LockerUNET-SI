@@ -75,7 +75,7 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
     Route::get('/reportes-user', function () {
         $asignacion = \App\Models\LockerAssignment::with(['locker.sector'])
             ->where('user_id', auth()->id())
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', \App\Models\LockerAssignment::VIGENTES)
             ->first();
         return inertia('User/ReporteIncidencia', ['asignacion' => $asignacion]);
     })->name('reportes-user');
@@ -88,11 +88,11 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
     Route::get('/devolucion-locker', function () {
         $asignacion = \App\Models\LockerAssignment::with(['locker'])
             ->where('user_id', auth()->id())
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', \App\Models\LockerAssignment::VIGENTES)
             ->first();
         return inertia('User/DevolucionLocker', ['asignacion' => $asignacion]);
     })->name('devolucion-locker');
-    Route::post('/devolucion-locker/{id}', [LockerAssignmentController::class, 'release']);
+    Route::post('/devolucion-locker/{id}', [LockerAssignmentController::class, 'requestReturn']);
 
     // --------------------------------------------------------
     // RUTAS SOLO PARA EL ADMIN (protegidas con IsAdminMiddleware)

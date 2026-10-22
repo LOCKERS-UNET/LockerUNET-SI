@@ -39,7 +39,7 @@ class GenerateSemesterPayments extends Command
 
         $this->info("Generando pagos para el semestre: {$semester->name}");
 
-        // Obtener todas las asignaciones activas
+        // Obtener todas las asignaciones activas (no 'return_requested': quien pidió devolver no paga el semestre siguiente)
         $activeAssignments = LockerAssignment::with(['user', 'locker'])
             ->where('assignment_status', 'active')
             ->get();

@@ -56,7 +56,7 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | `HomeController.php` | Inicio del estudiante. | `Home` |
 | `LockerController.php` | Busca lockers (estudiante) y los gestiona: CRUD y JSON de disponibles. Los lockers se crean desde un modal de `GestionLockers`. | `User/BuscarLocker`, `Admin/GestionLockers`, `Admin/ModificarLocker` |
 | `LockerRequestController.php` | Crea solicitudes, muestra "mis solicitudes" y permite aprobarlas o rechazarlas. Aprobar crea la asignación y el primer pago, y necesita un arancel para ese tipo de locker. | `User/MisSolicitudes`, `Admin/GestionSolicitudes` |
-| `LockerAssignmentController.php` | Muestra "mi locker", crea asignaciones directas, lista asignaciones en JSON y libera lockers. El admin libera cualquiera; el estudiante, solo la suya. | `User/MiLocker`, `Admin/Asignaciones` |
+| `LockerAssignmentController.php` | Muestra "mi locker", crea asignaciones directas y lista asignaciones en JSON. Devolución en dos pasos: el estudiante la solicita (`requestReturn`, queda `return_requested`) y el admin la confirma (`release`). Pagos pendientes o multas la bloquean. | `User/MiLocker`, `Admin/Asignaciones` |
 | `PaymentController.php` | Muestra los pagos del estudiante y permite al admin marcarlos como pagados (desde `Asignaciones`). | `User/PagoArancel` |
 | `FeeRateController.php` | Tarifas (aranceles) y generación de pagos del semestre. | `Admin/Aranceles` |
 | `FineController.php` | Multas: las del estudiante, y crearlas o borrarlas desde el admin. El admin ve las multas de un usuario en `VistaUsuario`. | `User/MultasUser`, `Admin/CrearMulta` |
@@ -88,7 +88,7 @@ Cada página que se renderiza desde PHP debe existir en `resources/js/pages/`. L
 | `Sector.php` | `sectors` | Sector → lockers. |
 | `Locker.php` | `lockers` | PK `locker_id`. |
 | `LockerRequest.php` | `locker_requests` | Solicitud del estudiante. PK `request_id`. |
-| `LockerAssignment.php` | `locker_assignments` | Asignación aprobada (`assignment_status`). PK `assignment_id`. |
+| `LockerAssignment.php` | `locker_assignments` | Asignación aprobada. `assignment_status`: `active`, `return_requested` o `released`; `VIGENTES` agrupa las dos primeras. PK `assignment_id`. |
 | `Payment.php` | `payments` | Pago de una asignación en un semestre. |
 | `FeeRate.php` | `fee_rates` | Tarifas, con historial. |
 | `Semester.php` | `semesters` | Semestres académicos. |
@@ -122,7 +122,7 @@ Notas sobre `web.php`:
 
 - `home` está declarada dos veces. Gana la segunda, la de `HomeController`.
 - `/fee-rates` (`aranceles-admin`) está dentro del grupo admin, aunque su URL no empiece con `/admin`.
-- `POST /devolucion-locker/{id}` (estudiante) y `PUT /admin/assignments/{id}/release` (admin) usan el mismo `LockerAssignmentController@release`. Ese método solo deja que un estudiante libere su propia asignación.
+- `POST /devolucion-locker/{id}` (estudiante, solo su asignación) solicita la devolución; `PUT /admin/assignments/{id}/release` (admin) la confirma o libera directamente.
 - Las rutas de estadísticas, semestres y generación de pagos están dentro del grupo admin, aunque su indentación no lo parezca.
 - Varias páginas se renderizan desde closures en la misma ruta: `User/SolicitudLocker`, `User/ReporteIncidencia` y `User/DevolucionLocker`.
 
@@ -213,7 +213,7 @@ Notas sobre `web.php`:
 | `PagoArancel.vue` | `/payments/my` | Pagos del semestre. |
 | `MultasUser.vue` | `/fines/my` | Multas del estudiante. |
 | `ReporteIncidencia.vue` | `/reportes-user` | Reportar una incidencia. |
-| `DevolucionLocker.vue` | `/devolucion-locker` | Devolver el locker. |
+| `DevolucionLocker.vue` | `/devolucion-locker` | Solicitar la devolución del locker; muestra "Devolución en proceso" hasta que el admin la confirme. |
 | `Notificaciones.vue` | `/notifications` | Notificaciones de la app. |
 | `Profile.vue` | `/profile` | Ver el perfil. |
 | `EditProfile.vue` | `/edit-profile` | Editar el perfil. |
@@ -225,7 +225,7 @@ Notas sobre `web.php`:
 | `HomeAdmin.vue` | `/inicio-admin` | Panel principal. |
 | `GestionLockers.vue` | `/admin/lockers` | Listar y buscar lockers. |
 | `ModificarLocker.vue` | `/admin/lockers/{id}/edit` | Editar un locker. |
-| `Asignaciones.vue` | `/admin/assignments` | Asignar y liberar lockers, y marcar pagos como pagados. |
+| `Asignaciones.vue` | `/admin/assignments` | Asignar y liberar lockers, confirmar devoluciones pendientes y marcar pagos como pagados. |
 | `GestionSolicitudes.vue` | `/admin/requests` | Aprobar o rechazar las solicitudes de los estudiantes. |
 | `Aranceles.vue` | `/fee-rates` | Tarifas y generación de pagos. |
 | `EstadisticasLockers.vue` | `/estadisticas-lockers` | Gráficas con Chart.js. |
@@ -251,7 +251,7 @@ Notas sobre `web.php`:
 | `bootstrap/` | `app.php` (rutas, middleware y excepciones) y `providers.php`. |
 | `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. |
 | `storage/` | Logs, caché y archivos subidos. En git solo están sus `.gitignore`. |
-| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
+| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
 | `.github/workflows/` | CI: `lint.yml` y `tests.yml`. |
 | `scripts/actualizar-order.php` | Regenera el árbol de este archivo. |
 | `.githooks/pre-commit` | Corre el script anterior antes de cada commit. |
@@ -447,6 +447,7 @@ LockerUNET-SI/
 ├── storage/  (10 archivos)
 ├── tests/
 │   ├── Feature/
+│   │   ├── DevolucionLockerTest.php
 │   │   ├── ExampleTest.php
 │   │   ├── GestionSolicitudesTest.php
 │   │   ├── RutasProtegidasTest.php
