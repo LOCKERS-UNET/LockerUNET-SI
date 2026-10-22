@@ -41,6 +41,11 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            // Mensajes de ->with('success') / ->with('status'); los muestra Components/FlashMessage.vue
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'status' => fn () => $request->session()->get('status'),
+            ],
         ];
     }
 }

@@ -7,7 +7,9 @@
         show: Boolean,
         text: String,
         titleButton:String,
-        url: String
+        url: String,
+        // Con error se muestra un ícono rojo: antes los errores salían con el check verde de éxito
+        error: Boolean
     });
 
     const emit = defineEmits(['close']);
@@ -47,8 +49,14 @@
         <div v-if="show" class="bg-white p-6">
             <div class="flex flex-col sm:flex-row items-center gap-5 sm:gap-10">
 
+                <div
+                    v-if="error"
+                    class="flex items-center justify-center shrink-0 w-[100px] h-[100px] rounded-full bg-[#fee2e2] text-[#B91C1C] text-6xl font-black"
+                    aria-hidden="true"
+                >!</div>
                 <img 
-                    src="/img/Icono_Aceptar.png" 
+                    v-else
+                    src="/img/Icono_Aceptar.webp" 
                     alt="Icono aceptar"
 
                     class="object-contain h-auto max-h-[100px]"

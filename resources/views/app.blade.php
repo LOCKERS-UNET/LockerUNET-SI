@@ -6,12 +6,16 @@
         <link rel="icon" type="image/png" href="{{ asset('img/Logo_UNET.png') }}">
 
         @vite('resources/js/app.ts')
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
         <x-inertia::head />
     </head>
     <body>
         <x-inertia::app />
+        {{-- Mientras baja el JavaScript (5-10 s en 3G) la página quedaba en blanco. El aviso se oculta
+             solo cuando Vue dibuja algo dentro de #app; no necesita JavaScript --}}
+        <div id="cargando-inicial" role="status" aria-live="polite">Cargando Lockers UNET…</div>
+        <style>
+            #cargando-inicial { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 16px system-ui, sans-serif; color: #213779; background: #fff; }
+            #app:not(:empty) ~ #cargando-inicial { display: none; }
+        </style>
     </body>
 </html>

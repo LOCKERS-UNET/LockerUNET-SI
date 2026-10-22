@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import Layout from '../Layouts/Layout.vue';
 
 defineOptions({ layout: Layout });
@@ -14,18 +14,22 @@ defineOptions({ layout: Layout });
 const props = defineProps<{
     asignacion: {
         assignment_id: number;
+        assignment_status: string; // active | return_requested
         locker: { locker_code: string }
     } | null
 }>();
 
 const confirmado = ref(false);
 
-// Enviamos la devolución al backend (POST /devolucion-locker/{id})
-// El controlador LockerAssignmentController@release lo procesa
+// Pagos o multas pendientes, devolución ya solicitada, etc.
+const errorDevolucion = computed(() => Object.values(usePage().props.errors ?? {})[0] as string | undefined);
+
+// Solicitamos la devolución al backend (POST /devolucion-locker/{id})
+// LockerAssignmentController@requestReturn la deja pendiente hasta que el admin la confirme
 const enviarDevolucion = () => {
     if (!confirmado.value || !props.asignacion) return;
-    
-    router.post(`/devolucion-locker/${props.asignacion.assignment_id}`);
+
+    router.post(`/devolucion-locker/${props.asignacion.assignment_id}`, {}, { preserveScroll: true });
 };
 </script>
 
@@ -43,6 +47,15 @@ const enviarDevolucion = () => {
             <!-- Si no tiene asignación activa -->
             <div v-if="!asignacion" class="text-center py-8 opacity-60">
                 <p class="font-bold text-gray-500 text-lg">No tienes un locker asignado para devolver.</p>
+            </div>
+
+            <!-- Devolución ya solicitada: falta que el admin confirme la entrega -->
+            <div v-else-if="asignacion.assignment_status === 'return_requested'" class="w-full bg-[#FEF3C7] border border-[#F59E0B] rounded-2xl p-8 text-center">
+                <h2 class="text-xl font-bold text-black mb-2">Devolución en proceso</h2>
+                <p class="text-gray-700 text-sm leading-relaxed">
+                    Solicitaste devolver el locker <span class="font-bold text-black">{{ asignacion.locker.locker_code }}</span>.
+                    Entrega la llave en el Decanato; el locker quedará liberado cuando el administrador confirme la devolución.
+                </p>
             </div>
 
             <!-- Si sí tiene asignación activa -->
@@ -86,6 +99,11 @@ const enviarDevolucion = () => {
                     <label for="confirm-baja" class="text-gray-700 text-sm leading-tight cursor-pointer select-none">
                         He leído el reglamento y confirmo que deseo devolver el locker <span class="font-bold text-black">{{ asignacion.locker.locker_code }}</span>.
                     </label>
+                </div>
+
+                <!-- Error del backend -->
+                <div v-if="errorDevolucion" class="w-full bg-[#FEE2E2] border border-[#DC2626] text-[#DC2626] font-semibold p-3 text-center rounded-2xl mb-4 text-sm">
+                    {{ errorDevolucion }}
                 </div>
 
                 <!-- Botón de envío -->

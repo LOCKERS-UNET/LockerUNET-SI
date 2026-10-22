@@ -15,25 +15,12 @@ class HomeController extends Controller
      */
     public function index()
     {
-        // Obtener todos los edificios con conteo de lockers disponibles
-        $buildings = Building::with(['sectors.lockers' => function($query) {
-            $query->where('status', 0); // Solo lockers disponibles
-        }])->get()->map(function($building) {
-            // Contar lockers disponibles en todos los sectores del edificio
-            $availableCount = $building->sectors->sum(function($sector) {
-                return $sector->lockers->count();
-            });
-            
-            return [
-                'building_id' => $building->building_id,
-                'building_code' => $building->building_code,
-                'building_name' => $building->building_name,
-                'available_lockers' => $availableCount,
-                'total_lockers' => $building->sectors->sum(function($sector) {
-                    return $sector->lockers()->count();
-                }),
-            ];
-        });
+        // Disponibles = lo que se puede pedir (mismo criterio que Buscar Locker: sin solicitud pendiente).
+        // Antes cargaba todos los lockers en memoria y contaba solo status = 0, y no cuadraba con la búsqueda.
+        $buildings = Building::withCount([
+            'lockers as available_lockers' => fn ($q) => $q->solicitables(),
+            'lockers as total_lockers',
+        ])->get(['building_id', 'building_code', 'building_name']);
 
         return Inertia::render('Home', [
             'buildings' => $buildings,

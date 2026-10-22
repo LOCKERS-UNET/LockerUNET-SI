@@ -20,7 +20,7 @@ class UserController extends Controller
         $query = User::query();
 
         // Filtro de búsqueda textual
-        if ($request->has('search') && $request->search) {
+        if (is_string($request->search) && $request->search !== '') {
             $searchTerm = '%' . $request->search . '%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', $searchTerm)
@@ -33,7 +33,7 @@ class UserController extends Controller
 
         // Recuperamos los usuarios junto con la asignación activa (si tienen)
         $users = $query->with(['assignments' => function ($q) {
-            $q->where('assignment_status', 'active')
+            $q->whereIn('assignment_status', LockerAssignment::VIGENTES)
               ->with(['locker.sector.building']);
         }])->get()->map(function ($user) {
             $activeAssignment = $user->assignments->first();
@@ -67,15 +67,22 @@ class UserController extends Controller
      */
     public function searchJson(Request $request)
     {
-        $searchTerm = trim($request->input('search', ''));
+        $searchTerm = is_string($request->input('search')) ? trim($request->input('search')) : '';
 
-        $users = User::when($searchTerm !== '', function ($query) use ($searchTerm) {
+        // Sin texto no se busca: con solo espacios devolvía a todos, admins incluidos
+        if ($searchTerm === '') {
+            return response()->json([]);
+        }
+
+        // Solo estudiantes: a un admin no se le asigna locker
+        $users = User::where('is_admin', false)
+            ->where(function ($query) use ($searchTerm) {
                 $query->where('name', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('lastname', 'LIKE', '%' . $searchTerm . '%')
                     ->orWhere('card_code', 'LIKE', '%' . $searchTerm . '%');
             })
             ->with(['assignments' => function ($q) {
-                $q->where('assignment_status', 'active')
+                $q->whereIn('assignment_status', LockerAssignment::VIGENTES)
                   ->with(['locker.sector.building']);
             }])
             ->get()
@@ -118,7 +125,7 @@ class UserController extends Controller
 
         $assignment = LockerAssignment::with(['locker.sector.building'])
             ->where('user_id', $id)
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->first();
 
         // 👇 OBTENER TODAS LAS MULTAS del usuario

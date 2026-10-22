@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { formatFecha } from '@/lib/utils';
 import ModalComponent from '../Components/ModalComponent.vue';
 import LayoutAdmin from '../Layouts/LayoutAdmin.vue';   
     
@@ -38,9 +39,29 @@ const closeModal = () => {
     confirmingDeletion.value = false;
 };
 
+interface Assignment {
+    assignment_status: string;
+    start_date: string;
+    locker?: {
+        locker_code: string;
+        sector?: { sector_name: string; building?: { building_name: string } };
+    };
+}
+
+interface Payment {
+    payment_id: number;
+    amount: number;
+    due_date: string;
+    payment_status: string;
+    semester: string | null;
+}
+
+// UserController::show ya enviaba la asignación y los pagos pendientes, pero la página no los mostraba
 const props = defineProps<{
     user: User;
     multa: Fine[]; // 👈🏼 AHORA ES ARRAY de multas
+    assignment?: Assignment | null;
+    pendingPayments?: Payment[];
 }>();
 
 defineOptions({ layout: LayoutAdmin })
@@ -69,12 +90,23 @@ const colorFondo = computed(() => {
     return colores[index];
 });
 
+// Con doble clic salían dos confirm y el segundo borrado daba una página 404
+const eliminando = ref<number | null>(null);
+
 const eliminarMulta = (id: number) => {
+    if (eliminando.value !== null) {
+        return;
+    }
+
     if (confirm('¿Estás seguro de eliminar esta multa? Esta acción no se puede deshacer.')) {
+        eliminando.value = id;
         router.delete(`/admin/fines/${id}`, {
             preserveScroll: true,
             onSuccess: () => {
                 openModal();
+            },
+            onFinish: () => {
+                eliminando.value = null;
             },
             onError: (errors) => {
                 console.error('Error al eliminar:', errors);
@@ -162,6 +194,34 @@ const formatDate = (dateString: string) => {
                 </section>
             </div>
 
+            <!-- Locker vigente y pagos pendientes -->
+            <div class="flex flex-col gap-4 w-full">
+                <h2 class="text-[#4169C4] text-2xl font-bold">Locker y pagos</h2>
+
+                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+                    <template v-if="assignment">
+                        <p class="font-bold text-black">
+                            {{ assignment.locker?.locker_code }}
+                            <span v-if="assignment.assignment_status === 'return_requested'" class="ml-2 bg-[#FEF3C7] text-[#92400E] text-[11px] font-extrabold px-2 py-0.5 rounded-full">Por devolver</span>
+                        </p>
+                        <p class="text-sm text-gray-600">
+                            {{ assignment.locker?.sector?.building?.building_name }} · {{ assignment.locker?.sector?.sector_name }} · desde {{ formatFecha(assignment.start_date) }}
+                        </p>
+                    </template>
+                    <p v-else class="text-gray-500">No tiene locker asignado.</p>
+                </div>
+
+                <ul v-if="pendingPayments?.length" class="flex flex-col gap-2">
+                    <li v-for="pago in pendingPayments" :key="pago.payment_id" class="bg-white border rounded-xl p-4 shadow-sm flex justify-between items-center gap-2" :class="pago.payment_status === 'overdue' ? 'border-red-300' : 'border-yellow-200'">
+                        <span class="font-bold text-black">Bs. {{ Number(pago.amount).toFixed(2) }}</span>
+                        <span class="text-sm text-gray-600">Semestre {{ pago.semester ?? '—' }} · vence {{ formatFecha(pago.due_date) }}</span>
+                        <span v-if="pago.payment_status === 'overdue'" class="bg-[#fee2e2] text-[#B91C1C] text-[11px] font-extrabold px-2 py-0.5 rounded-full">Vencido</span>
+                        <span v-else class="bg-[#FEF3C7] text-[#92400E] text-[11px] font-extrabold px-2 py-0.5 rounded-full">Pendiente</span>
+                    </li>
+                </ul>
+                <p v-else class="text-gray-500">Sin pagos pendientes.</p>
+            </div>
+
             <!-- 👇 MULTAS DEL USUARIO - LISTA COMPLETA -->
             <div class="flex flex-col gap-4 w-full">
                 <h2 class="text-[#4169C4] text-2xl font-bold">Multas del Usuario</h2> 
@@ -208,7 +268,8 @@ const formatDate = (dateString: string) => {
                         <!-- 👇🏼 BOTÓN ELIMINAR MULTA -->
                         <button 
                             @click="eliminarMulta(fine.fine_id)"
-                            class="ml-4 cursor-pointer hover:scale-110 transition duration-200 p-2 rounded-full hover:bg-red-50"
+                            :disabled="eliminando !== null"
+                            class="ml-4 cursor-pointer hover:scale-110 transition duration-200 p-2 rounded-full hover:bg-red-50 disabled:opacity-50"
                             title="Eliminar multa"
                         >
                             <svg 

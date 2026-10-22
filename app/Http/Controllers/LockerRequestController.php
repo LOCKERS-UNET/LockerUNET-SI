@@ -20,6 +20,84 @@ class LockerRequestController extends Controller
     // ==========================================
 
     /**
+     * Si el estudiante ya tiene un locker o una solicitud pendiente, el aviso a mostrar
+     * (['mensaje', 'enlace', 'texto_enlace']) o null.
+     * Antes solo se avisaba al final, después de elegir el locker y marcar la casilla.
+     */
+    public static function bloqueoParaSolicitar(int $userId): ?array
+    {
+        $asignacion = LockerAssignment::with('locker')->where('user_id', $userId)
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)->first();
+        if ($asignacion) {
+            return ['mensaje' => "Ya tienes asignado el locker {$asignacion->locker?->locker_code}.", 'enlace' => '/assignments/my', 'texto_enlace' => 'Ir a Mi Locker'];
+        }
+
+        $pendiente = LockerRequest::with('locker')->where('user_id', $userId)
+            ->where('request_status', 'pending')->first();
+        if ($pendiente) {
+            return ['mensaje' => "Ya tienes una solicitud pendiente del locker {$pendiente->locker?->locker_code}. Puedes verla o cancelarla en Mis Solicitudes.", 'enlace' => '/requests/my', 'texto_enlace' => 'Ir a Mis Solicitudes'];
+        }
+
+        return null;
+    }
+
+    /**
+     * GET /solicitud-locker?locker_id=
+     * Formulario de solicitud. Los datos del locker salen de la base: antes se
+     * mostraban los que venían en la URL (se podía ver un locker y pedir otro).
+     */
+    public function form(Request $request)
+    {
+        // Buscar Locker ya muestra el motivo del bloqueo
+        if (self::bloqueoParaSolicitar(Auth::id()) !== null) {
+            return redirect()->route('buscar-locker');
+        }
+
+        // Solo un id entero: con ?locker_id[]=1 find() devolvía una colección y daba un error 500
+        $lockerId = filter_var($request->query('locker_id'), FILTER_VALIDATE_INT);
+        $locker = $lockerId ? Locker::with('sector.building')->solicitables()->find($lockerId) : null;
+
+        if (! $locker) {
+            return redirect()->route('buscar-locker')->withErrors(['locker' => 'Ese locker no existe o ya no está disponible. Elige otro.']);
+        }
+
+        $tamanos = ['small' => 'Pequeño', 'mid' => 'Mediano', 'large' => 'Grande'];
+
+        // Arancel vigente para ese tamaño, para que el estudiante sepa el costo antes de pedirlo
+        $arancel = FeeRate::vigente($locker->locker_type)?->monthly_amount;
+
+        return Inertia::render('User/SolicitudLocker', [
+            'lockerData' => [
+                'locker_id' => $locker->locker_id,
+                'codigo' => $locker->locker_code,
+                'tamano' => $tamanos[$locker->locker_type] ?? $locker->locker_type,
+                'edificio' => $locker->sector->building->building_name.' - '.$locker->sector->sector_name,
+                'arancel_mensual' => $arancel,
+            ],
+        ]);
+    }
+
+    /**
+     * POST /requests/{id}/cancel
+     * El estudiante cancela su solicitud mientras sigue pendiente
+     * (queda como 'cancelled' para no perder el historial)
+     */
+    public function cancel($id)
+    {
+        $lockerReq = LockerRequest::where('request_id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        if ($lockerReq->request_status !== 'pending') {
+            return redirect()->back()->withErrors(['request' => 'Solo puedes cancelar una solicitud pendiente.']);
+        }
+
+        $lockerReq->update(['request_status' => 'cancelled']);
+
+        return redirect()->back()->with('success', 'Solicitud cancelada. Puedes solicitar otro locker cuando quieras.');
+    }
+
+    /**
      * POST /requests
      * Crear una solicitud de locker
      */
@@ -29,7 +107,7 @@ class LockerRequestController extends Controller
 
         // Regla 1: Un user solo puede tener UNA assignment activa
         $hasActiveAssignment = LockerAssignment::where('user_id', $userId)
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->exists();
         if ($hasActiveAssignment) {
             return redirect()->back()->withErrors(['request' => 'Ya posees un locker asignado físicamente de forma activa.']);
@@ -47,19 +125,28 @@ class LockerRequestController extends Controller
             'locker_id' => 'required|exists:lockers,locker_id',
         ]);
 
-        $locker = Locker::findOrFail($request->locker_id);
+        // Regla 3: Solo se puede solicitar un locker disponible y sin solicitud pendiente de otra persona.
+        // La fila del locker se bloquea para que dos solicitudes simultáneas no pasen las dos.
+        $creada = DB::transaction(function () use ($request, $userId) {
+            $locker = Locker::whereKey($request->locker_id)->lockForUpdate()->first();
 
-        // Regla 3: Solo se puede solicitar un locker con status = 0
-        if ($locker->status != 0) {
-            return redirect()->back()->withErrors(['locker' => 'El locker seleccionado ya no está disponible.']);
+            if (! $locker || ! Locker::solicitables()->whereKey($locker->locker_id)->exists()) {
+                return false;
+            }
+
+            LockerRequest::create([
+                'user_id' => $userId,
+                'locker_id' => $locker->locker_id,
+                'request_status' => 'pending',
+                'requested_at' => now(),
+            ]);
+
+            return true;
+        });
+
+        if (! $creada) {
+            return redirect()->route('buscar-locker')->withErrors(['locker' => 'Ese locker ya no está disponible o alguien más lo solicitó. Elige otro.']);
         }
-
-        LockerRequest::create([
-            'user_id' => $userId,
-            'locker_id' => $locker->locker_id,
-            'request_status' => 'pending',
-            'requested_at' => now(),
-        ]);
 
         NotificationHelper::send(
             $userId, 
@@ -68,7 +155,8 @@ class LockerRequestController extends Controller
             'Tu solicitud de locker fue enviada. Dirígete al Decanato de Desarrollo Estudiantil.'
         );
 
-        return redirect()->route('home')->with('success', 'Solicitud creada con éxito.');
+        // A 'Mis Solicitudes' para que vea su solicitud en estado Pendiente junto al aviso
+        return redirect()->route('mis-solicitudes')->with('success', 'Solicitud enviada. Te avisaremos cuando el administrador la revise.');
     }
 
     /**
@@ -127,6 +215,15 @@ class LockerRequestController extends Controller
             return redirect()->back()->withErrors(['locker' => 'El locker de esta solicitud fue tomado u ocupado por otra vía. Recomienda al usuario otra opción.']);
         }
 
+        // Si mientras esperaba se le asignó un locker directamente, aprobar le daría un segundo
+        $yaTieneLocker = LockerAssignment::where('user_id', $lockerReq->user_id)
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
+            ->exists();
+
+        if ($yaTieneLocker) {
+            return redirect()->back()->withErrors(['user' => 'Este estudiante ya tiene un locker asignado. Rechaza esta solicitud.']);
+        }
+
         try {
             DB::beginTransaction();
 
@@ -151,10 +248,7 @@ class LockerRequestController extends Controller
             ]);
 
             // 4. Buscar FeeRate
-            $feeRate = FeeRate::where('locker_type', $locker->locker_type)
-                ->where('effective_from', '<=', today())
-                ->orderBy('effective_from', 'desc')
-                ->first();
+            $feeRate = FeeRate::vigente($locker->locker_type);
 
             if (!$feeRate) {
                 DB::rollBack();
@@ -189,15 +283,20 @@ class LockerRequestController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()->withErrors(['error' => 'Error de BD: ' . $e->getMessage()]);
+            report($e);
+
+            return redirect()->back()->withErrors(['error' => 'No se pudo aprobar la solicitud. Intenta de nuevo.']);
         }
     }
 
     /**
      * PUT /admin/requests/{id}/reject
      */
-    public function reject($id)
+    public function reject(Request $request, $id)
     {
+        // Motivo opcional: se le dice al estudiante en la notificación
+        $request->validate(['reason' => 'nullable|string|max:500']);
+
         $lockerReq = LockerRequest::findOrFail($id);
 
         if ($lockerReq->request_status !== 'pending') {
@@ -214,7 +313,9 @@ class LockerRequestController extends Controller
             $lockerReq->user_id, 
             'request_rejected', 
             'Solicitud rechazada',
-            'Tu solicitud de locker fue rechazada. Puedes contactar al Decanato para más información.'
+            'Tu solicitud de locker fue rechazada.'
+                .(filled($request->reason) ? ' Motivo: '.trim($request->reason) : '')
+                .' Puedes contactar al Decanato para más información.'
         );
 
         return redirect()->back()->with('success', 'La solicitud fue rechazada y el usuario notificado.');

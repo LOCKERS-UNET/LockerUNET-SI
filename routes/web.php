@@ -23,13 +23,18 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UserController;
 
+use App\Http\Middleware\CifrarHistorial;
 use App\Http\Middleware\IsAdminMiddleware;
 use Illuminate\Support\Facades\Route;
 
 // ============================================================
-// RUTAS PARA USUARIOS AUTENTICADOS (estudiantes y admins)
+// RUTAS PARA USUARIOS AUTENTICADOS Y CON CORREO VERIFICADO (estudiantes y admins)
+// Sin correo verificado, 'verified' redirige a /verify-email (verification.notice)
 // ============================================================
-Route::middleware(['auth'])->group(function () {
+// CifrarHistorial: el historial del navegador guarda los datos de cada página cifrados;
+// al cerrar sesión se limpia (Inertia::clearHistory) y 'Atrás' ya no los muestra.
+// auth.session: si la contraseña cambia (perfil o recuperación), las demás sesiones se cierran.
+Route::middleware(['auth', 'auth.session', 'verified', CifrarHistorial::class])->group(function () {
 
     // Página de inicio
     Route::inertia('/', 'Home')->name('home');
@@ -39,6 +44,7 @@ Route::get('/profile', [ProfileController::class, 'show'])->name('user-profile')
 Route::get('/edit-profile', [PerfilController::class, 'index'])->name('edit-profile'); // 👈🏼 AGREGAR ESTO
 Route::put('/profile', [ProfileController::class, 'update']);
 Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Para guardar cambios
+Route::post('/edit-profile/password', [PerfilController::class, 'password']);
 
     // --------------------------------------------------------
     // RUTAS DEL ESTUDIANTE
@@ -49,14 +55,13 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
     Route::get('/', [HomeController::class, 'index'])->name('home');
 
     // Hacer una solicitud de locker
-    Route::match(['get', 'head'], '/solicitud-locker', function () {
-        return inertia('User/SolicitudLocker', ['lockerData' => request()->all()]);
-    })->name('solicitud-locker');
+    Route::get('/solicitud-locker', [LockerRequestController::class, 'form'])->name('solicitud-locker');
     Route::match(['post'], '/solicitud-locker', [LockerRequestController::class, 'store'])->name('solicitud-locker.store');
     Route::post('/requests', [LockerRequestController::class, 'store']);
 
     // Ver mis solicitudes
     Route::get('/requests/my', [LockerRequestController::class, 'myRequests'])->name('mis-solicitudes');
+    Route::post('/requests/{id}/cancel', [LockerRequestController::class, 'cancel']);
 
     // Ver mi locker activo (Asignación)
     Route::get('/assignments/my', [LockerAssignmentController::class, 'myAssignment'])->name('mi-locker');
@@ -69,13 +74,12 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
 
     // Pago de arancel e historial
     Route::get('/payments/my', [PaymentController::class, 'myPayments'])->name('pago-arancel');
-    Route::get('/payments/my/pending', [PaymentController::class, 'myPending']);
 
     // Reportar incidencia
     Route::get('/reportes-user', function () {
         $asignacion = \App\Models\LockerAssignment::with(['locker.sector'])
             ->where('user_id', auth()->id())
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', \App\Models\LockerAssignment::VIGENTES)
             ->first();
         return inertia('User/ReporteIncidencia', ['asignacion' => $asignacion]);
     })->name('reportes-user');
@@ -88,15 +92,11 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
     Route::get('/devolucion-locker', function () {
         $asignacion = \App\Models\LockerAssignment::with(['locker'])
             ->where('user_id', auth()->id())
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', \App\Models\LockerAssignment::VIGENTES)
             ->first();
         return inertia('User/DevolucionLocker', ['asignacion' => $asignacion]);
     })->name('devolucion-locker');
-    Route::post('/devolucion-locker/{id}', [LockerAssignmentController::class, 'release']);
-    Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release'])
-    ->name('admin.assignments.release');
-    // Aranceles (disponibles para lectura)
-    Route::get('/fee-rates', [FeeRateController::class, 'index'])->name('aranceles-admin');
+    Route::post('/devolucion-locker/{id}', [LockerAssignmentController::class, 'requestReturn']);
 
     // --------------------------------------------------------
     // RUTAS SOLO PARA EL ADMIN (protegidas con IsAdminMiddleware)
@@ -109,7 +109,6 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
         // Gestión de Lockers (ver, crear, editar, eliminar)
         Route::get('/admin/lockers', [LockerController::class, 'adminIndex'])->name('gestion-admin');
         Route::get('/admin/lockers/available', [LockerController::class, 'availableJson']);
-        Route::get('/admin/lockers/create', [LockerController::class, 'create'])->name('crear-locker-admin');
         Route::post('/admin/lockers', [LockerController::class, 'store']);
         Route::get('/admin/lockers/{id}/edit', [LockerController::class, 'edit'])->name('modificar-locker-admin');
         Route::put('/admin/lockers/{id}', [LockerController::class, 'update']);
@@ -124,17 +123,17 @@ Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Pa
         Route::get('/admin/assignments', [LockerAssignmentController::class, 'index'])->name('asignaciones-admin');
         Route::get('/admin/assignments/list', [LockerAssignmentController::class, 'listJson']);
         Route::post('/admin/assignments', [LockerAssignmentController::class, 'store']);
-        Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release']);
+        Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release'])->name('admin.assignments.release');
 
         // Estadísticas (Vista)
 Route::get('/estadisticas-lockers', [StatsController::class, 'index'])->name('estadisticas-admin');
         // Estadísticas (Endpoints JSON AJAX para Gráficos)
-Route::get('/admin/stats/summary', [StatsController::class, 'summary'])->name('admin.stats.summary');        Route::get('/admin/stats/by-semester', [StatsController::class, 'bySemester']);
-        Route::get('/admin/stats/monthly', [StatsController::class, 'monthly']);
+Route::get('/admin/stats/summary', [StatsController::class, 'summary'])->name('admin.stats.summary');
         // Gestión de Semestres
 Route::get('/admin/semesters', [StatsController::class, 'getSemesters'])->name('admin.semesters.index');
 Route::post('/admin/semesters', [StatsController::class, 'storeSemester'])->name('admin.semesters.store');
         // Aranceles (tarifas) - Registro histórico
+        Route::get('/fee-rates', [FeeRateController::class, 'index'])->name('aranceles-admin');
         Route::post('/admin/fee-rates', [FeeRateController::class, 'store']);
         // Generar pagos semestrales
 Route::post('/admin/payments/generate-semester', [FeeRateController::class, 'generatePayments'])
@@ -150,13 +149,11 @@ Route::post('/admin/payments/generate-semester', [FeeRateController::class, 'gen
         Route::get('/admin/users/{id}', [UserController::class, 'show'])->name('admin-ver-usuario');
 
         // Multas del admin (ver y crear para un usuario específico)
-        Route::get('/admin/users/{userId}/fines', [FineController::class, 'userFines']);
         Route::get('/admin/multas/{user:card_code}', [FineController::class, 'create'])->name('crear-multa-admin');
         Route::post('/admin/fines', [FineController::class, 'store']);
         Route::delete('/admin/fines/{id}', [FineController::class, 'destroy']);
 
         // Pagos
-        Route::get('/admin/payments', [PaymentController::class, 'index']);
         Route::patch('/admin/payments/{id}/paid', [PaymentController::class, 'markPaid']);
     });
 });
@@ -174,9 +171,13 @@ Route::post('/register', [RegisterController::class, 'store']);
    // Paso 2: Verificar código
     Route::get('/verify-code', [VerificationCodeController::class, 'show'])->name('password.verify');
     Route::post('/verify-code', [VerificationCodeController::class, 'verify'])->name('password.verify.post');
+
+// Verificación de correo: requiere sesión, pero no correo verificado
+Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::get('/verify-email', [EmailVerificationController::class, 'show'])->name('verification.notice');
     Route::post('/verify-email', [EmailVerificationController::class, 'verify'])->name('verification.verify');
     Route::post('/verify-email/resend', [EmailVerificationController::class, 'resend'])->name('verification.resend');
+});
 
 
 

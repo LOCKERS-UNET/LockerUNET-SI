@@ -75,7 +75,7 @@ class LockerSeeder extends Seeder
                 // type, code, status, plate, sector_id
                 if (count($row) >= 5) {
                     $lockersData[] = [
-                        'locker_type' => $row[0],
+                        'locker_type' => strtolower(trim($row[0])),
                         'locker_code' => $row[1],
                         'status' => (int) $row[2],
                         'plate_number' => $row[3] === 'not' ? null : $row[3],

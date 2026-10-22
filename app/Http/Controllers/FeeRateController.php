@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FeeRate;
+use App\Models\Payment;
 use App\Models\Semester;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,11 +21,7 @@ class FeeRateController extends Controller
         $rates = [];
 
         foreach ($types as $type) {
-            $rates[$type] = FeeRate::where('locker_type', $type)
-                ->where('effective_from', '<=', today())
-                ->orderBy('effective_from', 'desc')
-                ->orderBy('rate_id', 'desc')
-                ->first();
+            $rates[$type] = FeeRate::vigente($type);
         }
 
         // Obtener semestres activos
@@ -44,9 +41,11 @@ class FeeRateController extends Controller
      */
     public function store(Request $request)
     {
+        $request->merge(['monthly_amount' => self::montoConPunto($request->monthly_amount)]);
+
         $request->validate([
             'locker_type'    => 'required|in:small,mid,large',
-            'monthly_amount' => 'required|numeric|gt:0',
+            'monthly_amount' => 'required|numeric|gt:0|max:99999999.99',
             'reason'         => 'required|string|max:500',
         ]);
 
@@ -62,6 +61,15 @@ class FeeRateController extends Controller
     }
 
     /**
+     * "12,50" → "12.50". En Venezuela se escribe la coma decimal; el campo era type="number" y el
+     * navegador descartaba la coma, así que se guardaba 1250. Lo usa también FineController.
+     */
+    public static function montoConPunto(mixed $monto): mixed
+    {
+        return is_string($monto) ? str_replace(',', '.', trim($monto)) : $monto;
+    }
+
+    /**
      * 👇 NUEVO: Generar pagos del semestre
      */
     public function generatePayments(Request $request)
@@ -73,18 +81,29 @@ class FeeRateController extends Controller
         $semesterName = $request->semester_name;
 
         try {
-            // Ejecutar el command
-            Artisan::call('payments:generate-semester', [
+            $antes = Payment::where('semester', $semesterName)->count();
+
+            $codigo = Artisan::call('payments:generate-semester', [
                 'semester' => $semesterName
             ]);
 
-            $output = Artisan::output();
+            $creados = Payment::where('semester', $semesterName)->count() - $antes;
 
-            return redirect()->back()->with('success', "Pagos del semestre {$semesterName} generados exitosamente.");
-            
+            // Antes decía "generados exitosamente" aunque no se hubiera creado ningún pago
+            if ($codigo !== 0) {
+                return redirect()->back()->withErrors([
+                    'error' => "Faltan aranceles para algunos tipos de locker. Se generaron {$creados} pagos: crea los aranceles que faltan y vuelve a generar."
+                ]);
+            }
+
+            return redirect()->back()->with('success', $creados > 0
+                ? "Se generaron {$creados} pagos del semestre {$semesterName}."
+                : "No había pagos nuevos que generar para el semestre {$semesterName}.");
         } catch (\Exception $e) {
+            report($e);
+
             return redirect()->back()->withErrors([
-                'error' => 'Error al generar pagos: ' . $e->getMessage()
+                'error' => 'No se pudieron generar los pagos del semestre. Intenta de nuevo.'
             ]);
         }
     }

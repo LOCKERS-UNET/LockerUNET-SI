@@ -1,8 +1,8 @@
 <script setup lang="ts">
     import { Link, router } from '@inertiajs/vue3';
-    import { reactive } from 'vue';
+    import { reactive, ref } from 'vue';
 
-    defineProps({ errors: Object });
+    defineProps<{ errors: Record<string, string>; carreras: string[] }>();
 
     const form = reactive({
 
@@ -10,19 +10,29 @@
         lastname:null,
         email: null,
         card_code:null,
-        career:null,
+        career:'',
         password:null,
         password_confirmation: null
 
     })
 
-    const submit = () =>{
+    // Bloquea el botón mientras viaja la petición (un doble clic creaba la cuenta y mostraba "ya registrado")
+    const enviando = ref(false)
 
+    const submit = () =>{
+        if (enviando.value) return
+
+        // Se marca antes de la petición: con CPU lenta onStart llegaba tarde y un doble toque enviaba dos veces
+        enviando.value = true;
         router.post('/register',form,{
             preserveScroll:true,
-            onError:() => {
-                form.password=null;
-                form.password_confirmation=null;
+            onFinish: () => (enviando.value = false),
+            // Solo se borran las contraseñas si el error es de la contraseña (antes se perdían con cualquier error)
+            onError:(errores) => {
+                if (errores.password) {
+                    form.password=null;
+                    form.password_confirmation=null;
+                }
             }
         })
 
@@ -35,12 +45,12 @@
 
 <header class="hidden lg:flex lg:justify-between lg:items-center lg:w-full lg:p-6 md:p-10 lg:flex-shrink-0"> 
     
-    <img src="/img/Logo_UNET.png" 
+    <img src="/img/Logo_UNET.webp" 
          alt="Logo unet" 
          class="h-16 md:h-24 w-auto object-contain"
     >
 
-    <img src="/img/Logo_Lockers_UNET.png" 
+    <img src="/img/Logo_Lockers_UNET.webp" 
          alt="logo lockers unet" 
          class="h-12 md:h-16 w-auto object-contain"
     >
@@ -52,12 +62,12 @@
             <div class="flex flex-col lg:flex-row w-full max-w-6xl items-center justify-center gap-10 md:gap-24">
 
                 <div class="flex-shrink-0">
-                    <img src="/img/Login.png" 
+                    <img loading="lazy" src="/img/Login.webp" 
                          alt="imagen prueba" 
                          class="hidden lg:block lg:h-auto lg:max-h-[300px] md:max-h-[500px] lg:w-auto lg:object-contain"
                     >
 
-                    <img src="/img/Logo_Lockers_UNET.png" 
+                    <img src="/img/Logo_Lockers_UNET.webp" 
                          alt="imagen prueba" 
                          class="block h-auto max-h-[100px] md:max-h-[200px] w-auto object-contain lg:hidden"
                     >
@@ -104,7 +114,7 @@
         <!-- Código Carnet -->
         <div class="space-y-2">
             <label for="card_code" class="block text-[#404040] font-semibold ml-1">Código Carnet</label>
-            <input type="number" id="card_code" name="card_code" placeholder="Código 5 dígitos Carnet"
+            <input type="text" inputmode="numeric" maxlength="5" id="card_code" name="card_code" placeholder="Código 5 dígitos Carnet"
                 class="w-full h-11 px-4 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-xs"
                 :class="{ 'border-[#DC2626] bg-[#FEE2E2]': errors?.card_code, 'border-[#A3A3A3] focus:border-[#22397A]': !errors?.card_code }"
                 v-model="form.card_code">
@@ -118,7 +128,7 @@
                 <select 
                     id="career"
                     name="career"
-                    class="w-full h-11 px-4 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none transition duration-200 appearance-none cursor-pointer pr-10 text-xs font-bold"
+                    class="w-full h-11 px-4 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none transition duration-200 appearance-none cursor-pointer pr-10 text-base sm:text-xs font-bold"
                     :class="{
                         'border-[#DC2626] bg-[#FEE2E2] text-[#DC2626]': errors?.career, 
                         'border-[#A3A3A3] focus:border-[#22397A]': !errors?.career,
@@ -130,20 +140,8 @@
                     <!-- Opción placeholder -->
                     <option value="" disabled selected>Carrera</option>
                     
-                    <!-- Opciones reales -->
-                    <option value="Informática">Informática</option>
-                    <option value="Industrial">Industrial</option>
-                    <option value="Civil">Civil</option>
-                    <option value="Electrónica">Electrónica</option>
-                    <option value="Mecánica">Mecánica</option>
-                    <option value="Psicología">Psicología</option>
-                    <option value="TSU Entrenamiento Deportivo">TSU Entrenamiento Deportivo</option>
-                    <option value="Producción Animal">Producción Animal</option>
-                    <option value="Ambiental">Ambiental</option>
-                    <option value="Agronomía">Agronomía</option>
-                    <option value="Música">Música</option>
-                    <option value="Agroindustrial">Agroindustrial</option>
-                    <option value="Arquitectura">Arquitectura</option>
+                    <!-- Opciones reales (User::CARRERAS) -->
+                    <option v-for="carrera in carreras" :key="carrera" :value="carrera">{{ carrera }}</option>
                 </select>
                 
                 <!-- Flecha personalizada centrada -->
@@ -160,19 +158,21 @@
     <!-- Contraseña -->
     <div class="space-y-2">
         <label for="password" class="block text-[#404040] font-semibold ml-1">Contraseña</label>
-        <input type="password" id="password" name="password" placeholder="Ingresa tu contraseña"
+        <input type="password" id="password" name="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"
             class="w-full h-11 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-xs"
             :class="{ 'border-[#DC2626] bg-[#FEE2E2]': errors?.password, 'border-[#A3A3A3] focus:border-[#22397A]': !errors?.password }"
             v-model="form.password">
-        <small v-if="errors?.password" class="text-red-500 text-xs">{{ errors.password }}</small>
+        <!-- "No coinciden" se muestra solo bajo la confirmación -->
+        <small v-if="errors?.password && errors.password !== 'Las contraseñas no coinciden.'" class="text-red-500 text-xs">{{ errors.password }}</small>
     </div>
 
     <!-- Confirmar Contraseña -->
     <div class="space-y-2">
         <label for="password_confirmation" class="block text-[#404040] font-semibold ml-1">Confirmar Contraseña</label>
-        <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Confirma tu contraseña"
+        <input type="password" id="password_confirmation" name="password_confirmation" autocomplete="new-password" placeholder="Confirma tu contraseña"
             class="w-full h-11 px-5 rounded-full bg-gray-100 border-2 border-[#A3A3A3] focus:border-[#22397A] focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-xs"
             v-model="form.password_confirmation">
+        <small v-if="errors?.password === 'Las contraseñas no coinciden.'" class="text-red-500 text-xs">Las contraseñas no coinciden. Escríbelas de nuevo.</small>
     </div>
 
     <p class="flex justify-end text-center text-gray-600 mt-6">
@@ -180,10 +180,16 @@
         <Link href="/login" class="text-blue-500 font-semibold hover:underline">Inicia Sesión</Link>
     </p>
 
+    <!-- Uso de los datos: describe lo que hace la app; la política formal es de la universidad -->
+    <p class="text-xs text-gray-500 leading-relaxed">
+        Tus datos (correo institucional, carnet y carrera) se usan solo para identificarte al solicitar, pagar y devolver tu locker.
+        Los ven únicamente los administradores del Decanato de Desarrollo Estudiantil. Tu contraseña se guarda cifrada.
+    </p>
+
     <div class="pt-2">
-        <button type="submit"
-            class="w-full py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95">
-            Crear Cuenta
+        <button type="submit" :disabled="enviando"
+            class="w-full py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95 disabled:opacity-60 disabled:cursor-wait">
+            {{ enviando ? 'Creando cuenta…' : 'Crear Cuenta' }}
         </button>
     </div>
 </form>

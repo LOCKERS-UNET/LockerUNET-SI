@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Link, Head } from '@inertiajs/vue3';
+import { formatFecha } from '@/lib/utils';
 import Layout from '../Layouts/Layout.vue';
 
 defineOptions({ layout: Layout });
@@ -52,8 +53,12 @@ const pagoPendiente = props.asignacion?.payments
                 <h2 class="text-4xl font-bold text-[#4472c4] mb-8">Locker: {{ asignacion.locker.locker_code }}</h2>
 
                 <div class="bg-white rounded-md shadow-[0px_4px_15px_rgba(0,0,0,0.1)] border border-gray-100 p-8 w-full max-w-sm mb-10 flex flex-col gap-6 text-center">
-                    <p class="text-gray-800 text-md"><span class="font-bold text-black">Estado:</span> En uso</p>
-                    <p class="text-gray-800 text-md"><span class="font-bold text-black">Fecha de inicio:</span> {{ asignacion.start_date }}</p>
+                    <p class="text-gray-800 text-md">
+                        <span class="font-bold text-black">Estado:</span>
+                        <span v-if="asignacion.assignment_status === 'return_requested'" class="text-[#B45309] font-bold"> Devolución en proceso</span>
+                        <span v-else> En uso</span>
+                    </p>
+                    <p class="text-gray-800 text-md"><span class="font-bold text-black">Fecha de inicio:</span> {{ formatFecha(asignacion.start_date) }}</p>
                     <p class="text-gray-800 text-md">
                         <span class="font-bold text-black">Pago Pendiente:</span>
                         <span :class="pagoPendiente > 0 ? 'text-red-500 font-bold' : 'text-green-600 font-bold'">

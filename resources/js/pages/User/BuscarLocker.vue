@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import Layout from '../Layouts/Layout.vue';
 
 defineOptions({ layout: Layout });
 
-// Props: El backend ya filtra y envía SOLO lockers disponibles (status = 0)
+type Locker = {
+    locker_id: number;
+    locker_code: string;
+    locker_type: string;
+    sector: {
+        sector_name: string;
+        building: { building_name: string; building_code: string };
+    };
+};
+
+// El backend manda solo lockers disponibles, ya filtrados y paginados (15 por página)
 const props = defineProps<{
-    lockers: Array<{
-        locker_id: number;
-        locker_code: string;
-        locker_type: string;
-        plate_number: string | null;
-        status: number; // 0=disponible (todos los que llegan aquí)
-        sector: {
-            sector_name: string;
-            building: {
-                building_name: string;
-                building_code: string;
-            }
-        }
-    }>
+    lockers: { data: Locker[]; current_page: number; last_page: number; total: number };
+    edificios: Array<{ building_code: string; building_name: string; disponibles: number }>;
+    filtros: { edificio: string; tamano: string };
+    bloqueo: { mensaje: string; enlace: string; texto_enlace: string } | null; // ya tiene un locker o una solicitud pendiente
 }>();
 
 // Mapeamos los tipos a texto legible
@@ -30,46 +30,33 @@ const tipoLabel: Record<string, string> = {
     large: 'Grande',
 };
 
-// Filtros reactivos
-const filtroEdificio = ref('');
-const filtroTamano   = ref('');
+const filtroEdificio = ref(props.filtros.edificio);
+const filtroTamano   = ref(props.filtros.tamano);
+const cargando = ref(false);
 
-// 👇🏼 Lockers filtrados: SOLO disponibles + filtros de usuario
-const lockersFiltrados = computed(() => {
-    return props.lockers.filter(locker => {
-        // 👈🏼 Solo lockers disponibles (status === 0)
-        const disponible = locker.status === 0;
-        
-        // Filtros adicionales del usuario
-        const matchEdificio = filtroEdificio.value === '' || 
-                              locker.sector.building.building_code === filtroEdificio.value;
-        const matchTamano   = filtroTamano.value === '' || 
-                              locker.locker_type === filtroTamano.value;
-        
-        return disponible && matchEdificio && matchTamano;
+// Error de la página de solicitud (p. ej. el locker ya no estaba disponible)
+const errorLocker = computed(() => usePage().props.errors?.locker as string | undefined);
+
+const buscar = (pagina = 1) => {
+    router.get('/lockers', {
+        edificio: filtroEdificio.value || undefined,
+        tamano: filtroTamano.value || undefined,
+        page: pagina > 1 ? pagina : undefined,
+    }, {
+        preserveState: true,
+        replace: true,
+        onStart: () => (cargando.value = true),
+        onFinish: () => {
+            cargando.value = false;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
     });
-});
-
-// Lista de edificios únicos para el select (solo de lockers disponibles)
-const edificios = [...new Map(props.lockers
-    .filter(l => l.status === 0) // 👈🏼 Solo edificios con lockers disponibles
-    .map(l => [l.sector.building.building_code, l.sector.building])
-).values()];
+};
 
 // Al hacer clic en "Solicitar" vamos a la página de confirmación
-const irASolicitud = (locker: typeof props.lockers[0]) => {
-    // Validación extra de seguridad (aunque el backend ya filtró)
-    if (locker.status !== 0) {
-        alert('Este locker no está disponible para solicitud.');
-        return;
-    }
-    
-    router.get('/solicitud-locker', {
-        locker_id: locker.locker_id,
-        codigo:    locker.locker_code,
-        tamano:    tipoLabel[locker.locker_type] ?? locker.locker_type,
-        edificio:  `${locker.sector.building.building_name} - ${locker.sector.sector_name}`,
-    });
+const irASolicitud = (locker: Locker) => {
+    // Solo el id: la página de solicitud carga el resto desde la base
+    router.get('/solicitud-locker', { locker_id: locker.locker_id });
 };
 </script>
 
@@ -87,10 +74,10 @@ const irASolicitud = (locker: typeof props.lockers[0]) => {
                     
                     <!-- Filtro por Edificio -->
                     <div class="relative w-full shadow-sm rounded-full">
-                        <select v-model="filtroEdificio" class="w-full h-12 px-6 border border-gray-200 rounded-[2rem] font-bold text-sm text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
+                        <select v-model="filtroEdificio" @change="buscar()" aria-label="Filtrar por edificio" class="w-full h-12 px-6 border border-gray-200 rounded-[2rem] font-bold text-base sm:text-sm text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
                             <option value="">Edificio (Todos)</option>
                             <option v-for="ed in edificios" :key="ed.building_code" :value="ed.building_code">
-                                {{ ed.building_name }}
+                                {{ ed.building_name }} ({{ ed.disponibles }})
                             </option>
                         </select>
                         <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -102,7 +89,7 @@ const irASolicitud = (locker: typeof props.lockers[0]) => {
 
                     <!-- Filtro por Tamaño -->
                     <div class="relative w-full shadow-sm rounded-full">
-                        <select v-model="filtroTamano" class="w-full h-12 px-6 border border-gray-200 rounded-[2rem] font-bold text-sm text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
+                        <select v-model="filtroTamano" @change="buscar()" aria-label="Filtrar por tamaño" class="w-full h-12 px-6 border border-gray-200 rounded-[2rem] font-bold text-base sm:text-sm text-black appearance-none bg-white focus:outline-none focus:border-gray-400">
                             <option value="">Tamaño (Todos)</option>
                             <option value="small">Pequeño</option>
                             <option value="mid">Mediano</option>
@@ -117,17 +104,32 @@ const irASolicitud = (locker: typeof props.lockers[0]) => {
 
                 </div>
 
+                <div v-if="bloqueo" class="w-full max-w-2xl mb-6 bg-[#FEF3C7] border border-[#F59E0B] text-[#92400E] font-semibold p-4 text-center rounded-2xl text-sm">
+                    {{ bloqueo.mensaje }}
+                    <Link :href="bloqueo.enlace" class="block mt-2 underline font-bold min-h-[44px] leading-[44px]">{{ bloqueo.texto_enlace }}</Link>
+                </div>
+
+                <div v-if="errorLocker" class="w-full max-w-2xl mb-6 bg-[#FEE2E2] border border-[#DC2626] text-[#DC2626] font-semibold p-3 text-center rounded-2xl text-sm">
+                    {{ errorLocker }}
+                </div>
+
+                <p class="w-full max-w-3xl text-sm font-bold text-gray-500 mb-2" aria-live="polite">
+                    <template v-if="cargando">Buscando lockers…</template>
+                    <template v-else>{{ lockers.total }} {{ lockers.total === 1 ? 'locker disponible' : 'lockers disponibles' }}</template>
+                </p>
+
                 <!-- 👇🏼 Lista de Lockers DISPONIBLES -->
-                <div class="w-full max-w-3xl flex flex-col">
+                <div class="w-full max-w-3xl flex flex-col transition-opacity" :class="{ 'opacity-50 pointer-events-none': cargando }">
                     
-                    <template v-if="lockersFiltrados.length > 0">
-                        <div v-for="(locker, idx) in lockersFiltrados" :key="locker.locker_id" class="w-full">
+                    <template v-if="lockers.data.length > 0">
+                        <div v-for="locker in lockers.data" :key="locker.locker_id" class="w-full">
                             <div class="h-px bg-gray-300 w-full my-6"></div>
 
                             <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                                 <div class="flex flex-col gap-1 w-full sm:w-1/3 text-center sm:text-left">
                                     <p class="text-sm sm:text-base text-black"><span class="font-extrabold">Locker:</span> {{ locker.locker_code }}</p>
                                     <p class="text-sm sm:text-base text-black"><span class="font-extrabold">Tamaño:</span> {{ tipoLabel[locker.locker_type] ?? locker.locker_type }}</p>
+                                    <p class="text-sm sm:text-base text-black"><span class="font-extrabold">Edificio:</span> {{ locker.sector.building.building_name }}</p>
                                     <p class="text-sm sm:text-base text-black"><span class="font-extrabold">Sector:</span> {{ locker.sector.sector_name }}</p>
                                 </div>
 
@@ -142,7 +144,9 @@ const irASolicitud = (locker: typeof props.lockers[0]) => {
                                     <!-- 👇 BOTÓN SIEMPRE visible (porque todos están disponibles) -->
                                     <button 
                                         @click="irASolicitud(locker)"
-                                        class="bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold py-2 px-8 rounded-xl shadow-md transition duration-300 active:scale-95 text-sm"
+                                        :disabled="!!bloqueo"
+                                        :title="bloqueo?.mensaje"
+                                        class="bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold py-3 px-8 min-h-[44px] rounded-xl shadow-md transition duration-300 active:scale-95 text-sm disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:shadow-none"
                                     >
                                         Solicitar
                                     </button>
@@ -150,6 +154,19 @@ const irASolicitud = (locker: typeof props.lockers[0]) => {
                             </div>
                         </div>
                         <div class="h-px bg-gray-300 w-full mt-6"></div>
+
+                        <!-- Paginación -->
+                        <nav v-if="lockers.last_page > 1" class="flex items-center justify-between gap-4 mt-8" aria-label="Paginación">
+                            <button type="button" :disabled="lockers.current_page <= 1 || cargando" @click="buscar(lockers.current_page - 1)"
+                                class="min-h-[44px] px-5 rounded-xl border border-gray-300 font-bold text-sm text-[#213779] disabled:text-gray-300 disabled:cursor-not-allowed">
+                                ← Anterior
+                            </button>
+                            <span class="text-sm font-bold text-gray-600">Página {{ lockers.current_page }} de {{ lockers.last_page }}</span>
+                            <button type="button" :disabled="lockers.current_page >= lockers.last_page || cargando" @click="buscar(lockers.current_page + 1)"
+                                class="min-h-[44px] px-5 rounded-xl border border-gray-300 font-bold text-sm text-[#213779] disabled:text-gray-300 disabled:cursor-not-allowed">
+                                Siguiente →
+                            </button>
+                        </nav>
                     </template>
                     
                     <template v-else>

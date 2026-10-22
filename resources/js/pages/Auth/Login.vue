@@ -21,11 +21,11 @@ const submit = () => {
 <template>
     <section class="min-h-screen flex flex-col bg-white">
         <header class="hidden lg:flex lg:justify-between lg:items-center lg:w-full lg:p-6 md:p-10 lg:flex-shrink-0"> 
-            <img src="/img/Logo_UNET.png" 
+            <img src="/img/Logo_UNET.webp" 
                  alt="Logo unet" 
                  class="h-16 md:h-24 w-auto object-contain"
             >
-            <img src="/img/Logo_Lockers_UNET.png" 
+            <img src="/img/Logo_Lockers_UNET.webp" 
                  alt="logo lockers unet" 
                  class="h-12 md:h-16 w-auto object-contain"
             >
@@ -38,14 +38,14 @@ const submit = () => {
                 <div class="flex-shrink-0 flex flex-col items-center">
                     <!-- Imagen centrada en desktop -->
                     <div class="hidden lg:flex justify-center w-full">
-                        <img src="/img/Login.png" 
+                        <img loading="lazy" src="/img/Login.webp" 
                              alt="imagen prueba" 
                              class="lg:h-auto lg:max-h-[300px] md:max-h-[500px] lg:w-auto lg:object-contain"
                         >
                     </div>
 
                     <!-- Logo en móvil -->
-                    <img src="/img/Logo_Lockers_UNET.png" 
+                    <img src="/img/Logo_Lockers_UNET.webp" 
                          alt="imagen prueba" 
                          class="block h-auto max-h-[100px] md:max-h-[200px] w-auto object-contain lg:hidden mx-auto"
                     >
@@ -83,7 +83,7 @@ const submit = () => {
                                 type="email" 
                                 id="email"
                                 placeholder="Ingresa tu correo UNET"
-                                class="w-full h-10 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
+                                class="w-full h-11 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
                                 :class="{
                                     'border-[#DC2626] bg-[#FEE2E2]': errors?.email, 
                                     'border-[#A3A3A3] focus:border-[#22397A]': !errors?.email
@@ -101,7 +101,7 @@ const submit = () => {
                                 type="password" 
                                 id="password"
                                 placeholder="Ingresa tu contraseña"
-                                class="w-full h-10 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
+                                class="w-full h-11 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
                                 :class="{
                                     'border-[#DC2626] bg-[#FEE2E2]': errors?.password, 
                                     'border-[#A3A3A3] focus:border-[#22397A]': !errors?.password
@@ -110,7 +110,7 @@ const submit = () => {
                             >
                             <small v-if="errors?.password" class="text-red-500">{{ errors.password }}</small>
                             <div class="flex justify-end pr-2">
-                                <Link href="/forgot-password" class="text-gray-500 text-sm hover:text-blue-600 transition">
+                                <Link href="/forgot-password" class="inline-flex items-center min-h-[44px] text-gray-500 text-sm hover:text-blue-600 transition">
                                     ¿Olvidaste tu contraseña?
                                 </Link>
                             </div>
@@ -127,7 +127,7 @@ const submit = () => {
 
                         <p class="text-center text-gray-600 mt-8">
                             ¿No tienes cuenta? 
-                            <Link href="/register" class="text-blue-500 font-semibold hover:underline">
+                            <Link href="/register" class="inline-flex items-center min-h-[44px] px-1 text-blue-500 font-semibold hover:underline">
                                 Resgístrate
                             </Link>
                         </p>

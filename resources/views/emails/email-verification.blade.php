@@ -24,11 +24,11 @@
     </div>
 
     <p style="font-size: 14px; color: #666;">
-        ⏰ Este código expira en <strong>15 minutos</strong>.
+        Este código expira en <strong>15 minutos</strong>.
     </p>
 
     <p style="font-size: 14px; color: #666;">
-        🔒 Si no te registraste en Lockers UNET, puedes ignorar este correo.
+        Si no te registraste en Lockers UNET, puedes ignorar este correo.
     </p>
 
     <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">

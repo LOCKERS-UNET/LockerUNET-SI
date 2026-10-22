@@ -6,8 +6,8 @@ defineOptions({ layout: Layout });
 
 // ─────────────────────────────────────────────
 // DATOS REALES DEL BACKEND
-// Vienen de BuscarLocker cuando el usuario hace clic en "Solicitar"
-// La ruta /solicitud-locker recibe los datos como query params
+// LockerRequestController@form los carga de la base a partir del locker_id
+// que manda BuscarLocker al hacer clic en "Solicitar"
 // ─────────────────────────────────────────────
 const props = defineProps<{
     lockerData: {
@@ -15,19 +15,26 @@ const props = defineProps<{
         codigo: string;
         tamano: string;
         edificio: string;
+        arancel_mensual: string | null;
     }
 }>();
 
 const confirmado = ref(false);
+const enviando = ref(false);
 const urlFormulario = '/docs/Solicitud_de_Locker.pdf';
 
 // Enviamos la solicitud real al backend (POST /solicitud-locker)
 // El controlador LockerRequestController@store lo procesa
+// 'enviando' bloquea el botón mientras viaja la petición (evita doble envío)
 const enviarSolicitud = () => {
-    if (!confirmado.value) return;
-    
+    if (!confirmado.value || enviando.value) return;
+
+    // Se marca antes de la petición: con CPU lenta onStart llegaba tarde y un doble toque enviaba dos veces
+    enviando.value = true;
     router.post('/requests', {
         locker_id: props.lockerData.locker_id
+    }, {
+        onFinish: () => (enviando.value = false),
     });
 };
 </script>
@@ -51,14 +58,20 @@ const enviarSolicitud = () => {
                     <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Código:</span> {{ lockerData.codigo }}</p>
                     <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Tamaño:</span> {{ lockerData.tamano }}</p>
                     <p class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Edificio:</span> {{ lockerData.edificio }}</p>
+                    <p v-if="lockerData.arancel_mensual" class="text-2xl font-bold text-black"><span class="font-extrabold text-black">Arancel:</span> Bs. {{ Number(lockerData.arancel_mensual).toLocaleString('es-VE', { minimumFractionDigits: 2 }) }} al mes</p>
                 </div>
             </div>
 
             <!-- Descarga del formulario -->
             <div class="w-full flex flex-col items-center mb-16">
-                <p class="text-2xl font-bold text-gray-600 mb-6 text-center">Descargar Formulario CBE-102</p>
+                <p class="text-2xl font-bold text-gray-600 mb-6 text-center">Descargar Formulario CBE-100</p>
                 
-                <div class="w-full max-w-sm bg-[#F3F4F6] rounded-2xl p-6 flex items-center justify-between shadow-sm border border-gray-100">
+                <!-- Todo el bloque descarga (antes solo el ícono pequeño) -->
+                <a
+                    :href="urlFormulario"
+                    download="Solicitud_Locker_UNET.pdf"
+                    class="w-full max-w-sm bg-[#F3F4F6] hover:bg-[#E5E7EB] rounded-2xl p-6 flex items-center justify-between shadow-sm border border-gray-100 transition-colors"
+                >
                     <div class="flex items-center gap-4">
                         <div class="bg-white p-3 rounded-xl shadow-inner" aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#EF5350" class="size-8">
@@ -69,16 +82,12 @@ const enviarSolicitud = () => {
                         <span class="text-2xl font-bold text-black">Descargar Archivo</span>
                     </div>
                     
-<a 
-    :href="urlFormulario" 
-    download="Solicitud_Locker_UNET.pdf"
-    class="bg-transparent border border-gray-300 rounded-full p-2.5 hover:bg-white transition-colors"
->
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-gray-700">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 12l4.5 4.5m0 0l4.5-4.5M12 3v13.5" />
-    </svg>
-</a>
-                </div>
+                    <span class="bg-transparent border border-gray-300 rounded-full p-2.5" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6 text-gray-700">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 12l4.5 4.5m0 0l4.5-4.5M12 3v13.5" />
+                        </svg>
+                    </span>
+                </a>
             </div>
 
             <!-- Dirección -->
@@ -87,6 +96,19 @@ const enviarSolicitud = () => {
                 <hr class="border-gray-200 w-11/12 mx-auto mb-6">
                 <p class="text-2xl font-bold text-gray-800">Decanato de Desarrollo Estudiantil.</p>
                 <hr class="border-gray-200 w-11/12 mx-auto mt-6">
+            </div>
+
+            <!-- Qué pide el formulario CBE-100 (tomado del PDF) -->
+            <div class="w-full bg-[#F3F4F6] rounded-2xl p-6 mb-10 text-gray-800 text-base leading-relaxed">
+                <h3 class="text-xl font-extrabold text-black mb-3">Antes de enviar, ten en cuenta</h3>
+                <p class="mb-2">El formulario CBE-100 pide: nombre completo, cédula, especialidad, lapso de ingreso, dirección de habitación, teléfonos, motivo de la solicitud y tu firma.</p>
+                <p class="font-bold mb-1">Recaudos que debes llevar al Decanato:</p>
+                <ol class="list-decimal ml-6 mb-2">
+                    <li>Copia de la cédula de identidad.</li>
+                    <li>Copia del carnet estudiantil (en la misma hoja que la cédula).</li>
+                    <li>Constancia de residencia, solo si vives fuera de San Cristóbal o del estado Táchira.</li>
+                </ol>
+                <p class="text-sm text-gray-600">Estos documentos los revisa la Coordinación de Bienestar Estudiantil; la app no los pide ni los guarda.</p>
             </div>
 
             <!-- Checkbox de confirmación -->
@@ -98,7 +120,7 @@ const enviarSolicitud = () => {
                     class="mt-1 size-7 rounded border-gray-300 text-[#213779] focus:ring-[#213779] cursor-pointer"
                 >
                 <label for="confirm-solicitud" class="text-gray-700 text-lg leading-tight cursor-pointer select-none">
-                    He descargado el Formulario CBE-102 y acepto consignar los recaudos necesarios para la solicitud del Casillero <span class="font-bold text-black">{{ lockerData.codigo }}</span>.
+                    He descargado el Formulario CBE-100 y acepto consignar los recaudos indicados arriba para la solicitud del locker <span class="font-bold text-black">{{ lockerData.codigo }}</span>.
                 </label>
             </div>
 
@@ -112,13 +134,14 @@ const enviarSolicitud = () => {
                 <!-- Botón Enviar: solo activo si el checkbox está marcado -->
                 <button 
                     @click="enviarSolicitud"
-                    :disabled="!confirmado"
+                    :disabled="!confirmado || enviando"
                     class="w-full font-bold py-5 rounded-3xl text-2xl transition-all shadow-lg active:scale-[0.98]"
-                    :class="confirmado ? 'bg-[#213779] text-white hover:bg-[#1a2b5f]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
+                    :class="confirmado && !enviando ? 'bg-[#213779] text-white hover:bg-[#1a2b5f]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
                     aria-label="Enviar solicitud de locker"
                 >
-                    Enviar Solicitud
+                    {{ enviando ? 'Enviando…' : 'Enviar Solicitud' }}
                 </button>
+                <p v-if="!confirmado" class="text-center text-sm text-gray-500 -mt-2">Marca la casilla de arriba para poder enviar la solicitud.</p>
 
                 <button 
                     @click="router.visit('/')"

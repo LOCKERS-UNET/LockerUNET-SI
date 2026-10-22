@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 // Este modelo representa un locker físico
 class Locker extends Model
 {
+    use HasFactory;
+
     protected $primaryKey = 'locker_id';
 
     protected $fillable = [
@@ -32,6 +35,14 @@ class Locker extends Model
     public function requests()
     {
         return $this->hasMany(LockerRequest::class, 'locker_id', 'locker_id');
+    }
+
+    // Lockers que un estudiante puede pedir: disponibles (status 0) y sin una solicitud pendiente
+    // de otra persona (antes dos estudiantes podían esperar por el mismo locker)
+    public function scopeSolicitables($query)
+    {
+        return $query->where('status', 0)
+            ->whereDoesntHave('requests', fn ($q) => $q->where('request_status', 'pending'));
     }
 
     // Un locker tiene muchas asignaciones

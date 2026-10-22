@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { Link } from '@inertiajs/vue3';
     import { ref, onMounted, onUnmounted } from 'vue';
+    import FlashMessage from '../Components/FlashMessage.vue';
 
     const isMenuOpen = ref(false);
     
@@ -38,7 +39,7 @@
     <div>
 
         <header class="bg-[#1C2F5E] text-white">
-            <nav class=" flex items-center justify-between p-4 max-w-screen-lg mx-auto ">
+            <nav class=" flex items-center justify-between p-4 max-w-screen-lg lg:max-w-screen-xl lg:gap-8 lg:px-8 mx-auto ">
                 
                 <div class="flex flex-row gap-2 sm:gap-5">
                     <button @click="openMenu" class=" block lg:hidden cursor-pointer mx-5">
@@ -50,7 +51,7 @@
                 
                     <Link href="/inicio-admin">
 
-                        <img src="/img/Logo_Minimal.png" 
+                        <img src="/img/Logo_Minimal.webp" 
                             alt="Logo Minimalista Lockers"
                             class="w-auto h-12 sm:h-15 object-contain"
                         >
@@ -60,11 +61,12 @@
 
                 
 
-                <div class=" hidden lg:flex lg:flex-row md:text-xs md:gap-5 lg:gap-10  lg:text-base">
+                <div class=" hidden lg:flex lg:flex-row md:text-xs md:gap-5 lg:gap-6 xl:gap-10  lg:text-base">
                     <Link 
                         href="/admin/assignments"
                         class=""
                     >Asignaciones</Link>
+                    <Link href="/admin/requests">Solicitudes</Link>
                     <Link href="/admin/lockers">Gestion Lockers</Link>
                     <Link href="/admin/users">Usuarios</Link>
                     <Link href="/admin/incidents">Incidencias</Link>
@@ -147,6 +149,16 @@
                             <span class="text-black ">Asignaciones</span>
                         </Link>
 
+                        <Link href="/admin/requests" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2">
+
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
+                                <path fill-rule="evenodd" d="M5.625 1.5c-1.036 0-1.875.84-1.875 1.875v17.25c0 1.035.84 1.875 1.875 1.875h12.75c1.035 0 1.875-.84 1.875-1.875V12.75A3.75 3.75 0 0 0 16.5 9h-1.875a1.875 1.875 0 0 1-1.875-1.875V5.25A3.75 3.75 0 0 0 9 1.5H5.625ZM7.5 15a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 7.5 15Zm.75 2.25a.75.75 0 0 0 0 1.5H12a.75.75 0 0 0 0-1.5H8.25Z" clip-rule="evenodd" />
+                                <path d="M12.971 1.816A5.23 5.23 0 0 1 14.25 5.25v1.875c0 .207.168.375.375.375H16.5a5.23 5.23 0 0 1 3.434 1.279 9.768 9.768 0 0 0-6.963-6.963Z" />
+                            </svg>
+
+                            <span class="text-black">Solicitudes</span>
+                        </Link>
+
                         <Link href="/admin/lockers" @click="isMenuOpen = false" class=" flex flex-row items-center gap-2">
 
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-8">
@@ -204,6 +216,8 @@
             </aside>
 
         </header>
+
+        <FlashMessage con-errores />
 
         <main>
             <slot></slot>

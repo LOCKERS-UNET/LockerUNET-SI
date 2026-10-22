@@ -6,7 +6,6 @@ use App\Models\LockerAssignment;
 use App\Models\Payment;
 use App\Models\FeeRate;
 use App\Models\Semester;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class GenerateSemesterPayments extends Command
@@ -39,7 +38,7 @@ class GenerateSemesterPayments extends Command
 
         $this->info("Generando pagos para el semestre: {$semester->name}");
 
-        // Obtener todas las asignaciones activas
+        // Obtener todas las asignaciones activas (no 'return_requested': quien pidió devolver no paga el semestre siguiente)
         $activeAssignments = LockerAssignment::with(['user', 'locker'])
             ->where('assignment_status', 'active')
             ->get();
@@ -48,6 +47,7 @@ class GenerateSemesterPayments extends Command
 
         $created = 0;
         $skipped = 0;
+        $withoutRate = 0;
 
         foreach ($activeAssignments as $assignment) {
             // Verificar si ya existe un pago para este semestre y asignación
@@ -62,13 +62,11 @@ class GenerateSemesterPayments extends Command
             }
 
             // Obtener tarifa vigente para el tipo de locker
-            $feeRate = FeeRate::where('locker_type', $assignment->locker->locker_type)
-                ->where('effective_from', '<=', Carbon::now())
-                ->orderBy('effective_from', 'desc')
-                ->first();
+            $feeRate = FeeRate::vigente($assignment->locker->locker_type);
 
             if (!$feeRate) {
                 $this->error("⊗ No hay tarifa vigente para locker tipo: {$assignment->locker->locker_type}");
+                $withoutRate++;
                 continue;
             }
 
@@ -96,8 +94,10 @@ class GenerateSemesterPayments extends Command
         $this->info("═══════════════════════════════════════");
         $this->info("Pagos creados: {$created}");
         $this->info("Pagos omitidos (ya existen): {$skipped}");
+        $this->info("Sin tarifa vigente: {$withoutRate}");
         $this->info("═══════════════════════════════════════");
 
-        return 0;
+        // Falla si quedaron asignaciones sin pago por falta de tarifa, para que el panel no diga que todo salió bien
+        return $withoutRate > 0 ? 1 : 0;
     }
 }

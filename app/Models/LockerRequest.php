@@ -24,6 +24,15 @@ class LockerRequest extends Model
         'reviewed_at',
     ];
 
+    // Se serializan en ISO con zona (UTC) para que el frontend las muestre en hora local
+    protected function casts(): array
+    {
+        return [
+            'requested_at' => 'datetime',
+            'reviewed_at' => 'datetime',
+        ];
+    }
+
     // La solicitud pertenece a un estudiante (usuario)
     public function user()
     {

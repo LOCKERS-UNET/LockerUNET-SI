@@ -43,50 +43,9 @@ public function myPayments()
     ]);
 }
 
-    /**
-     * GET /payments/my/pending
-     * Solo los pendientes o vencidos (Para la pantalla de "Pago Arancel" actual)
-     */
-    public function myPending()
-    {
-        $payments = Payment::with(['assignment.locker'])
-            ->where('user_id', Auth::id())
-            ->whereIn('payment_status', ['pending', 'overdue'])
-            ->orderBy('due_date', 'asc')
-            ->get();
-
-        return Inertia::render('User/PagosPendientes', [
-            'pagos' => $payments
-        ]);
-    }
-
     // ==========================================
     // ADMIN
     // ==========================================
-
-    /**
-     * GET /admin/payments
-     */
-    public function index(Request $request)
-    {
-        $query = Payment::with(['user', 'assignment.locker']);
-
-        if ($request->has('user_id') && $request->user_id !== null) {
-            $query->where('user_id', $request->user_id);
-        }
-        if ($request->has('payment_status') && $request->payment_status !== null) {
-            $query->where('payment_status', $request->payment_status);
-        }
-        if ($request->has('semester') && $request->semester !== null) {
-            $query->where('semester', $request->semester);
-        }
-
-        $payments = $query->orderBy('created_at', 'desc')->get();
-
-        return Inertia::render('Admin/GestionPagos', [
-            'payments' => $payments
-        ]);
-    }
 
     /**
      * PATCH /admin/payments/{id}/paid

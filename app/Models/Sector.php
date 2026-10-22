@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 // Este modelo representa un sector dentro de un edificio (ej: Piso 1, Planta Baja)
 class Sector extends Model
 {
+    use HasFactory;
+
     protected $primaryKey = 'sector_id';
 
     // Esta tabla NO tiene created_at ni updated_at

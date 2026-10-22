@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -12,7 +13,7 @@ class PerfilController extends Controller
 {
     public function index()
     {
-        return Inertia::render('User/EditProfile');
+        return Inertia::render('User/EditProfile', ['carreras' => User::CARRERAS]);
     }
 
     public function store(Request $request)
@@ -20,13 +21,12 @@ class PerfilController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
+        // El correo y el carnet no se editan aquí: son la identidad institucional y el correo ya
+        // fue verificado (antes se podía cambiar por el de otra persona sin código). Los cambia el Decanato.
         $request->validate([
-            'name' => ['nullable', 'string', 'max:30'],
-            'lastname' => ['nullable', 'string', 'max:30'],
-            // Se ignora el ID del usuario actual para que el 'unique' no falle al no cambiar el correo
-            'email' => ['nullable', 'email', 'unique:users,email,' . $user->id, 'ends_with:@unet.edu.ve'],
-            'card_code' => ['nullable', 'string', 'max:5', 'unique:users,card_code,' . $user->id],
-            'career' => ['nullable', 'string', 'max:50'],
+            'name' => ['required', 'string', 'max:30'],
+            'lastname' => ['required', 'string', 'max:30'],
+            'career' => ['required', Rule::in(User::CARRERAS)],
             'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'], // Máximo 2MB
         ]);
 
@@ -42,15 +42,32 @@ class PerfilController extends Controller
             $user->profile_photo = $path;
         }
 
-        // Actualizar campos solo si se enviaron en el request
-        $user->name = $request->name ?? $user->name;
-        $user->lastname = $request->lastname ?? $user->lastname;
-        $user->email = $request->email ?? $user->email;
-        $user->card_code = $request->card_code ?? $user->card_code;
-        $user->career = $request->career ?? $user->career;
+        $user->name = trim($request->name);
+        $user->lastname = trim($request->lastname);
+        $user->career = $request->career;
 
         $user->save();
 
         return redirect()->back();
+    }
+
+    /**
+     * POST /edit-profile/password
+     * Cambiar la contraseña desde adentro (antes solo existía "olvidé mi contraseña")
+     */
+    public function password(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'min:8', 'max:72', 'confirmed', 'different:current_password'], // bcrypt ignora lo que pase de 72
+        ], [
+            'current_password.current_password' => 'La contraseña actual no es correcta.',
+            'password.different' => 'La nueva contraseña debe ser distinta de la actual.',
+            'password.max' => 'La contraseña no puede tener más de 72 caracteres.',
+        ]);
+
+        Auth::user()->update(['password' => $request->password]);
+
+        return redirect()->back()->with('success', 'Contraseña actualizada.');
     }
 }

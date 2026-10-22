@@ -28,18 +28,26 @@ const incidenciasFiltradas = computed(() => {
 // ── Modal State ──
 const modalAbierto = ref(false);
 const modalMensaje = ref('');
+const modalError = ref(false);
 const formReview = useForm({});
 
 const marcarComoRevisada = (inc: any) => {
+    // Un segundo toque mandaba otra petición, que respondía "ya fue revisada"
+    if (formReview.processing) {
+        return;
+    }
+
     formReview.put(`/admin/incidents/${inc.incident_id}/review`, {
         preserveScroll: true,
         onSuccess: () => {
             inc.status = 'reviewed';
+            modalError.value = false;
             modalMensaje.value = '¡Incidencia marcada como revisada!';
             modalAbierto.value = true;
         },
-        onError: () => {
-            modalMensaje.value = 'No se pudo actualizar la incidencia. Intenta de nuevo.';
+        onError: (errors) => {
+            modalError.value = true;
+            modalMensaje.value = Object.values(errors)[0] || 'No se pudo actualizar la incidencia. Intenta de nuevo.';
             modalAbierto.value = true;
         }
     });
@@ -105,8 +113,8 @@ const marcarComoRevisada = (inc: any) => {
 
                         <!-- Botón Acción Compacto -->
                         <div v-if="inc.status === 'pending'" class="w-full flex justify-center mt-auto">
-                            <button @click="marcarComoRevisada(inc)" class="w-full bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold py-1.5 px-2 rounded-md shadow-sm transition active:scale-95 text-[10px]">
-                                Revisada
+                            <button @click="marcarComoRevisada(inc)" :disabled="formReview.processing" class="w-full bg-[#213779] hover:bg-[#1a2b5f] text-white font-extrabold min-h-[44px] px-2 rounded-md shadow-sm transition active:scale-95 text-xs disabled:opacity-50">
+                                {{ formReview.processing ? 'Guardando…' : 'Revisada' }}
                             </button>
                         </div>
                         <div v-else class="w-full flex justify-center mt-auto py-1">
@@ -129,6 +137,7 @@ const marcarComoRevisada = (inc: any) => {
         <ModalComponent
             :show="modalAbierto"
             :text="modalMensaje"
+            :error="modalError"
             title-button="Aceptar"
             url=""
             @close="modalAbierto = false"

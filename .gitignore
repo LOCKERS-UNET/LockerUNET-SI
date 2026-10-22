@@ -25,3 +25,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Capturas de las pruebas de usabilidad (se regeneran en cada ronda)
+/qa-reports/**/screenshots/

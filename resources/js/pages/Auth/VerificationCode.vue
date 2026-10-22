@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { Link, router } from '@inertiajs/vue3';
-    import { reactive } from 'vue';
+    import { reactive, ref } from 'vue';
 
     defineProps({ errors: Object, status: String });
 
@@ -8,9 +8,19 @@
         code: null,
     });
 
+    // Bloquea el botón mientras viaja la petición (un doble clic mandaba dos envíos)
+    const enviando = ref(false);
+
     const submit = () => {
+        if (enviando.value) {
+            return;
+        }
+
+        // Se marca antes de la petición: con CPU lenta onStart llegaba tarde y un doble toque enviaba dos veces
+        enviando.value = true;
         router.post('/verify-code', form, {
             preserveScroll: true,
+            onFinish: () => (enviando.value = false),
         });
     };
 </script>
@@ -20,11 +30,11 @@
 
         <!-- Header: logos (solo escritorio) -->
         <header class="hidden lg:flex lg:justify-between lg:items-center lg:w-full lg:p-6 lg:flex-shrink-0">
-            <img src="/img/Logo_Lockers_UNET.png"
+            <img src="/img/Logo_Lockers_UNET.webp"
                  alt="logo lockers unet"
                  class="h-12 md:h-20 w-auto object-contain"
             >
-            <img src="/img/Logo_UNET.png"
+            <img src="/img/Logo_UNET.webp"
                  alt="Logo unet"
                  class="h-12 md:h-20 w-auto object-contain"
             >
@@ -39,7 +49,7 @@
 
                     <!-- Logo solo en móvil/tablet -->
                     <div class="flex justify-center mb-6 lg:hidden">
-                        <img src="/img/Logo_Lockers_UNET.png"
+                        <img src="/img/Logo_Lockers_UNET.webp"
                              alt="logo lockers unet"
                              class="h-auto max-h-[80px] md:max-h-[120px] w-auto object-contain"
                         >
@@ -61,7 +71,8 @@
                         Código de verificación
                     </h2>
                     <p class="text-[#404040] text-sm mb-8 leading-relaxed">
-                        Se ha enviado un código de autenticación a su correo electrónico.
+                        Escribe el código de 6 dígitos que te llegó por correo. Vence en 15 minutos; si no lo ves, revisa la carpeta de spam
+                        o vuelve a pedirlo desde "¿Olvidaste tu contraseña?".
                     </p>
 
                     <!-- Mensaje de éxito -->
@@ -83,7 +94,8 @@
                                 id="code"
                                 name="code"
                                 placeholder="Ingresa el código de verificación"
-                                maxlength="6"
+                                inputmode="numeric"
+                                autocomplete="one-time-code"
                                 class="w-full h-10 px-5 py-3 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200
                                        placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm tracking-widest text-center font-bold text-lg"
                                 :class="{
@@ -98,9 +110,10 @@
                         <div class="pt-2 flex justify-center">
                             <button
                                 type="submit"
-                                class="w-full py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95"
+                                :disabled="enviando"
+                                class="w-full py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95 disabled:opacity-60 disabled:cursor-wait"
                             >
-                                Verificar
+                                {{ enviando ? 'Verificando…' : 'Verificar' }}
                             </button>
                         </div>
 
@@ -109,7 +122,7 @@
 
                 <!-- ===== COLUMNA DERECHA: Imagen decorativa (solo escritorio) ===== -->
                 <div class="hidden lg:flex flex-shrink-0 items-center justify-center w-[400px] h-[400px]">
-                    <img src="/img/VerificationCode.png" alt="Código de verificación" class="w-full h-full object-contain">
+                    <img loading="lazy" src="/img/VerificationCode.webp" alt="Código de verificación" class="w-full h-full object-contain">
                 </div>
 
             </div>

@@ -39,7 +39,7 @@ public function show($id)
 
     $assignment = LockerAssignment::with(['locker.sector.building'])
         ->where('user_id', $id)
-        ->where('assignment_status', 'active')
+        ->whereIn('assignment_status', LockerAssignment::VIGENTES)
         ->first();
 
     // 👇🏼 OBTENER TODAS LAS MULTAS (no solo una)
@@ -66,25 +66,6 @@ public function show($id)
     // ==========================================
 
     /**
-     * GET /admin/users/{userId}/fines
-     * Lista de multas aplicadas a un usuario en específico
-     */
-    public function userFines($userId)
-    {
-        $user = User::findOrFail($userId);
-        
-        $fines = Fine::with(['assignment.locker'])
-            ->where('user_id', $userId)
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return Inertia::render('Admin/UsuarioMultas', [
-            'user' => $user,
-            'fines' => $fines
-        ]);
-    }
-
-    /**
      * GET /admin/multas/{card_code}
      * Muestra el formulario para crear una multa
      */
@@ -101,15 +82,17 @@ public function show($id)
      */
     public function store(Request $request)
     {
+        $request->merge(['amount' => FeeRateController::montoConPunto($request->amount)]);
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'amount'  => 'required|numeric|min:0.01',
+            'amount'  => 'required|numeric|min:0.01|max:99999999.99',
             'reason'  => 'required|string|max:500',
         ]);
 
         // Buscamos la assignment activa del usuario a quien multan
         $activeAssignment = LockerAssignment::where('user_id', $request->user_id)
-            ->where('assignment_status', 'active')
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->first();
 
         if (!$activeAssignment) {

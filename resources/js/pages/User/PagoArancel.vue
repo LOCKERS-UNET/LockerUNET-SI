@@ -60,10 +60,13 @@ const tipoLabel: Record<string, string> = {
     large: 'Grande',
 };
 
-// Formatear fecha de forma legible
+// Formatear fecha de forma legible. due_date viene sin hora ("2026-11-21"): new Date() la leía en UTC
+// y en Venezuela (UTC-4) mostraba el día anterior, así que se arma la fecha local
 const formatDate = (dateString: string) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('es-ES', {
+    const [anio, mes, dia] = dateString.slice(0, 10).split('-').map(Number);
+
+    return new Date(anio, mes - 1, dia).toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'short',
         day: 'numeric'

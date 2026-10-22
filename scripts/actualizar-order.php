@@ -24,6 +24,7 @@ $colapsar = [
     'storage',
     'bootstrap/cache',
     '.github/workflows',
+    'qa-reports',
 ];
 
 // Archivos y carpetas que no aportan al mapa del proyecto.

@@ -140,7 +140,7 @@ const cerrarModal = () => {
 
                         <Link 
                             :href="`/admin/users/${user.id}`"
-                            class="px-1 bg-[#1C2F5E] text-white text-center font-bold rounded-lg text-xs w-[50px] md:w-[100px] md:px-2 sm:w-[80px] sm:text-base hover:bg-[#0f1a3a] transition"
+                            class="flex items-center justify-center min-h-[44px] min-w-[56px] px-2 bg-[#1C2F5E] text-white text-center font-bold rounded-lg text-sm md:w-[100px] sm:w-[80px] sm:text-base hover:bg-[#0f1a3a] transition"
                         >
                             Ver
                         </Link>

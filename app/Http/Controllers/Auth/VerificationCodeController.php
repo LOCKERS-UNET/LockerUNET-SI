@@ -5,22 +5,28 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\PasswordResetCode;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 
 class VerificationCodeController extends Controller
 {
     public function show()
     {
-        // Si no hay user_id en sesión, redirigir al inicio del flujo
-        if (!session('reset_user_id')) {
+        // Si no se pidió un código antes, redirigir al inicio del flujo
+        if (!session('reset_iniciado')) {
             return redirect('/forgot-password');
         }
 
-        return Inertia::render('Auth/VerificationCode');
+        return Inertia::render('Auth/VerificationCode', [
+            'status' => session('status'),
+        ]);
     }
 
     public function verify(Request $request)
     {
+        // Al pegar el código suelen venir espacios: se dejan solo los dígitos
+        $request->merge(['code' => preg_replace('/\D/', '', (string) $request->code)]);
+
         $request->validate([
             'code' => ['required', 'digits:6'],
         ], [
@@ -28,10 +34,18 @@ class VerificationCodeController extends Controller
             'code.digits'   => 'El código debe tener 6 dígitos.',
         ]);
 
+        if (!session('reset_iniciado')) {
+            return redirect('/forgot-password');
+        }
+
         $userId = session('reset_user_id');
 
-        if (!$userId) {
-            return redirect('/forgot-password');
+        // 5 códigos incorrectos bloquean 5 minutos (antes no había límite de intentos)
+        $clave = 'reset-codigo:'.$userId.'|'.$request->ip();
+        if (RateLimiter::tooManyAttempts($clave, 5)) {
+            return back()->withErrors([
+                'code' => 'Demasiados intentos. Espera '.ceil(RateLimiter::availableIn($clave) / 60).' minuto(s) y vuelve a intentarlo.',
+            ]);
         }
 
         // Buscar el código por user_id y token (nombre correcto de columna)
@@ -41,8 +55,12 @@ class VerificationCodeController extends Controller
             ->first();
 
         if (!$record) {
+            RateLimiter::hit($clave, 300);
+
             return back()->withErrors(['code' => 'El código es incorrecto.']);
         }
+
+        RateLimiter::clear($clave);
 
         if ($record->isExpired()) {
             $record->delete();

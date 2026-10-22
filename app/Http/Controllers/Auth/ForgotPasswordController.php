@@ -7,6 +7,7 @@ use App\Mail\ResetCodeMail;
 use App\Models\PasswordResetCode;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 
@@ -19,16 +20,33 @@ class ForgotPasswordController extends Controller
 
     public function send(Request $request)
     {
+        // Sin 'exists': la respuesta es la misma exista o no la cuenta, para no revelar qué correos están registrados
         $request->validate([
-            'email' => ['required', 'email', 'exists:users,email'],
+            'email' => ['required', 'email', 'ends_with:@unet.edu.ve'],
         ], [
             'email.required' => 'El correo es obligatorio.',
             'email.email'    => 'Ingresa un correo válido.',
-            'email.exists'   => 'No encontramos una cuenta con ese correo.',
+            'email.ends_with' => 'Usa tu correo institucional (termina en @unet.edu.ve).',
         ]);
 
-        // Buscar el usuario por email
-        $user = User::where('email', $request->email)->firstOrFail();
+        $user = User::where('email', $request->email)->first();
+        $mensaje = 'Si el correo está registrado, te enviamos un código de verificación. Revisa también la carpeta de spam.';
+
+        // 'reset_iniciado' habilita /verify-code; con un correo inexistente reset_user_id queda en 0 y ningún código coincide
+        session(['reset_iniciado' => true, 'reset_user_id' => $user?->id ?? 0]);
+
+        // Un código por minuto para cada correo (un doble clic generaba dos códigos). Se aplica a cualquier
+        // correo, exista o no, así que decir que hay que esperar no revela si la cuenta existe.
+        $clave = 'recuperar-clave:'.strtolower($request->email);
+        if (RateLimiter::tooManyAttempts($clave, 1)) {
+            return redirect('/verify-code')->with('status', 'Ya pediste un código hace menos de un minuto. Revisa tu correo o espera '
+                .RateLimiter::availableIn($clave).' segundos para pedir otro.');
+        }
+        RateLimiter::hit($clave, 60);
+
+        if (! $user) {
+            return redirect('/verify-code')->with('status', $mensaje);
+        }
 
         // Eliminar códigos anteriores no usados del mismo usuario
         PasswordResetCode::where('user_id', $user->id)
@@ -46,9 +64,6 @@ class ForgotPasswordController extends Controller
             'used'       => false,
         ]);
 
-        // Guardar el user_id en sesión (más seguro que email)
-        session(['reset_user_id' => $user->id]);
-
         // Enviar el código por correo
         try {
             Mail::to($user->email)->send(new ResetCodeMail($code));
@@ -64,9 +79,9 @@ class ForgotPasswordController extends Controller
             ]);
         }
 
-        return redirect('/verify-code')->with(
-            'status',
-            'Se ha enviado un código de verificación a tu correo.'
-        );
+        // Código nuevo, intentos nuevos (misma clave que VerificationCodeController@verify)
+        RateLimiter::clear('reset-codigo:'.$user->id.'|'.$request->ip());
+
+        return redirect('/verify-code')->with('status', $mensaje);
     }
 }

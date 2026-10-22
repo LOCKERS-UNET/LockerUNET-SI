@@ -59,7 +59,7 @@ class ImportLockers extends Command
                     Locker::updateOrCreate(
                         ['locker_code' => $code],
                         [
-                            'locker_type' => trim($rowData['type']),
+                            'locker_type' => strtolower(trim($rowData['type'])),
                             'status' => (int) trim($rowData['status']), 
                             'plate_number' => empty(trim($rowData['plate'])) ? null : trim($rowData['plate']),
                             'sector_id' => $sectorId,

@@ -42,11 +42,11 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 
 | Archivo | Qué hace |
 | --- | --- |
-| `LoginController.php` | Login y logout. Manda a los admins a `home-admin`. |
-| `RegisterController.php` | Registro, solo con correos `@unet.edu.ve`. Envía el código de verificación. |
-| `EmailVerificationController.php` | Verifica el código de registro y lo reenvía. Marca `email_verified_at`. |
-| `ForgotPasswordController.php` | Paso 1 de la recuperación: envía el código. |
-| `VerificationCodeController.php` | Paso 2: valida el código (sesión `reset_code_verified`). |
+| `LoginController.php` | Login y logout (el logout invalida la sesión, renueva el token y limpia el historial). Si el correo no está verificado, envía un código nuevo y manda a `/verify-email`. Manda a los admins a `home-admin`. |
+| `RegisterController.php` | Registro, solo con correos `@unet.edu.ve`. Envía el código de verificación; si el correo no sale, borra el usuario. |
+| `EmailVerificationController.php` | Muestra `/verify-email`, verifica el código y lo reenvía. Marca `email_verified_at`. |
+| `ForgotPasswordController.php` | Paso 1 de la recuperación: envía el código. Responde igual exista o no el correo (sesión `reset_iniciado`). |
+| `VerificationCodeController.php` | Paso 2: valida el código (sesión `reset_code_verified`), con límite de 5 intentos. |
 | `NewPasswordController.php` | Paso 3: guarda la contraseña nueva. |
 
 **Dominio.**
@@ -54,41 +54,43 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | Archivo | Qué hace | Páginas |
 | --- | --- | --- |
 | `HomeController.php` | Inicio del estudiante. | `Home` |
-| `LockerController.php` | Busca lockers (estudiante) y los gestiona: CRUD y JSON de disponibles. | `User/BuscarLocker`, `Admin/GestionLockers`, `Admin/ModificarLocker`, `Admin/AgregarLocker` ⚠️ |
-| `LockerRequestController.php` | Crea solicitudes, muestra "mis solicitudes" y permite aprobarlas o rechazarlas. | `User/MisSolicitudes`, `Admin/GestionSolicitudes` ⚠️ |
-| `LockerAssignmentController.php` | Muestra "mi locker", crea asignaciones directas, lista asignaciones en JSON y libera lockers. | `User/MiLocker`, `Admin/Asignaciones` |
-| `PaymentController.php` | Muestra los pagos del estudiante y permite al admin marcarlos como pagados. | `User/PagoArancel`, `User/PagosPendientes` ⚠️, `Admin/GestionPagos` ⚠️ |
+| `LockerController.php` | Busca lockers disponibles para el estudiante (filtrados por edificio y tamaño, 15 por página) y los gestiona: CRUD y JSON de disponibles. Los lockers se crean desde un modal de `GestionLockers`. | `User/BuscarLocker`, `Admin/GestionLockers`, `Admin/ModificarLocker` |
+| `LockerRequestController.php` | Muestra el formulario de solicitud con los datos del locker (`form`), crea solicitudes, muestra "mis solicitudes", deja al estudiante cancelar una pendiente (`cancelled`) y permite aprobarlas o rechazarlas. Aprobar crea la asignación y el primer pago, y necesita un arancel para ese tipo de locker. | `User/MisSolicitudes`, `Admin/GestionSolicitudes` |
+| `LockerAssignmentController.php` | Muestra "mi locker", crea asignaciones directas y lista asignaciones en JSON. Devolución en dos pasos: el estudiante la solicita (`requestReturn`, queda `return_requested`) y el admin la confirma (`release`). Pagos pendientes o multas la bloquean. | `User/MiLocker`, `Admin/Asignaciones` |
+| `PaymentController.php` | Muestra los pagos del estudiante y permite al admin marcarlos como pagados (desde `Asignaciones`). | `User/PagoArancel` |
 | `FeeRateController.php` | Tarifas (aranceles) y generación de pagos del semestre. | `Admin/Aranceles` |
-| `FineController.php` | Multas: las del estudiante, y crearlas o borrarlas desde el admin. | `User/MultasUser`, `Admin/CrearMulta`, `Admin/UsuarioMultas` ⚠️ |
+| `FineController.php` | Multas: las del estudiante, y crearlas o borrarlas desde el admin. El admin ve las multas de un usuario en `VistaUsuario`. | `User/MultasUser`, `Admin/CrearMulta` |
 | `IncidentController.php` | Recibe los reportes de incidencias y los marca como revisados. | `Admin/Incidencias` |
 | `NotificationController.php` | Notificaciones en la app: listado, marcar leídas y contador. | `User/Notificaciones` |
 | `StatsController.php` | Estadísticas: la vista y los endpoints JSON para las gráficas. También gestiona los semestres. | `Admin/EstadisticasLockers` |
 | `UserController.php` | Listado, búsqueda y detalle de usuarios (admin). | `Admin/Usuarios`, `Admin/VistaUsuario` |
 | `ProfileController.php` | Ver y actualizar el perfil (`/profile`). | `User/Profile` |
-| `PerfilController.php` | Editar el perfil (`/edit-profile`). Hace lo mismo que `ProfileController`. | `User/EditProfile` |
+| `PerfilController.php` | Editar el perfil (`/edit-profile`): nombre, apellido, carrera (de `User::CARRERAS`) y foto, y cambiar la contraseña (`password`). El correo y el carnet no se editan. | `User/EditProfile` |
 | `Controller.php` | Clase base. | |
 | `MultaController.php` | **Legado.** Reemplazado por `FineController`. | |
 | `BuscarUsuarioController.php` | **Legado.** Reemplazado por `UserController`. | |
 
-⚠️ = el controlador renderiza esa página, pero el `.vue` no existe en `resources/js/pages/`. Si se llega a esa ruta, falla.
+Cada página que se renderiza desde PHP debe existir en `resources/js/pages/`. Lo revisa `tests/Unit/PaginasInertiaExistenTest.php`.
 
 ### `app/Http/Middleware/`
 
 | Archivo | Qué hace |
 | --- | --- |
-| `HandleInertiaRequests.php` | Props compartidas con todas las páginas: `name` y `auth.user`. |
+| `HandleInertiaRequests.php` | Props compartidas con todas las páginas: `name`, `auth.user` y `flash` (`success`, `status`). |
 | `IsAdminMiddleware.php` | Protege las rutas de admin con `users.is_admin` y, si no es admin, redirige a `home`. |
+| `SinCacheConSesion.php` | Con sesión iniciada envía `Cache-Control: no-store, private` (en el grupo `web`, `bootstrap/app.php`). |
+| `CifrarHistorial.php` | Cifra el historial de Inertia en el grupo autenticado si la conexión es HTTPS o localhost; el logout lo limpia. |
 
 ### `app/Models/`
 
 | Archivo | Tabla | Notas |
 | --- | --- | --- |
-| `User.php` | `users` | Campo `is_admin`, perfil y foto. |
-| `Building.php` | `buildings` | Edificio → sectores. |
+| `User.php` | `users` | Campo `is_admin`, perfil y foto. `CARRERAS` es la lista de carreras del registro y el perfil. |
+| `Building.php` | `buildings` | Edificio → sectores; `lockers()` llega a sus lockers a través de los sectores. |
 | `Sector.php` | `sectors` | Sector → lockers. |
-| `Locker.php` | `lockers` | PK `locker_id`. |
+| `Locker.php` | `lockers` | PK `locker_id`. `solicitables()`: disponibles y sin solicitud pendiente (lo que el estudiante puede pedir). |
 | `LockerRequest.php` | `locker_requests` | Solicitud del estudiante. PK `request_id`. |
-| `LockerAssignment.php` | `locker_assignments` | Asignación aprobada (`assignment_status`). PK `assignment_id`. |
+| `LockerAssignment.php` | `locker_assignments` | Asignación aprobada. `assignment_status`: `active`, `return_requested` o `released`; `VIGENTES` agrupa las dos primeras. PK `assignment_id`. |
 | `Payment.php` | `payments` | Pago de una asignación en un semestre. |
 | `FeeRate.php` | `fee_rates` | Tarifas, con historial. |
 | `Semester.php` | `semesters` | Semestres académicos. |
@@ -106,6 +108,7 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | Archivo | Qué hace |
 | --- | --- |
 | `app/Helpers/NotificationHelper.php` | `NotificationHelper::send($userId, $type, $title, $message)` crea una notificación en la app. |
+| `app/Helpers/EmailVerificationHelper.php` | `EmailVerificationHelper::send($user)` genera un código de 6 dígitos (15 min), invalida los anteriores y lo envía. Lo usan el registro, el login y "Reenviar código". |
 | `app/Mail/EmailVerificationCodeMail.php` | Correo con el código de registro. |
 | `app/Mail/ResetCodeMail.php` | Correo con el código para recuperar la contraseña. |
 | `app/Providers/AppServiceProvider.php` | Provider de la app. |
@@ -114,15 +117,16 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 
 | Archivo | Qué hace |
 | --- | --- |
-| `web.php` | Todas las rutas, en tres zonas. **Estudiante:** grupo `auth`. **Admin:** `IsAdminMiddleware`, casi todas bajo `/admin/*`. **Públicas e invitado:** login, registro, verificación y recuperación. Algunas devuelven páginas Inertia y otras devuelven JSON. |
+| `web.php` | Todas las rutas, en tres zonas. **Estudiante:** grupo `auth` + `verified` (sin correo verificado redirige a `/verify-email`). **Admin:** `IsAdminMiddleware`, casi todas bajo `/admin/*`. **Públicas e invitado:** login, registro, verificación y recuperación. Algunas devuelven páginas Inertia y otras devuelven JSON. |
 | `console.php` | Programa `app:check-payments` a diario. |
 
 Notas sobre `web.php`:
 
 - `home` está declarada dos veces. Gana la segunda, la de `HomeController`.
-- `/fee-rates` (`aranceles-admin`) y `PUT /admin/assignments/{id}/release` están dentro de `auth` pero **fuera** de `IsAdminMiddleware`, así que cualquier estudiante autenticado puede llegar a ellas.
+- `/fee-rates` (`aranceles-admin`) está dentro del grupo admin, aunque su URL no empiece con `/admin`.
+- `POST /devolucion-locker/{id}` (estudiante, solo su asignación) solicita la devolución; `PUT /admin/assignments/{id}/release` (admin) la confirma o libera directamente.
 - Las rutas de estadísticas, semestres y generación de pagos están dentro del grupo admin, aunque su indentación no lo parezca.
-- Varias páginas se renderizan desde closures en la misma ruta: `User/SolicitudLocker`, `User/ReporteIncidencia` y `User/DevolucionLocker`.
+- Algunas páginas se renderizan desde closures en la misma ruta: `User/ReporteIncidencia` y `User/DevolucionLocker`. `User/SolicitudLocker` la arma `LockerRequestController@form` desde el `locker_id`.
 
 ## `database/`
 
@@ -149,18 +153,21 @@ Notas sobre `web.php`:
 | `2026_04_24_045310_create_semesters_table.php` | `semesters` |
 | `2026_04_28_152837_add_email_verified_at_to_users_table.php` | `email_verified_at` en `users` |
 | `2026_04_28_153201_create_email_verification_codes_table.php` | `email_verification_codes` |
+| `2026_10_21_000000_mark_existing_admins_as_verified.php` | Marca como verificados a los admins existentes, que el seeder creaba sin `email_verified_at`. |
+| `2026_10_22_000000_normalize_locker_types.php` | Pasa a minúsculas los tipos de locker (`Large` → `large`), que la validación no aceptaba. |
 
 ### `seeders/`
 
 | Archivo | Qué siembra |
 | --- | --- |
 | `DatabaseSeeder.php` | Llama a los demás seeders. |
-| `UsersSeeder.php` | El admin `adminBE@unet.edu.ve`. |
+| `UsersSeeder.php` | El admin `adminBE@unet.edu.ve`, ya verificado. |
 | `LockerSeeder.php` | Edificios, sectores y lockers desde `data/*.csv`. |
 | `FeeRateSeeder.php` | Tarifas iniciales. |
+| `QaAdminSeeder.php` | Solo para la QA del panel admin, **no** está en `DatabaseSeeder`: estudiantes `qa-est1..10@unet.edu.ve`, asignaciones, devoluciones, solicitudes, pagos, una multa, incidencias y semestres. Se corre a mano sobre una base recién sembrada. |
 | `data/Buildings.csv`, `data/sectors.csv`, `data/Lockers.csv` | El inventario real de la UNET. |
 
-`factories/UserFactory.php` se usa en las pruebas.
+Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `BuildingFactory.php`, `SectorFactory.php`, `LockerFactory.php` (estados `ocupado` y `enMantenimiento`) y `LockerAssignmentFactory.php` (activa, `devolucionSolicitada` o `liberada`).
 
 ## `resources/`: frontend
 
@@ -169,6 +176,7 @@ Notas sobre `web.php`:
 | `views/app.blade.php` | Shell HTML de Inertia. Carga `resources/js/app.ts` con Vite. |
 | `views/emails/email-verification.blade.php` | Plantilla del correo de verificación. |
 | `views/emails/reset-code.blade.php` | Plantilla del correo de recuperación. |
+| `views/errors/*.blade.php` | Páginas de error en español (403, 404, 405, 419, 429, 500, 503) con `layout.blade.php`; HTML simple, sin Vite. |
 | `css/app.css` | Tailwind v4 y estilos globales. |
 | `js/app.ts` | Arranque de Inertia y Vue. |
 | `js/lib/utils.ts` | Utilidades compartidas. |
@@ -185,6 +193,7 @@ Notas sobre `web.php`:
 **`Components/`**
 
 - `ModalComponent.vue`: modal reutilizable.
+- `FlashMessage.vue`: aviso flotante con los mensajes `success`/`status` del backend; lo usa `Layout.vue`. En `LayoutAdmin.vue` va con `con-errores` y también muestra el primer error de validación, en rojo.
 
 **`Auth/`**
 
@@ -203,17 +212,17 @@ Notas sobre `web.php`:
 
 | Página | Ruta | Qué hace |
 | --- | --- | --- |
-| `BuscarLocker.vue` | `/lockers` | Buscar lockers disponibles. |
+| `BuscarLocker.vue` | `/lockers` | Buscar lockers disponibles, con filtros y paginación del servidor. |
 | `SolicitudLocker.vue` | `/solicitud-locker` | Pedir un locker y descargar el PDF de la solicitud. |
-| `MisSolicitudes.vue` | `/requests/my` | Estado de las solicitudes. |
+| `MisSolicitudes.vue` | `/requests/my` | Estado de las solicitudes; cancelar una pendiente. |
 | `MiLocker.vue` | `/assignments/my` | El locker asignado. |
 | `PagoArancel.vue` | `/payments/my` | Pagos del semestre. |
 | `MultasUser.vue` | `/fines/my` | Multas del estudiante. |
 | `ReporteIncidencia.vue` | `/reportes-user` | Reportar una incidencia. |
-| `DevolucionLocker.vue` | `/devolucion-locker` | Devolver el locker. |
+| `DevolucionLocker.vue` | `/devolucion-locker` | Solicitar la devolución del locker; muestra "Devolución en proceso" hasta que el admin la confirme. |
 | `Notificaciones.vue` | `/notifications` | Notificaciones de la app. |
 | `Profile.vue` | `/profile` | Ver el perfil. |
-| `EditProfile.vue` | `/edit-profile` | Editar el perfil. |
+| `EditProfile.vue` | `/edit-profile` | Editar el perfil y cambiar la contraseña. |
 
 **`Admin/`**: páginas del administrador.
 
@@ -222,7 +231,8 @@ Notas sobre `web.php`:
 | `HomeAdmin.vue` | `/inicio-admin` | Panel principal. |
 | `GestionLockers.vue` | `/admin/lockers` | Listar y buscar lockers. |
 | `ModificarLocker.vue` | `/admin/lockers/{id}/edit` | Editar un locker. |
-| `Asignaciones.vue` | `/admin/assignments` | Asignar y liberar lockers. |
+| `Asignaciones.vue` | `/admin/assignments` | Asignar y liberar lockers, confirmar devoluciones pendientes y marcar pagos como pagados. |
+| `GestionSolicitudes.vue` | `/admin/requests` | Aprobar o rechazar las solicitudes de los estudiantes. |
 | `Aranceles.vue` | `/fee-rates` | Tarifas y generación de pagos. |
 | `EstadisticasLockers.vue` | `/estadisticas-lockers` | Gráficas con Chart.js. |
 | `Incidencias.vue` | `/admin/incidents` | Revisar incidencias. |
@@ -245,11 +255,13 @@ Notas sobre `web.php`:
 | Ruta | Qué hace |
 | --- | --- |
 | `bootstrap/` | `app.php` (rutas, middleware y excepciones) y `providers.php`. |
-| `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. |
+| `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. `app.locale` está fijo en `es`. |
+| `lang/es/validation.php` | Mensajes de validación en español y nombres de los campos (`card_code` → "carnet", etc.). |
 | `storage/` | Logs, caché y archivos subidos. En git solo están sus `.gitignore`. |
-| `tests/` | `Feature/ExampleTest.php`, `Unit/ExampleTest.php` y `TestCase.php`. Solo hay pruebas de ejemplo. |
+| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/RecuperarContrasenaTest.php`: recuperar contraseña sin revelar cuentas y con límite de intentos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Feature/Admin/`: el panel admin. `PermisosAdminTest` recorre todas las rutas de admin (estudiante → inicio, invitado → login, el admin abre cada GET sin error 500); `LockersAdminTest`, `SolicitudesAsignacionesTest`, `PagosArancelesTest`, `MultasIncidenciasTest` y `UsuariosEstadisticasTest` cubren cada flujo.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
 | `.github/workflows/` | CI: `lint.yml` y `tests.yml`. |
 | `scripts/actualizar-order.php` | Regenera el árbol de este archivo. |
+| `qa-reports/` | Reportes de las pruebas de usabilidad con subagentes (`RESUMEN.md`, uno por persona y por ronda). Las capturas están en el gitignore. |
 | `.githooks/pre-commit` | Corre el script anterior antes de cada commit. |
 
 ## Árbol de archivos
@@ -270,6 +282,7 @@ LockerUNET-SI/
 │   │       ├── ImportLockers.php
 │   │       └── ImportSectors.php
 │   ├── Helpers/
+│   │   ├── EmailVerificationHelper.php
 │   │   └── NotificationHelper.php
 │   ├── Http/
 │   │   ├── Controllers/
@@ -297,8 +310,10 @@ LockerUNET-SI/
 │   │   │   ├── StatsController.php
 │   │   │   └── UserController.php
 │   │   └── Middleware/
+│   │       ├── CifrarHistorial.php
 │   │       ├── HandleInertiaRequests.php
-│   │       └── IsAdminMiddleware.php
+│   │       ├── IsAdminMiddleware.php
+│   │       └── SinCacheConSesion.php
 │   ├── Mail/
 │   │   ├── EmailVerificationCodeMail.php
 │   │   └── ResetCodeMail.php
@@ -340,6 +355,10 @@ LockerUNET-SI/
 │   └── session.php
 ├── database/
 │   ├── factories/
+│   │   ├── BuildingFactory.php
+│   │   ├── LockerAssignmentFactory.php
+│   │   ├── LockerFactory.php
+│   │   ├── SectorFactory.php
 │   │   └── UserFactory.php
 │   ├── migrations/
 │   │   ├── 0001_01_01_000000_create_users_table.php
@@ -360,24 +379,31 @@ LockerUNET-SI/
 │   │   ├── 2026_04_09_094348_add_profile_photo_to_users_table.php
 │   │   ├── 2026_04_24_045310_create_semesters_table.php
 │   │   ├── 2026_04_28_152837_add_email_verified_at_to_users_table.php
-│   │   └── 2026_04_28_153201_create_email_verification_codes_table.php
+│   │   ├── 2026_04_28_153201_create_email_verification_codes_table.php
+│   │   ├── 2026_10_21_000000_mark_existing_admins_as_verified.php
+│   │   └── 2026_10_22_000000_normalize_locker_types.php
 │   ├── seeders/
 │   │   ├── data/  (3 archivos)
 │   │   ├── DatabaseSeeder.php
 │   │   ├── FeeRateSeeder.php
 │   │   ├── LockerSeeder.php
+│   │   ├── QaAdminSeeder.php
 │   │   └── UsersSeeder.php
 │   └── .gitignore
+├── lang/
+│   └── es/
+│       └── validation.php
 ├── public/
 │   ├── docs/
 │   │   └── Solicitud_de_Locker.pdf
-│   ├── img/  (9 archivos)
+│   ├── img/  (17 archivos)
 │   ├── .htaccess
 │   ├── apple-touch-icon.png
 │   ├── favicon.ico
 │   ├── favicon.svg
 │   ├── index.php
 │   └── robots.txt
+├── qa-reports/  (23 archivos)
 ├── resources/
 │   ├── css/
 │   │   └── app.css
@@ -391,6 +417,7 @@ LockerUNET-SI/
 │   │   │   │   ├── CrearMulta.vue
 │   │   │   │   ├── EstadisticasLockers.vue
 │   │   │   │   ├── GestionLockers.vue
+│   │   │   │   ├── GestionSolicitudes.vue
 │   │   │   │   ├── HomeAdmin.vue
 │   │   │   │   ├── Incidencias.vue
 │   │   │   │   ├── ModificarLocker.vue
@@ -404,6 +431,7 @@ LockerUNET-SI/
 │   │   │   │   ├── VerificationCode.vue
 │   │   │   │   └── VerifyEmail.vue
 │   │   │   ├── Components/
+│   │   │   │   ├── FlashMessage.vue
 │   │   │   │   └── ModalComponent.vue
 │   │   │   ├── Layouts/
 │   │   │   │   ├── Layout.vue
@@ -431,6 +459,15 @@ LockerUNET-SI/
 │       ├── emails/
 │       │   ├── email-verification.blade.php
 │       │   └── reset-code.blade.php
+│       ├── errors/
+│       │   ├── 403.blade.php
+│       │   ├── 404.blade.php
+│       │   ├── 405.blade.php
+│       │   ├── 419.blade.php
+│       │   ├── 429.blade.php
+│       │   ├── 500.blade.php
+│       │   ├── 503.blade.php
+│       │   └── layout.blade.php
 │       └── app.blade.php
 ├── routes/
 │   ├── console.php
@@ -440,9 +477,23 @@ LockerUNET-SI/
 ├── storage/  (10 archivos)
 ├── tests/
 │   ├── Feature/
-│   │   └── ExampleTest.php
+│   │   ├── Admin/
+│   │   │   ├── LockersAdminTest.php
+│   │   │   ├── MultasIncidenciasTest.php
+│   │   │   ├── PagosArancelesTest.php
+│   │   │   ├── PermisosAdminTest.php
+│   │   │   ├── SolicitudesAsignacionesTest.php
+│   │   │   └── UsuariosEstadisticasTest.php
+│   │   ├── DevolucionLockerTest.php
+│   │   ├── ExampleTest.php
+│   │   ├── GestionSolicitudesTest.php
+│   │   ├── RecuperarContrasenaTest.php
+│   │   ├── RutasProtegidasTest.php
+│   │   ├── UsabilidadTest.php
+│   │   └── VerificacionCorreoTest.php
 │   ├── Unit/
-│   │   └── ExampleTest.php
+│   │   ├── ExampleTest.php
+│   │   └── PaginasInertiaExistenTest.php
 │   └── TestCase.php
 ├── .editorconfig
 ├── .env.example
@@ -462,6 +513,7 @@ LockerUNET-SI/
 ├── package.json
 ├── phpunit.xml
 ├── pint.json
+├── prompt-5-subagentes.md
 ├── README.md
 ├── tsconfig.json
 └── vite.config.ts

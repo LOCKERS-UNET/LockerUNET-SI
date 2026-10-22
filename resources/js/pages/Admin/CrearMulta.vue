@@ -44,10 +44,21 @@
 
     //**Ejemplo al momento de subir formulario, 
     // debemos abrir el modal en caso de que todo este bien. */
+    // Con dos toques seguidos se creaban dos multas iguales
+    const enviando = ref(false);
+
     const submit = () => {
+        if (enviando.value) {
+            return;
+        }
+
+        enviando.value = true;
         router.post('/admin/fines', form, {
             onSuccess: () => {
                 openModal();
+            },
+            onFinish: () => {
+                enviando.value = false;
             }
         });
     }
@@ -74,13 +85,13 @@
                     <label for="monto" class="block text-[#404040] font-semibold ml-1">
                         Monto
                     </label>
+                    <!-- type="text": con type="number" el navegador descartaba la coma y 12,50 llegaba como 1250 -->
                     <input 
-                        type="number"
-                        step="1"
-                        min="1"
+                        type="text"
+                        inputmode="decimal"
                         name="monto" 
                         id="monto"
-                        placeholder="Ej. BS.1000"
+                        placeholder="Ej. 1000 o 12,50"
                         class="w-full h-10 px-5 py-3 rounded-full bg-gray-100  border-3  focus:bg-white focus:outline-none text-[#404040] transition duration-200
                             placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
                         :class="{
@@ -116,9 +127,10 @@
                 <div class="pt-4 flex justify-center">
                     <button 
                         type="submit"
-                        class="w-1/2 py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95"
+                        :disabled="enviando"
+                        class="w-1/2 py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95 disabled:opacity-50"
                     >
-                        Generar Multa
+                        {{ enviando ? 'Generando…' : 'Generar Multa' }}
                     </button>
                 </div>
 

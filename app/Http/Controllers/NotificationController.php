@@ -18,7 +18,7 @@ class NotificationController extends Controller
         $query = Notification::where('user_id', Auth::id());
 
         // Búsqueda LIKE opcional
-        if ($request->has('search') && $request->search) {
+        if (is_string($request->search) && $request->search !== '') {
             $searchTerm = '%' . $request->search . '%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('title', 'LIKE', $searchTerm)

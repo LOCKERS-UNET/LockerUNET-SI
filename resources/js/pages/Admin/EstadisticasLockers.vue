@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import LayoutAdmin from '../Layouts/LayoutAdmin.vue';
 // Importación de Chart.js
@@ -16,10 +16,12 @@ defineOptions({ layout: LayoutAdmin });
 
 interface Stats {
     uso_proyectado: number;
+    vigentes: number;
+    ocupados: number;
     capacidad_total: number;
-    crecimiento: string;
     tasa_ocupacion: string;
     chart_data: number[];
+    chart_labels: string[];
 }
 
 interface Filters {
@@ -62,15 +64,39 @@ const filtroCarrera = ref(props.filters?.carrera || '');
 const filtroSemestre = ref(props.filters?.semestre || '');
 const filtroMes = ref(props.filters?.mes || '');
 
+// "+ Agregar Semestre" es una opción del select: Chrome no dispara @click en un <option>,
+// así que se detecta al cambiar el valor y el select vuelve al semestre que tenía
+watch(filtroSemestre, (nuevo, anterior) => {
+    if (nuevo === '__agregar__') {
+        filtroSemestre.value = anterior;
+        abrirModalSemestre();
+
+        return;
+    }
+
+    // El mes tenía prioridad sobre el semestre y elegir un semestre no cambiaba nada: son excluyentes
+    if (nuevo) {
+        filtroMes.value = '';
+    }
+});
+
+watch(filtroMes, (nuevo) => {
+    if (nuevo) {
+        filtroSemestre.value = '';
+    }
+});
+
+const tituloPeriodo = computed(() => filtroMes.value || (filtroSemestre.value ? `Semestre ${filtroSemestre.value}` : ''));
+
 // Configuración de Datos para la Gráfica
 const chartData = computed(() => {
     // Si no hay datos, enviamos una estructura vacía segura
     const dataPoints = props.stats?.chart_data || [];
     
     return {
-        labels: Array.from({ length: dataPoints.length }, (_, i) => i + 1),
+        labels: props.stats?.chart_labels ?? Array.from({ length: dataPoints.length }, (_, i) => String(i + 1)),
         datasets: [{
-            label: 'Ocupación',
+            label: 'Asignaciones nuevas (acumulado)',
             data: dataPoints,
             borderColor: '#1768B4',
             backgroundColor: 'rgba(23, 104, 180, 0.1)',
@@ -91,7 +117,7 @@ const chartOptions = computed(() => ({
         legend: { display: false },
         tooltip: {
             backgroundColor: '#213779',
-            titleFont: { size: 14, weight: 'bold' },
+            titleFont: { size: 14, weight: 'bold' as const },
             padding: 12,
             cornerRadius: 10
         }
@@ -99,22 +125,23 @@ const chartOptions = computed(() => ({
     scales: {
         y: {
             beginAtZero: true,
-            // Validación de seguridad para capacidad_total
-            max: (props.stats?.capacidad_total > 0) ? props.stats.capacidad_total : 10,
+            // Escala automática: con max = capacidad (1159) unas pocas asignaciones eran una línea plana en 0
+            suggestedMax: 5,
             grid: { color: 'rgba(0,0,0,0.03)' },
-            ticks: { font: { size: 10, weight: 'bold' }, color: '#94a3b8' }
+            ticks: { precision: 0, font: { size: 10, weight: 'bold' as const }, color: '#94a3b8' }
         },
         x: {
             grid: { display: false },
-            ticks: { font: { size: 10, weight: 'bold' }, color: '#94a3b8' }
+            ticks: { font: { size: 10, weight: 'bold' as const }, color: '#94a3b8' }
         }
     }
 }));
 
+// "Ocupados" cuenta el inventario, igual que el panel de inicio; "vigentes" solo las asignaciones del sistema
 const kpis = computed(() => [
-    { label: 'Uso Actual', value: props.stats?.uso_proyectado ?? 0, color: 'bg-[#1768B4]' },
-    { label: 'Capacidad Total', value: props.stats?.capacidad_total ?? 0, color: 'bg-[#DC2626]' },
-    { label: 'Crecimiento Mensual', value: (parseFloat(props.stats?.crecimiento) >= 0 ? '+' : '') + (props.stats?.crecimiento ?? '0') + '%', color: 'bg-[#0D7A5F]' },
+    { label: 'Nuevas en el período', value: props.stats?.uso_proyectado ?? 0, color: 'bg-[#1768B4]' },
+    { label: 'Asignaciones vigentes', value: props.stats?.vigentes ?? 0, color: 'bg-[#0D7A5F]' },
+    { label: 'Lockers ocupados / total', value: `${props.stats?.ocupados ?? 0} / ${props.stats?.capacidad_total ?? 0}`, color: 'bg-[#DC2626]' },
     { label: 'Tasa de Ocupación', value: (props.stats?.tasa_ocupacion ?? '0') + '%', color: 'bg-[#F97316]' }
 ]);
 
@@ -129,22 +156,36 @@ const aplicarFiltros = () => {
     });
 };
 
-const abrirModalSemestre = () => {
+function abrirModalSemestre() {
+    // Propone seis meses desde el actual; el fin pasa al año siguiente si hace falta (antes podía dar mes 13)
+    const hoy = new Date();
+    const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 5, 1);
+
     formSemestre.value = {
         name: '',
-        start_month: new Date().getMonth() + 1,
-        start_year: new Date().getFullYear(),
-        end_month: new Date().getMonth() + 6,
-        end_year: new Date().getFullYear(),
+        start_month: hoy.getMonth() + 1,
+        start_year: hoy.getFullYear(),
+        end_month: fin.getMonth() + 1,
+        end_year: fin.getFullYear(),
     };
     modalAbierto.value = true;
-};
+}
+
+const guardandoSemestre = ref(false);
 
 const guardarSemestre = () => {
+    if (guardandoSemestre.value) {
+        return;
+    }
+
+    guardandoSemestre.value = true;
     router.post('/admin/semesters', formSemestre.value, {
         preserveScroll: true,
         onSuccess: () => {
             modalAbierto.value = false;
+        },
+        onFinish: () => {
+            guardandoSemestre.value = false;
         },
         onError: (errors) => {
             console.error('Error al crear semestre:', errors);
@@ -178,7 +219,7 @@ const cerrarModal = () => {
                         <option value="">Seleccionar semestre</option>
                         <option v-for="s in semestresList" :key="s" :value="s">{{ s }}</option>
                         <option disabled>──────────</option>
-                        <option value="__agregar__" @click="abrirModalSemestre">+ Agregar Semestre</option>
+                        <option value="__agregar__">+ Agregar Semestre</option>
                     </select>
                 </div>
 
@@ -196,7 +237,7 @@ const cerrarModal = () => {
             <div class="flex flex-col lg:flex-row gap-8">
                 <div class="w-full lg:w-3/4 bg-white p-8 rounded-3xl shadow-sm border border-gray-50">
                     <h3 class="text-center font-black text-gray-400 mb-8 uppercase tracking-widest text-sm">
-                        Curva de Ocupación Acumulada - {{ filtroMes }}
+                        Asignaciones nuevas (acumulado) - {{ tituloPeriodo }}
                     </h3>
                     
                     <div class="h-[300px] w-full relative">
@@ -205,10 +246,10 @@ const cerrarModal = () => {
 
                     <div class="flex justify-center gap-8 mt-10">
                         <div class="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase">
-                            <span class="w-6 h-1.5 bg-[#1768B4] rounded-full"></span> Uso Real Acumulado
+                            <span class="w-6 h-1.5 bg-[#1768B4] rounded-full"></span> Asignaciones nuevas (acumulado)
                         </div>
                         <div class="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase">
-                            <span class="w-6 h-0.5 border-t border-dashed border-gray-300"></span> Eje de Tiempo (Días)
+                            <span class="w-6 h-0.5 border-t border-dashed border-gray-300"></span> {{ filtroSemestre ? 'Meses del semestre' : 'Días del mes' }}
                         </div>
                     </div>
                 </div>
@@ -286,6 +327,7 @@ const cerrarModal = () => {
                     </button>
                     <button 
                         @click="guardarSemestre"
+                        :disabled="guardandoSemestre"
                         class="flex-1 px-4 py-2 bg-[#213779] text-white rounded-lg hover:bg-[#1a2b5f] transition font-bold"
                     >
                         Guardar Semestre

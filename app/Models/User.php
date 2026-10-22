@@ -14,6 +14,13 @@ use Illuminate\Notifications\Notifiable;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
+    // Carreras que se ofrecen en el registro y el perfil (se validan con 'in:')
+    public const CARRERAS = [
+        'Informática', 'Industrial', 'Civil', 'Electrónica', 'Mecánica', 'Psicología',
+        'TSU Entrenamiento Deportivo', 'Producción Animal', 'Ambiental', 'Agronomía',
+        'Música', 'Agroindustrial', 'Arquitectura',
+    ];
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 

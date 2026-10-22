@@ -6,9 +6,10 @@ import Layout from '../Layouts/Layout.vue';
 
 defineOptions({ layout: Layout });
 
-const props = defineProps({
-    errors: Object
-});
+const props = defineProps<{
+    errors: Record<string, string>;
+    carreras: string[];
+}>();
 
 // Obtenemos los datos actuales del usuario desde las props globales
 const user = usePage().props.auth.user;
@@ -20,8 +21,6 @@ const photoPreview = ref<string | null>(null);
 const form = useForm({
     name: user.name || '',
     lastname: user.lastname || '',
-    email: user.email || '',
-    card_code: user.card_code || '',
     career: user.career || '',
     profile_photo: null as File | null,
 });
@@ -40,6 +39,21 @@ const handlePhotoChange = (e: any) => {
         form.profile_photo = file;
         photoPreview.value = URL.createObjectURL(file);
     }
+};
+
+// Cambiar contraseña (formulario aparte)
+const formClave = useForm({
+    current_password: '',
+    password: '',
+    password_confirmation: '',
+});
+
+const cambiarClave = () => {
+    formClave.post('/edit-profile/password', {
+        preserveScroll: true,
+        onSuccess: () => formClave.reset(),
+        onError: () => formClave.reset('password', 'password_confirmation'),
+    });
 };
 
 const submit = () => {
@@ -88,7 +102,8 @@ const submit = () => {
                     <input type="text" id="name" placeholder="Ingresa tu Nombre"
                         class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
                         :class="errors?.name ? 'border-[#DC2626] bg-[#FEE2E2]' : 'border-[#E5E5E5] focus:border-[#22397A]'"
-                        v-model="form.name">
+                        v-model="form.name" maxlength="30">
+                    <small v-if="errors?.name" class="text-red-500 font-bold ml-4">{{ errors.name }}</small>
                 </div>
 
                 <div class="space-y-2 min-h-16">
@@ -96,32 +111,34 @@ const submit = () => {
                     <input type="text" id="lastname" placeholder="Ingresa tu Apellido"
                         class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
                         :class="errors?.lastname ? 'border-[#DC2626] bg-[#FEE2E2]' : 'border-[#E5E5E5] focus:border-[#22397A]'"
-                        v-model="form.lastname">
+                        v-model="form.lastname" maxlength="30">
+                    <small v-if="errors?.lastname" class="text-red-500 font-bold ml-4">{{ errors.lastname }}</small>
                 </div>
 
                 <div class="space-y-2 min-h-16">
                     <label for="email" class="block text-[#404040] font-semibold ml-1">Correo</label>
-                    <input type="email" id="email" placeholder="Ingresa tu correo UNET"
-                        class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
-                        :class="errors?.email ? 'border-[#DC2626] bg-[#FEE2E2]' : 'border-[#E5E5E5] focus:border-[#22397A]'"
-                        v-model="form.email">
-                    <small v-if="errors?.email" class="text-red-500 font-bold ml-4">{{ errors.email }}</small>
+                    <!-- Solo lectura: el correo verificado y el carnet los cambia el Decanato -->
+                    <input type="email" id="email" :value="user.email" readonly
+                        class="w-full h-10 px-5 rounded-full bg-gray-200 border-2 border-[#E5E5E5] text-gray-500 cursor-not-allowed">
                 </div>
 
                 <div class="space-y-2 min-h-16">
                     <label for="card_code" class="block text-[#404040] font-semibold ml-1">Código Carnet</label>
-                    <input type="text" id="card_code" placeholder="Carnet de 5 dígitos UNET"
-                        class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
-                        :class="errors?.card_code ? 'border-[#DC2626] bg-[#FEE2E2]' : 'border-[#E5E5E5] focus:border-[#22397A]'"
-                        v-model="form.card_code">
-                    <small v-if="errors?.card_code" class="text-red-500 font-bold ml-4">{{ errors.card_code }}</small>
+                    <input type="text" id="card_code" :value="user.card_code" readonly
+                        class="w-full h-10 px-5 rounded-full bg-gray-200 border-2 border-[#E5E5E5] text-gray-500 cursor-not-allowed">
+                    <small class="text-gray-500 text-xs ml-4">Para cambiar tu correo o tu carnet, dirígete al Decanato de Desarrollo Estudiantil.</small>
                 </div>
 
                 <div class="space-y-2 min-h-16">
                     <label for="career" class="block text-[#404040] font-semibold ml-1">Carrera</label>
-                    <input type="text" id="career" placeholder="Ingresa tu carrera"
-                        class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 border-[#E5E5E5] focus:border-[#22397A] focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
+                    <select id="career"
+                        class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200"
+                        :class="errors?.career ? 'border-[#DC2626] bg-[#FEE2E2]' : 'border-[#E5E5E5] focus:border-[#22397A]'"
                         v-model="form.career">
+                        <option value="" disabled>Selecciona tu carrera</option>
+                        <option v-for="carrera in carreras" :key="carrera" :value="carrera">{{ carrera }}</option>
+                    </select>
+                    <small v-if="errors?.career" class="text-red-500 font-bold ml-4">{{ errors.career }}</small>
                 </div>
 
                 <div class="pt-4 flex justify-center">
@@ -134,6 +151,31 @@ const submit = () => {
                     </button>
                 </div>
 
+            </form>
+
+            <!-- Cambiar contraseña -->
+            <form @submit.prevent="cambiarClave" class="flex flex-col gap-5 w-full mt-12 pt-8 border-t border-gray-200">
+                <h2 class="text-2xl font-bold text-center">Cambiar contraseña</h2>
+
+                <div v-for="campo in [
+                        { id: 'current_password', label: 'Contraseña actual', auto: 'current-password' },
+                        { id: 'password', label: 'Nueva contraseña (mínimo 8 caracteres)', auto: 'new-password' },
+                        { id: 'password_confirmation', label: 'Confirmar nueva contraseña', auto: 'new-password' },
+                    ] as const" :key="campo.id" class="space-y-2">
+                    <label :for="campo.id" class="block text-[#404040] font-semibold ml-1">{{ campo.label }}</label>
+                    <input type="password" :id="campo.id" :autocomplete="campo.auto"
+                        class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200"
+                        :class="formClave.errors[campo.id] ? 'border-[#DC2626] bg-[#FEE2E2]' : 'border-[#E5E5E5] focus:border-[#22397A]'"
+                        v-model="formClave[campo.id]">
+                    <small v-if="formClave.errors[campo.id]" class="text-red-500 font-bold ml-4">{{ formClave.errors[campo.id] }}</small>
+                </div>
+
+                <div class="pt-2 flex justify-center">
+                    <button type="submit" :disabled="formClave.processing"
+                        class="w-1/2 py-3 bg-white border-2 border-[#213779] text-[#213779] font-bold rounded-xl transition duration-300 hover:bg-[#f3f5fb] active:scale-95 disabled:opacity-50">
+                        {{ formClave.processing ? 'Cambiando…' : 'Cambiar contraseña' }}
+                    </button>
+                </div>
             </form>
         </section>
 
