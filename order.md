@@ -163,6 +163,7 @@ Notas sobre `web.php`:
 | `UsersSeeder.php` | El admin `adminBE@unet.edu.ve`, ya verificado. |
 | `LockerSeeder.php` | Edificios, sectores y lockers desde `data/*.csv`. |
 | `FeeRateSeeder.php` | Tarifas iniciales. |
+| `QaAdminSeeder.php` | Solo para la QA del panel admin, **no** está en `DatabaseSeeder`: estudiantes `qa-est1..10@unet.edu.ve`, asignaciones, devoluciones, solicitudes, pagos, una multa, incidencias y semestres. Se corre a mano sobre una base recién sembrada. |
 | `data/Buildings.csv`, `data/sectors.csv`, `data/Lockers.csv` | El inventario real de la UNET. |
 
 Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `BuildingFactory.php`, `SectorFactory.php`, `LockerFactory.php` (estados `ocupado` y `enMantenimiento`) y `LockerAssignmentFactory.php` (activa, `devolucionSolicitada` o `liberada`).
@@ -384,6 +385,7 @@ LockerUNET-SI/
 │   │   ├── DatabaseSeeder.php
 │   │   ├── FeeRateSeeder.php
 │   │   ├── LockerSeeder.php
+│   │   ├── QaAdminSeeder.php
 │   │   └── UsersSeeder.php
 │   └── .gitignore
 ├── lang/
