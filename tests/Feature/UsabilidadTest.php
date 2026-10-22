@@ -56,4 +56,19 @@ class UsabilidadTest extends TestCase
         $this->actingAs($estudiante)->get('/requests/my')
             ->assertInertia(fn (Assert $page) => $page->where('solicitudes.0.requested_at', '2026-10-22T05:37:23.000000Z'));
     }
+
+    public function test_el_registro_rechaza_carnets_que_no_son_numeros(): void
+    {
+        foreach (['-5', '1e3', 'abc', '123456'] as $carnet) {
+            $this->post('/register', ['card_code' => $carnet])->assertSessionHasErrors('card_code');
+        }
+
+        $this->post('/register', ['card_code' => '12345'])->assertSessionDoesntHaveErrors('card_code');
+    }
+
+    public function test_la_contrasena_debe_tener_al_menos_8_caracteres(): void
+    {
+        $this->post('/register', ['password' => 'corta12', 'password_confirmation' => 'corta12'])
+            ->assertSessionHasErrors(['password' => 'El campo contraseña debe tener al menos 8 caracteres.']);
+    }
 }

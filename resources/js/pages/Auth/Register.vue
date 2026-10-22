@@ -26,9 +26,12 @@
             preserveScroll:true,
             onStart: () => (enviando.value = true),
             onFinish: () => (enviando.value = false),
-            onError:() => {
-                form.password=null;
-                form.password_confirmation=null;
+            // Solo se borran las contraseñas si el error es de la contraseña (antes se perdían con cualquier error)
+            onError:(errores) => {
+                if (errores.password) {
+                    form.password=null;
+                    form.password_confirmation=null;
+                }
             }
         })
 
@@ -110,7 +113,7 @@
         <!-- Código Carnet -->
         <div class="space-y-2">
             <label for="card_code" class="block text-[#404040] font-semibold ml-1">Código Carnet</label>
-            <input type="number" id="card_code" name="card_code" placeholder="Código 5 dígitos Carnet"
+            <input type="text" inputmode="numeric" maxlength="5" id="card_code" name="card_code" placeholder="Código 5 dígitos Carnet"
                 class="w-full h-11 px-4 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-xs"
                 :class="{ 'border-[#DC2626] bg-[#FEE2E2]': errors?.card_code, 'border-[#A3A3A3] focus:border-[#22397A]': !errors?.card_code }"
                 v-model="form.card_code">
@@ -166,7 +169,7 @@
     <!-- Contraseña -->
     <div class="space-y-2">
         <label for="password" class="block text-[#404040] font-semibold ml-1">Contraseña</label>
-        <input type="password" id="password" name="password" placeholder="Ingresa tu contraseña"
+        <input type="password" id="password" name="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"
             class="w-full h-11 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-xs"
             :class="{ 'border-[#DC2626] bg-[#FEE2E2]': errors?.password, 'border-[#A3A3A3] focus:border-[#22397A]': !errors?.password }"
             v-model="form.password">
@@ -176,9 +179,10 @@
     <!-- Confirmar Contraseña -->
     <div class="space-y-2">
         <label for="password_confirmation" class="block text-[#404040] font-semibold ml-1">Confirmar Contraseña</label>
-        <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Confirma tu contraseña"
+        <input type="password" id="password_confirmation" name="password_confirmation" autocomplete="new-password" placeholder="Confirma tu contraseña"
             class="w-full h-11 px-5 rounded-full bg-gray-100 border-2 border-[#A3A3A3] focus:border-[#22397A] focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-xs"
             v-model="form.password_confirmation">
+        <small v-if="errors?.password === 'Las contraseñas no coinciden.'" class="text-red-500 text-xs">Las contraseñas no coinciden. Escríbelas de nuevo.</small>
     </div>
 
     <p class="flex justify-end text-center text-gray-600 mt-6">

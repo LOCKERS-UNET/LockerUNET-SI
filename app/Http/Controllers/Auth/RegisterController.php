@@ -33,9 +33,11 @@ class RegisterController extends Controller
             'name' => 'required|string|max:255',
             'lastname' => 'required|string|max:255',
             'email' => ['required','email','unique:users','ends_with:@unet.edu.ve'],
-            'card_code' => ['required','unique:users','max:5'],
+            'card_code' => ['required', 'regex:/^\d{1,5}$/', 'unique:users'],
             'career' => 'required|string|max:255',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'card_code.regex' => 'El carnet debe tener solo números (hasta 5 dígitos).',
         ]);
 
         // Crear usuario (email_verified_at será null por defecto)
