@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class RegisterController extends Controller
@@ -19,7 +20,7 @@ class RegisterController extends Controller
             return redirect('/');
         }
         
-        return Inertia::render('Auth/Register');
+        return Inertia::render('Auth/Register', ['carreras' => User::CARRERAS]);
     }
     
     public function create()
@@ -34,7 +35,7 @@ class RegisterController extends Controller
             'lastname' => 'required|string|max:255',
             'email' => ['required','email','unique:users','ends_with:@unet.edu.ve'],
             'card_code' => ['required', 'regex:/^\d{1,5}$/', 'unique:users'],
-            'career' => 'required|string|max:255',
+            'career' => ['required', Rule::in(User::CARRERAS)],
             'password' => 'required|string|min:8|confirmed',
         ], [
             'card_code.regex' => 'El carnet debe tener solo números (hasta 5 dígitos).',

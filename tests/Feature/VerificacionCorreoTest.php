@@ -36,7 +36,7 @@ class VerificacionCorreoTest extends TestCase
             'lastname' => 'Perez',
             'email' => 'ana@unet.edu.ve',
             'card_code' => '12345',
-            'career' => 'Informatica',
+            'career' => 'Informática',
             'password' => 'secreto123',
             'password_confirmation' => 'secreto123',
         ])->assertRedirect('/verify-email');

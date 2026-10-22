@@ -65,7 +65,7 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | `StatsController.php` | Estadísticas: la vista y los endpoints JSON para las gráficas. También gestiona los semestres. | `Admin/EstadisticasLockers` |
 | `UserController.php` | Listado, búsqueda y detalle de usuarios (admin). | `Admin/Usuarios`, `Admin/VistaUsuario` |
 | `ProfileController.php` | Ver y actualizar el perfil (`/profile`). | `User/Profile` |
-| `PerfilController.php` | Editar el perfil (`/edit-profile`). Hace lo mismo que `ProfileController`. | `User/EditProfile` |
+| `PerfilController.php` | Editar el perfil (`/edit-profile`): nombre, apellido, carrera (de `User::CARRERAS`) y foto. El correo y el carnet no se editan. | `User/EditProfile` |
 | `Controller.php` | Clase base. | |
 | `MultaController.php` | **Legado.** Reemplazado por `FineController`. | |
 | `BuscarUsuarioController.php` | **Legado.** Reemplazado por `UserController`. | |
@@ -83,7 +83,7 @@ Cada página que se renderiza desde PHP debe existir en `resources/js/pages/`. L
 
 | Archivo | Tabla | Notas |
 | --- | --- | --- |
-| `User.php` | `users` | Campo `is_admin`, perfil y foto. |
+| `User.php` | `users` | Campo `is_admin`, perfil y foto. `CARRERAS` es la lista de carreras del registro y el perfil. |
 | `Building.php` | `buildings` | Edificio → sectores. |
 | `Sector.php` | `sectors` | Sector → lockers. |
 | `Locker.php` | `lockers` | PK `locker_id`. |

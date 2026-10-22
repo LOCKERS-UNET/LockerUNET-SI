@@ -2,7 +2,7 @@
     import { Link, router } from '@inertiajs/vue3';
     import { reactive, ref } from 'vue';
 
-    defineProps({ errors: Object });
+    defineProps<{ errors: Record<string, string>; carreras: string[] }>();
 
     const form = reactive({
 
@@ -10,7 +10,7 @@
         lastname:null,
         email: null,
         card_code:null,
-        career:null,
+        career:'',
         password:null,
         password_confirmation: null
 
@@ -139,20 +139,8 @@
                     <!-- Opción placeholder -->
                     <option value="" disabled selected>Carrera</option>
                     
-                    <!-- Opciones reales -->
-                    <option value="Informática">Informática</option>
-                    <option value="Industrial">Industrial</option>
-                    <option value="Civil">Civil</option>
-                    <option value="Electrónica">Electrónica</option>
-                    <option value="Mecánica">Mecánica</option>
-                    <option value="Psicología">Psicología</option>
-                    <option value="TSU Entrenamiento Deportivo">TSU Entrenamiento Deportivo</option>
-                    <option value="Producción Animal">Producción Animal</option>
-                    <option value="Ambiental">Ambiental</option>
-                    <option value="Agronomía">Agronomía</option>
-                    <option value="Música">Música</option>
-                    <option value="Agroindustrial">Agroindustrial</option>
-                    <option value="Arquitectura">Arquitectura</option>
+                    <!-- Opciones reales (User::CARRERAS) -->
+                    <option v-for="carrera in carreras" :key="carrera" :value="carrera">{{ carrera }}</option>
                 </select>
                 
                 <!-- Flecha personalizada centrada -->

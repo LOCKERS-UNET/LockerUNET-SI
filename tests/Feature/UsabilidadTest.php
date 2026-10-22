@@ -71,4 +71,30 @@ class UsabilidadTest extends TestCase
         $this->post('/register', ['password' => 'corta12', 'password_confirmation' => 'corta12'])
             ->assertSessionHasErrors(['password' => 'El campo contraseña debe tener al menos 8 caracteres.']);
     }
+
+    public function test_el_perfil_no_cambia_el_correo_ni_el_carnet(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false, 'email' => 'yo@unet.edu.ve', 'card_code' => '11111']);
+
+        $this->actingAs($estudiante)->post('/edit-profile', [
+            'name' => 'Nuevo', 'lastname' => 'Nombre', 'career' => 'Civil',
+            'email' => 'otra.persona@unet.edu.ve', 'card_code' => '22222',
+        ])->assertSessionHasNoErrors();
+
+        $estudiante->refresh();
+        $this->assertSame('yo@unet.edu.ve', $estudiante->email);
+        $this->assertSame('11111', (string) $estudiante->card_code);
+        $this->assertSame('Nuevo', $estudiante->name);
+        $this->assertNotNull($estudiante->email_verified_at);
+    }
+
+    public function test_el_perfil_exige_nombre_y_una_carrera_valida(): void
+    {
+        $estudiante = User::factory()->create(['is_admin' => false, 'name' => 'Ana']);
+
+        $this->actingAs($estudiante)->post('/edit-profile', ['name' => '', 'lastname' => 'X', 'career' => 'Inventada'])
+            ->assertSessionHasErrors(['name', 'career']);
+
+        $this->assertSame('Ana', $estudiante->fresh()->name);
+    }
 }
