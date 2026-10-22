@@ -167,16 +167,16 @@ class LockerController extends Controller
             'plate_number'=> 'nullable|string|max:20',
         ]);
 
-        // REGLA: Si el status nuevo es 2 (mantenimiento)
-        if ($request->status == 2) {
-            // Revisamos si tiene asignaciones activas
+        // REGLA: un locker con asignación vigente sigue ocupado. Antes se podía marcar como
+        // disponible y volvía a "Buscar Locker" aunque el estudiante lo seguía teniendo
+        if ((int) $request->status !== 1) {
             $hasActive = $locker->assignments()
                                 ->whereIn('assignment_status', LockerAssignment::VIGENTES)
                                 ->exists();
-                                
+
             if ($hasActive) {
                 return redirect()->back()->withErrors([
-                    'status' => 'No puedes poner en mantenimiento un locker con asignación activa.'
+                    'status' => 'Este locker tiene una asignación vigente. Libéralo desde Asignaciones antes de cambiar su estado.'
                 ]);
             }
         }

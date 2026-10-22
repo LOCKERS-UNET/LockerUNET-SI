@@ -138,6 +138,28 @@ class LockersAdminTest extends TestCase
             ->assertSessionHasErrors('status');
     }
 
+    public function test_un_locker_asignado_no_se_marca_como_disponible(): void
+    {
+        $asignacion = LockerAssignment::factory()->create();
+        $locker = $asignacion->locker;
+
+        $this->actingAs($this->admin())->put("/admin/lockers/{$locker->locker_id}", $this->datosLocker($locker->sector, ['locker_code' => $locker->locker_code, 'status' => 0]))
+            ->assertSessionHasErrors('status');
+
+        $this->assertDatabaseHas('lockers', ['locker_id' => $locker->locker_id, 'status' => 1]);
+    }
+
+    public function test_un_locker_asignado_si_se_puede_editar_sin_cambiar_su_estado(): void
+    {
+        $asignacion = LockerAssignment::factory()->create();
+        $locker = $asignacion->locker;
+
+        $this->actingAs($this->admin())->put("/admin/lockers/{$locker->locker_id}", $this->datosLocker($locker->sector, ['locker_code' => $locker->locker_code, 'status' => 1, 'plate_number' => 'NUEVA']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('lockers', ['locker_id' => $locker->locker_id, 'plate_number' => 'NUEVA', 'status' => 1]);
+    }
+
     public function test_eliminar_un_locker_disponible_sin_historial(): void
     {
         $locker = Locker::factory()->create();
