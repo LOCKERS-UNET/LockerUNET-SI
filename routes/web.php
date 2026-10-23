@@ -1,30 +1,28 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-use App\Http\Controllers\Auth\VerificationCodeController;
 use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\PerfilController;
-
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\VerificationCodeController;
+use App\Http\Controllers\FeeRateController;
 // Nuevos controladores del backend
+use App\Http\Controllers\FineController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\IncidentController;
+use App\Http\Controllers\LockerAssignmentController;
 use App\Http\Controllers\LockerController;
 use App\Http\Controllers\LockerRequestController;
-use App\Http\Controllers\LockerAssignmentController;
-use App\Http\Controllers\FineController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\IncidentController;
-use App\Http\Controllers\FeeRateController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\BuscarUsuarioController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\UserController;
-
 use App\Http\Middleware\CifrarHistorial;
 use App\Http\Middleware\IsAdminMiddleware;
+use App\Models\LockerAssignment;
 use Illuminate\Support\Facades\Route;
 
 // ============================================================
@@ -40,11 +38,11 @@ Route::middleware(['auth', 'auth.session', 'verified', CifrarHistorial::class])-
     Route::inertia('/', 'Home')->name('home');
 
     // Perfil
-Route::get('/profile', [ProfileController::class, 'show'])->name('user-profile');
-// El perfil no se edita: nombre, carrera, foto, correo y carnet los cambia el Decanato.
-// Solo se cambia la contraseña. (PUT /profile permitía cambiar el correo y el carnet sin verificar)
-Route::get('/edit-profile', [PerfilController::class, 'index'])->name('edit-profile');
-Route::post('/edit-profile/password', [PerfilController::class, 'password']);
+    Route::get('/profile', [ProfileController::class, 'show'])->name('user-profile');
+    // El perfil no se edita: nombre, carrera, foto, correo y carnet los cambia el Decanato.
+    // Solo se cambia la contraseña. (PUT /profile permitía cambiar el correo y el carnet sin verificar)
+    Route::get('/edit-profile', [PerfilController::class, 'index'])->name('edit-profile');
+    Route::post('/edit-profile/password', [PerfilController::class, 'password']);
 
     // --------------------------------------------------------
     // RUTAS DEL ESTUDIANTE
@@ -77,10 +75,11 @@ Route::post('/edit-profile/password', [PerfilController::class, 'password']);
 
     // Reportar incidencia
     Route::get('/reportes-user', function () {
-        $asignacion = \App\Models\LockerAssignment::with(['locker.sector'])
+        $asignacion = LockerAssignment::with(['locker.sector'])
             ->where('user_id', auth()->id())
-            ->whereIn('assignment_status', \App\Models\LockerAssignment::VIGENTES)
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->first();
+
         return inertia('User/ReporteIncidencia', ['asignacion' => $asignacion]);
     })->name('reportes-user');
     Route::post('/incidents', [IncidentController::class, 'store']);
@@ -90,10 +89,11 @@ Route::post('/edit-profile/password', [PerfilController::class, 'password']);
 
     // Devolución Locker
     Route::get('/devolucion-locker', function () {
-        $asignacion = \App\Models\LockerAssignment::with(['locker'])
+        $asignacion = LockerAssignment::with(['locker'])
             ->where('user_id', auth()->id())
-            ->whereIn('assignment_status', \App\Models\LockerAssignment::VIGENTES)
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->first();
+
         return inertia('User/DevolucionLocker', ['asignacion' => $asignacion]);
     })->name('devolucion-locker');
     Route::post('/devolucion-locker/{id}', [LockerAssignmentController::class, 'requestReturn']);
@@ -126,18 +126,18 @@ Route::post('/edit-profile/password', [PerfilController::class, 'password']);
         Route::put('/admin/assignments/{id}/release', [LockerAssignmentController::class, 'release'])->name('admin.assignments.release');
 
         // Estadísticas (Vista)
-Route::get('/estadisticas-lockers', [StatsController::class, 'index'])->name('estadisticas-admin');
+        Route::get('/estadisticas-lockers', [StatsController::class, 'index'])->name('estadisticas-admin');
         // Estadísticas (Endpoints JSON AJAX para Gráficos)
-Route::get('/admin/stats/summary', [StatsController::class, 'summary'])->name('admin.stats.summary');
+        Route::get('/admin/stats/summary', [StatsController::class, 'summary'])->name('admin.stats.summary');
         // Gestión de Semestres
-Route::get('/admin/semesters', [StatsController::class, 'getSemesters'])->name('admin.semesters.index');
-Route::post('/admin/semesters', [StatsController::class, 'storeSemester'])->name('admin.semesters.store');
+        Route::get('/admin/semesters', [StatsController::class, 'getSemesters'])->name('admin.semesters.index');
+        Route::post('/admin/semesters', [StatsController::class, 'storeSemester'])->name('admin.semesters.store');
         // Aranceles (tarifas) - Registro histórico
         Route::get('/fee-rates', [FeeRateController::class, 'index'])->name('aranceles-admin');
         Route::post('/admin/fee-rates', [FeeRateController::class, 'store']);
         // Generar pagos semestrales
-Route::post('/admin/payments/generate-semester', [FeeRateController::class, 'generatePayments'])
-    ->name('admin.payments.generate-semester');
+        Route::post('/admin/payments/generate-semester', [FeeRateController::class, 'generatePayments'])
+            ->name('admin.payments.generate-semester');
         Route::get('/admin/stats', [StatsController::class, 'index']);
         // Incidencias
         Route::get('/admin/incidents', [IncidentController::class, 'index'])->name('incidencias-admin');
@@ -168,9 +168,9 @@ Route::post('/logout', [LoginController::class, 'logout']);
 Route::get('/register', [RegisterController::class, 'index']);
 Route::post('/register', [RegisterController::class, 'store']);
 
-   // Paso 2: Verificar código
-    Route::get('/verify-code', [VerificationCodeController::class, 'show'])->name('password.verify');
-    Route::post('/verify-code', [VerificationCodeController::class, 'verify'])->name('password.verify.post');
+// Paso 2: Verificar código
+Route::get('/verify-code', [VerificationCodeController::class, 'show'])->name('password.verify');
+Route::post('/verify-code', [VerificationCodeController::class, 'verify'])->name('password.verify.post');
 
 // Verificación de correo: requiere sesión, pero no correo verificado
 Route::middleware(['auth', 'auth.session'])->group(function () {
@@ -179,14 +179,11 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::post('/verify-email/resend', [EmailVerificationController::class, 'resend'])->name('verification.resend');
 });
 
-
-
 Route::middleware('guest')->group(function () {
     // Paso 1: Ingresar correo
     Route::get('/forgot-password', [ForgotPasswordController::class, 'show'])->name('password.request');
     Route::post('/forgot-password', [ForgotPasswordController::class, 'send'])->name('password.email');
 
- 
     // Paso 3: Nueva contraseña
     Route::get('/new-password', [NewPasswordController::class, 'show'])->name('password.new');
     Route::post('/new-password', [NewPasswordController::class, 'update'])->name('password.update');

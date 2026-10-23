@@ -3,34 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Models\Locker;
-use App\Models\User;
 use App\Models\LockerAssignment;
-use Illuminate\Http\Request;
-use App\Models\Semester; 
-use Inertia\Inertia;
+use App\Models\Semester;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class StatsController extends Controller
 {
-
-// 👇🏼 NUEVA FUNCIÓN AUXILIAR: Generar rango de meses
+    // 👇🏼 NUEVA FUNCIÓN AUXILIAR: Generar rango de meses
     private function generarRangoMeses($mesesAtras = 6, $mesesAdelante = 3)
     {
         $mesesEspañol = [
             1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril', 5 => 'Mayo', 6 => 'Junio',
-            7 => 'Julio', 8 => 'Agosto', 9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+            7 => 'Julio', 8 => 'Agosto', 9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre',
         ];
-        
+
         $rango = [];
         $fecha = Carbon::now()->subMonths($mesesAtras);
         $fin = Carbon::now()->addMonths($mesesAdelante);
-        
+
         while ($fecha->lte($fin)) {
             $nombreMes = $mesesEspañol[$fecha->month];
             $rango[] = "{$nombreMes} {$fecha->year}";
             $fecha->addMonth();
         }
-        
+
         return $rango;
     }
 
@@ -40,7 +39,7 @@ class StatsController extends Controller
             ->orderBy('start_year', 'desc')
             ->orderBy('start_month', 'desc')
             ->get();
-        
+
         return response()->json($semesters);
     }
 
@@ -58,10 +57,10 @@ class StatsController extends Controller
         // Validar que end_date sea mayor que start_date
         $start = Carbon::create($request->start_year, $request->start_month, 1);
         $end = Carbon::create($request->end_year, $request->end_month, 1);
-        
+
         if ($end < $start) {
             return redirect()->back()->withErrors([
-                'end_month' => 'La fecha de fin debe ser posterior a la fecha de inicio.'
+                'end_month' => 'La fecha de fin debe ser posterior a la fecha de inicio.',
             ]);
         }
 
@@ -87,13 +86,13 @@ class StatsController extends Controller
         // 2. Variables para fecha
         $mesesMap = [
             'Enero' => 1, 'Febrero' => 2, 'Marzo' => 3, 'Abril' => 4, 'Mayo' => 5, 'Junio' => 6,
-            'Julio' => 7, 'Agosto' => 8, 'Septiembre' => 9, 'Octubre' => 10, 'Noviembre' => 11, 'Diciembre' => 12
+            'Julio' => 7, 'Agosto' => 8, 'Septiembre' => 9, 'Octubre' => 10, 'Noviembre' => 11, 'Diciembre' => 12,
         ];
 
         $mesNum = Carbon::now()->month;
         $anioNum = Carbon::now()->year;
 
-        if (!empty($mesFiltro)) {
+        if (! empty($mesFiltro)) {
             $partes = explode(' ', $mesFiltro);
             $nombreMes = $partes[0] ?? Carbon::now()->format('F');
             $mesNum = $mesesMap[$nombreMes] ?? Carbon::now()->month;
@@ -101,20 +100,20 @@ class StatsController extends Controller
             $anioNum = isset($partes[1]) && preg_match('/^\d{4}$/', $partes[1]) ? (int) $partes[1] : Carbon::now()->year;
         }
 
-        $semestre = (empty($mesFiltro) && !empty($semestreFiltro))
+        $semestre = (empty($mesFiltro) && ! empty($semestreFiltro))
             ? Semester::where('name', $semestreFiltro)->first()
             : null;
 
         // Sin filtro (o con un semestre que no existe) se muestra el mes actual, y el select lo muestra elegido:
         // antes la página abría con el mes vacío
-        if (empty($mesFiltro) && !$semestre) {
+        if (empty($mesFiltro) && ! $semestre) {
             $mesFiltro = array_search($mesNum, $mesesMap)." {$anioNum}";
             $semestreFiltro = '';
         }
 
         // 3. Asignaciones vigentes (con filtro de carrera); de ellas, las nuevas en el período
         $vigentes = LockerAssignment::whereIn('assignment_status', LockerAssignment::VIGENTES)
-            ->when(!empty($carrera), fn ($q) => $q->whereHas('user', fn ($u) => $u->where('career', $carrera)));
+            ->when(! empty($carrera), fn ($q) => $q->whereHas('user', fn ($u) => $u->where('career', $carrera)));
 
         $queryBase = clone $vigentes;
 
@@ -124,7 +123,7 @@ class StatsController extends Controller
             $queryBase->whereBetween('created_at', [$inicio, $fin]);
         } else {
             $queryBase->whereMonth('created_at', $mesNum)
-                      ->whereYear('created_at', $anioNum);
+                ->whereYear('created_at', $anioNum);
         }
 
         // KPIs. La ocupación cuenta los lockers ocupados del inventario, como el panel de inicio
@@ -161,9 +160,9 @@ class StatsController extends Controller
             ->distinct()
             ->orderBy('career', 'asc')
             ->pluck('career');
-        
+
         $mesesDisponibles = $this->generarRangoMeses(6, 3);
-        
+
         // 👇🏼 NUEVO: Obtener semestres disponibles
         $semestresDisponibles = Semester::where('is_active', true)
             ->orderBy('start_year', 'desc')
@@ -172,33 +171,32 @@ class StatsController extends Controller
 
         return Inertia::render('Admin/EstadisticasLockers', [
             'stats' => [
-                'uso_proyectado'  => $usoEnMes,
-                'vigentes'        => $vigentes->count(),
-                'ocupados'        => $ocupados,
+                'uso_proyectado' => $usoEnMes,
+                'vigentes' => $vigentes->count(),
+                'ocupados' => $ocupados,
                 'capacidad_total' => $totalCapacity,
-                'tasa_ocupacion'  => $totalCapacity > 0 ? number_format(($ocupados / $totalCapacity) * 100, 1) : "0.0",
-                'chart_data'      => $chartPoints,
-                'chart_labels'    => $chartLabels,
+                'tasa_ocupacion' => $totalCapacity > 0 ? number_format(($ocupados / $totalCapacity) * 100, 1) : '0.0',
+                'chart_data' => $chartPoints,
+                'chart_labels' => $chartLabels,
             ],
             'filters' => [
                 'carrera' => $carrera,
-                'mes'     => $mesFiltro,
-                'semestre'=> $semestreFiltro,
+                'mes' => $mesFiltro,
+                'semestre' => $semestreFiltro,
             ],
             'carrerasDisponibles' => $carrerasDisponibles,
-            'mesesDisponibles'    => $mesesDisponibles,
-            'semestresDisponibles'=> $semestresDisponibles, // 👈🏼 Pasar a la vista
+            'mesesDisponibles' => $mesesDisponibles,
+            'semestresDisponibles' => $semestresDisponibles, // 👈🏼 Pasar a la vista
         ]);
     }
 
     public function summary()
     {
         return response()->json([
-            'total'       => (int) Locker::count(),
-            'occupied'    => (int) Locker::where('status', 1)->count(),
-            'available'   => (int) Locker::where('status', 0)->count(),
+            'total' => (int) Locker::count(),
+            'occupied' => (int) Locker::where('status', 1)->count(),
+            'available' => (int) Locker::where('status', 0)->count(),
             'maintenance' => (int) Locker::where('status', 2)->count(),
         ], 200, [], JSON_UNESCAPED_UNICODE);
     }
-
 }

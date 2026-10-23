@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LockerRequest;
+use App\Helpers\NotificationHelper;
+use App\Models\FeeRate;
 use App\Models\Locker;
 use App\Models\LockerAssignment;
-use App\Models\FeeRate;
+use App\Models\LockerRequest;
 use App\Models\Payment;
-use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Auth;
 
 class LockerRequestController extends Controller
 {
@@ -156,8 +156,8 @@ class LockerRequestController extends Controller
         }
 
         NotificationHelper::send(
-            $userId, 
-            'request_sent', 
+            $userId,
+            'request_sent',
             'Solicitud enviada',
             'Tu solicitud de locker fue enviada. Dirígete al Decanato de Desarrollo Estudiantil.'
         );
@@ -184,7 +184,7 @@ class LockerRequestController extends Controller
             ->get();
 
         return Inertia::render('User/MisSolicitudes', [
-            'solicitudes' => $requests
+            'solicitudes' => $requests,
         ]);
     }
 
@@ -207,7 +207,7 @@ class LockerRequestController extends Controller
         $requests = $query->orderBy('requested_at', 'desc')->get();
 
         return Inertia::render('Admin/GestionSolicitudes', [
-            'requests' => $requests
+            'requests' => $requests,
         ]);
     }
 
@@ -263,8 +263,9 @@ class LockerRequestController extends Controller
             // 4. Buscar FeeRate
             $feeRate = FeeRate::vigente($locker->locker_type);
 
-            if (!$feeRate) {
+            if (! $feeRate) {
                 DB::rollBack();
+
                 return redirect()->back()->withErrors(['fee_rate' => 'No hay arancel definido (FeeRate) para este tipo de locker. Debes crear uno primero.']);
             }
 
@@ -284,8 +285,8 @@ class LockerRequestController extends Controller
 
             // 6. Notificar
             NotificationHelper::send(
-                $lockerReq->user_id, 
-                'request_approved', 
+                $lockerReq->user_id,
+                'request_approved',
                 'Solicitud aprobada',
                 'Tu solicitud de locker fue aprobada. Dirígete al Decanato para completar el proceso.'
             );
@@ -323,8 +324,8 @@ class LockerRequestController extends Controller
         ]);
 
         NotificationHelper::send(
-            $lockerReq->user_id, 
-            'request_rejected', 
+            $lockerReq->user_id,
+            'request_rejected',
             'Solicitud rechazada',
             'Tu solicitud de locker fue rechazada.'
                 .(filled($request->reason) ? ' Motivo: '.trim($request->reason) : '')

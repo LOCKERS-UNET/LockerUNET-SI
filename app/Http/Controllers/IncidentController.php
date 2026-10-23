@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Incident;
 use App\Helpers\NotificationHelper;
+use App\Models\Incident;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -21,16 +21,16 @@ class IncidentController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'locker_id'   => 'required|exists:lockers,locker_id',
+            'locker_id' => 'required|exists:lockers,locker_id',
             'description' => 'required|string|max:1000',
         ]);
 
         $incident = Incident::create([
-            'user_id'     => Auth::id(),
-            'locker_id'   => $request->locker_id,
+            'user_id' => Auth::id(),
+            'locker_id' => $request->locker_id,
             'description' => $request->description,
-            'status'      => 'pending',
-            'created_at'  => now()
+            'status' => 'pending',
+            'created_at' => now(),
         ]);
 
         NotificationHelper::sendToAdmins(
@@ -61,7 +61,7 @@ class IncidentController extends Controller
         $incidents = $query->orderBy('created_at', 'desc')->get();
 
         return Inertia::render('Admin/Incidencias', [
-            'incidents' => $incidents
+            'incidents' => $incidents,
         ]);
     }
 
@@ -78,14 +78,14 @@ class IncidentController extends Controller
         }
 
         $incident->update([
-            'status'      => 'reviewed',
+            'status' => 'reviewed',
             'reviewed_by' => Auth::id(),
             'reviewed_at' => now(),
         ]);
 
         NotificationHelper::send(
-            $incident->user_id, 
-            'incident_reviewed', 
+            $incident->user_id,
+            'incident_reviewed',
             'Incidencia revisada',
             'Tu reporte de incidencia ha sido revisado por el administrador.'
         );

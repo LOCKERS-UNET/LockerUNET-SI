@@ -15,7 +15,7 @@ class ProfileController extends Controller
     public function show()
     {
         $user = Auth::user();
-        
+
         $assignment = LockerAssignment::with(['locker.sector.building'])
             ->where('user_id', $user->id)
             ->whereIn('assignment_status', LockerAssignment::VIGENTES)
@@ -24,7 +24,7 @@ class ProfileController extends Controller
         // En caso de que se necesiten ambos
         return Inertia::render('User/Profile', [
             'user' => $user,
-            'asignacion' => $assignment
+            'asignacion' => $assignment,
         ]);
     }
 }

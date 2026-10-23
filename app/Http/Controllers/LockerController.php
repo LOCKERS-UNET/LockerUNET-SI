@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LockerAssignment;
-use App\Models\Locker;
 use App\Models\Building;
+use App\Models\Locker;
+use App\Models\LockerAssignment;
 use App\Models\Sector;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\DB;
 
 class LockerController extends Controller
 {
@@ -93,9 +92,9 @@ class LockerController extends Controller
         $query = Locker::with(['sector.building']);
 
         if (is_string($request->search) && $request->search !== '') {
-        $searchTerm = '%' . $request->search . '%';
-        $query->where('locker_code', 'LIKE', $searchTerm);
-    }
+            $searchTerm = '%'.$request->search.'%';
+            $query->where('locker_code', 'LIKE', $searchTerm);
+        }
         // Filtros opcionales (mismos que index)
         if ($request->has('sector_id') && $request->sector_id !== null && $request->sector_id !== '') {
             $query->where('sector_id', $request->sector_id);
@@ -131,9 +130,9 @@ class LockerController extends Controller
         $request->validate([
             'locker_code' => 'required|string|max:50|unique:lockers,locker_code',
             'locker_type' => 'required|in:small,mid,large',
-            'status'      => 'required|integer|in:0,2',
-            'sector_id'   => 'required|exists:sectors,sector_id',
-            'plate_number'=> 'nullable|string|max:20',
+            'status' => 'required|integer|in:0,2',
+            'sector_id' => 'required|exists:sectors,sector_id',
+            'plate_number' => 'nullable|string|max:20',
         ]);
 
         Locker::create($request->all());
@@ -148,7 +147,7 @@ class LockerController extends Controller
     public function edit($id)
     {
         $locker = Locker::with(['sector.building'])->findOrFail($id);
-        
+
         return Inertia::render('Admin/ModificarLocker', [
             'locker' => $locker,
             'sectors' => Sector::with('building')->get(),
@@ -167,16 +166,16 @@ class LockerController extends Controller
         $request->validate([
             'locker_code' => 'required|string|max:50|unique:lockers,locker_code,'.$id.',locker_id',
             'locker_type' => 'required|in:small,mid,large',
-            'status'      => 'required|integer|in:0,1,2',
-            'sector_id'   => 'required|exists:sectors,sector_id',
-            'plate_number'=> 'nullable|string|max:20',
+            'status' => 'required|integer|in:0,1,2',
+            'sector_id' => 'required|exists:sectors,sector_id',
+            'plate_number' => 'nullable|string|max:20',
         ]);
 
         // REGLA: solo se pasa a "Ocupado" con una asignación (desde Asignaciones). Los que ya
         // estaban ocupados sin dueño (vienen así del inventario) se pueden seguir editando
         if ((int) $request->status === 1 && $locker->status !== 1) {
             return redirect()->back()->withErrors([
-                'status' => 'Un locker queda "Ocupado" al asignarlo desde Asignaciones, no desde aquí.'
+                'status' => 'Un locker queda "Ocupado" al asignarlo desde Asignaciones, no desde aquí.',
             ]);
         }
 
@@ -184,12 +183,12 @@ class LockerController extends Controller
         // disponible y volvía a "Buscar Locker" aunque el estudiante lo seguía teniendo
         if ((int) $request->status !== 1) {
             $hasActive = $locker->assignments()
-                                ->whereIn('assignment_status', LockerAssignment::VIGENTES)
-                                ->exists();
+                ->whereIn('assignment_status', LockerAssignment::VIGENTES)
+                ->exists();
 
             if ($hasActive) {
                 return redirect()->back()->withErrors([
-                    'status' => 'Este locker tiene una asignación vigente. Libéralo desde Asignaciones antes de cambiar su estado.'
+                    'status' => 'Este locker tiene una asignación vigente. Libéralo desde Asignaciones antes de cambiar su estado.',
                 ]);
             }
         }
@@ -211,7 +210,7 @@ class LockerController extends Controller
         $hasHistory = $locker->assignments()->exists();
         if ($hasHistory) {
             return redirect()->back()->withErrors([
-                'locker' => 'No se puede eliminar: el locker tiene historial de asignaciones.'
+                'locker' => 'No se puede eliminar: el locker tiene historial de asignaciones.',
             ]);
         }
 
@@ -219,14 +218,14 @@ class LockerController extends Controller
         // el estudiante se quedaría sin su solicitud y sin aviso
         if ($locker->requests()->where('request_status', 'pending')->exists()) {
             return redirect()->back()->withErrors([
-                'locker' => 'No se puede eliminar: tiene solicitudes pendientes. Recházalas primero desde Solicitudes.'
+                'locker' => 'No se puede eliminar: tiene solicitudes pendientes. Recházalas primero desde Solicitudes.',
             ]);
         }
 
         // REGLA: Solo se pueden eliminar si status = 0 (disponible)
         if ($locker->status != 0) {
             return redirect()->back()->withErrors([
-                'locker' => 'Solo se pueden eliminar lockers disponibles.'
+                'locker' => 'Solo se pueden eliminar lockers disponibles.',
             ]);
         }
 
@@ -234,5 +233,4 @@ class LockerController extends Controller
 
         return redirect()->back()->with('success', 'Locker eliminado exitosamente.');
     }
-    
 }

@@ -10,10 +10,6 @@ class NotificationHelper
     /**
      * Envía una notificación in-app a un usuario.
      *
-     * @param int $userId
-     * @param string|null $type
-     * @param string $title
-     * @param string $message
      * @return Notification
      */
     public static function send(int $userId, ?string $type, string $title, string $message)

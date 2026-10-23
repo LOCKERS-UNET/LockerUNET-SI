@@ -15,10 +15,10 @@ return new class extends Migration
             $table->string('locker_type', 20)->comment('small | mid | large');
             $table->string('plate_number', 20)->nullable()->comment('Placa física, not si no tiene');
             $table->integer('status')->default(0)->comment('0=disponible | 1=ocupado | 2=mantenimiento');
-            
+
             // Laravel defaults
             $table->timestamps();
-            
+
             $table->foreign('sector_id')->references('sector_id')->on('sectors')->onDelete('cascade');
         });
     }

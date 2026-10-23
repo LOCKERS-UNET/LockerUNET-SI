@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Payment;
 use App\Helpers\NotificationHelper;
-use Illuminate\Http\Request;
+use App\Models\Payment;
+use App\Models\Semester;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use App\Models\Semester;
 
 class PaymentController extends Controller
 {
@@ -19,29 +18,29 @@ class PaymentController extends Controller
      * GET /payments/my
      * Todos los pagos del usuario (historial)
      */
-public function myPayments()
-{
-    // Obtener semestre activo más reciente
-    $activeSemester = Semester::where('is_active', true)
-        ->orderBy('start_year', 'desc')
-        ->orderBy('start_month', 'desc')
-        ->first();
+    public function myPayments()
+    {
+        // Obtener semestre activo más reciente
+        $activeSemester = Semester::where('is_active', true)
+            ->orderBy('start_year', 'desc')
+            ->orderBy('start_month', 'desc')
+            ->first();
 
-    $query = Payment::with(['assignment.locker'])
-        ->where('user_id', Auth::id());
+        $query = Payment::with(['assignment.locker'])
+            ->where('user_id', Auth::id());
 
-    // Si hay semestre activo, mostrar solo esos pagos
-    if ($activeSemester) {
-        $query->where('semester', $activeSemester->name);
+        // Si hay semestre activo, mostrar solo esos pagos
+        if ($activeSemester) {
+            $query->where('semester', $activeSemester->name);
+        }
+
+        $payments = $query->orderBy('due_date', 'desc')->get();
+
+        return Inertia::render('User/PagoArancel', [
+            'pagos' => $payments,
+            'activeSemester' => $activeSemester,
+        ]);
     }
-
-    $payments = $query->orderBy('due_date', 'desc')->get();
-
-    return Inertia::render('User/PagoArancel', [
-        'pagos' => $payments,
-        'activeSemester' => $activeSemester,
-    ]);
-}
 
     // ==========================================
     // ADMIN
@@ -64,8 +63,8 @@ public function myPayments()
         ]);
 
         NotificationHelper::send(
-            $payment->user_id, 
-            'payment_confirmed', 
+            $payment->user_id,
+            'payment_confirmed',
             'Pago confirmado',
             "Tu pago de Bs.{$payment->amount} fue registrado exitosamente."
         );

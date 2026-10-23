@@ -14,9 +14,9 @@ class IsAdminMiddleware
      * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
-    {   
+    {
 
-        if(!$request->user()->is_admin){
+        if (! $request->user()->is_admin) {
             return to_route('home');
         }
 

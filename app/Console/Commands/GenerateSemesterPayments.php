@@ -2,36 +2,39 @@
 
 namespace App\Console\Commands;
 
+use App\Models\FeeRate;
 use App\Models\LockerAssignment;
 use App\Models\Payment;
-use App\Models\FeeRate;
 use App\Models\Semester;
 use Illuminate\Console\Command;
 
 class GenerateSemesterPayments extends Command
 {
     protected $signature = 'payments:generate-semester {semester?}';
+
     protected $description = 'Genera pagos semestrales para todos los usuarios con lockers activos';
 
     public function handle()
     {
         $semesterName = $this->argument('semester');
-        
+
         // Si no se especifica semestre, buscar el activo más reciente
-        if (!$semesterName) {
+        if (! $semesterName) {
             $semester = Semester::where('is_active', true)
                 ->orderBy('start_year', 'desc')
                 ->orderBy('start_month', 'desc')
                 ->first();
-            
-            if (!$semester) {
+
+            if (! $semester) {
                 $this->error('No hay semestres activos registrados.');
+
                 return 1;
             }
         } else {
             $semester = Semester::where('name', $semesterName)->first();
-            if (!$semester) {
+            if (! $semester) {
                 $this->error("Semestre {$semesterName} no encontrado.");
+
                 return 1;
             }
         }
@@ -58,15 +61,17 @@ class GenerateSemesterPayments extends Command
             if ($existingPayment) {
                 $this->warn("⊗ Usuario {$assignment->user->name} ya tiene pago para {$semester->name}");
                 $skipped++;
+
                 continue;
             }
 
             // Obtener tarifa vigente para el tipo de locker
             $feeRate = FeeRate::vigente($assignment->locker->locker_type);
 
-            if (!$feeRate) {
+            if (! $feeRate) {
                 $this->error("⊗ No hay tarifa vigente para locker tipo: {$assignment->locker->locker_type}");
                 $withoutRate++;
+
                 continue;
             }
 
@@ -89,13 +94,13 @@ class GenerateSemesterPayments extends Command
         }
 
         $this->newLine();
-        $this->info("═══════════════════════════════════════");
-        $this->info("✅ PROCESO COMPLETADO");
-        $this->info("═══════════════════════════════════════");
+        $this->info('═══════════════════════════════════════');
+        $this->info('✅ PROCESO COMPLETADO');
+        $this->info('═══════════════════════════════════════');
         $this->info("Pagos creados: {$created}");
         $this->info("Pagos omitidos (ya existen): {$skipped}");
         $this->info("Sin tarifa vigente: {$withoutRate}");
-        $this->info("═══════════════════════════════════════");
+        $this->info('═══════════════════════════════════════');
 
         // Falla si quedaron asignaciones sin pago por falta de tarifa, para que el panel no diga que todo salió bien
         return $withoutRate > 0 ? 1 : 0;

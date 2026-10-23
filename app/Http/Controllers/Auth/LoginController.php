@@ -13,19 +13,19 @@ class LoginController extends Controller
 {
     //
 
-    public function index(){
+    public function index()
+    {
 
         return Inertia::render('Auth/Login');
 
     }
 
-
-    public function store(Request $request){
-
+    public function store(Request $request)
+    {
 
         $credenciales = $request->validate([
-            'email' => ['required','email','ends_with:@unet.edu.ve'],
-            'password'=>['required']
+            'email' => ['required', 'email', 'ends_with:@unet.edu.ve'],
+            'password' => ['required'],
 
         ]);
 
@@ -37,7 +37,7 @@ class LoginController extends Controller
             ]);
         }
 
-        if(!Auth::attempt($credenciales)){
+        if (! Auth::attempt($credenciales)) {
             RateLimiter::hit($clave, 60);
 
             return back()->withErrors([
@@ -48,10 +48,9 @@ class LoginController extends Controller
         RateLimiter::clear($clave);
         $request->session()->regenerate();
 
-
         // Sin correo verificado no se entra: se envía un código nuevo y se pide verificar
-        if(! Auth::user()->hasVerifiedEmail()){
-            if(! EmailVerificationHelper::send(Auth::user())){
+        if (! Auth::user()->hasVerifiedEmail()) {
+            if (! EmailVerificationHelper::send(Auth::user())) {
                 return redirect('/verify-email')->withErrors([
                     'email' => 'Tu correo no está verificado y no pudimos enviarte el código. Usa "Reenviar código".',
                 ]);
@@ -60,14 +59,16 @@ class LoginController extends Controller
             return redirect('/verify-email')->with('status', 'Tu correo no está verificado. Te enviamos un código nuevo.');
         }
 
-        if(Auth::user()->is_admin){
-            return to_route('home-admin');    
+        if (Auth::user()->is_admin) {
+            return to_route('home-admin');
         }
+
         return to_route('home');
 
     }
 
-    public function logout(Request $request){
+    public function logout(Request $request)
+    {
 
         Auth::logout();
 
@@ -79,5 +80,4 @@ class LoginController extends Controller
         return to_route('login');
 
     }
-
 }

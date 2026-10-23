@@ -3,9 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Building;
-use App\Models\Sector;
-use App\Models\Locker;
+use Illuminate\Support\Facades\DB;
 
 class LockerSeeder extends Seeder
 {
@@ -32,10 +30,10 @@ class LockerSeeder extends Seeder
             }
             fclose($handle);
 
-            if (!empty($buildingsData)) {
-                \Illuminate\Support\Facades\DB::table('buildings')->upsert(
-                    $buildingsData, 
-                    ['building_id'], 
+            if (! empty($buildingsData)) {
+                DB::table('buildings')->upsert(
+                    $buildingsData,
+                    ['building_id'],
                     ['building_code', 'building_name']
                 );
             }
@@ -57,10 +55,10 @@ class LockerSeeder extends Seeder
             }
             fclose($handle);
 
-            if (!empty($sectorsData)) {
-                \Illuminate\Support\Facades\DB::table('sectors')->upsert(
-                    $sectorsData, 
-                    ['sector_id'], 
+            if (! empty($sectorsData)) {
+                DB::table('sectors')->upsert(
+                    $sectorsData,
+                    ['sector_id'],
                     ['building_id', 'sector_name']
                 );
             }
@@ -86,12 +84,12 @@ class LockerSeeder extends Seeder
             fclose($handle);
 
             // Insertar en lotes si el archivo es grande
-            if (!empty($lockersData)) {
+            if (! empty($lockersData)) {
                 $chunks = array_chunk($lockersData, 500);
                 foreach ($chunks as $chunk) {
-                    \Illuminate\Support\Facades\DB::table('lockers')->upsert(
-                        $chunk, 
-                        ['locker_code'], 
+                    DB::table('lockers')->upsert(
+                        $chunk,
+                        ['locker_code'],
                         ['locker_type', 'status', 'plate_number', 'sector_id']
                     );
                 }

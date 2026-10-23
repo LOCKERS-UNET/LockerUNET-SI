@@ -19,10 +19,10 @@ class NotificationController extends Controller
 
         // Búsqueda LIKE opcional
         if (is_string($request->search) && $request->search !== '') {
-            $searchTerm = '%' . $request->search . '%';
+            $searchTerm = '%'.$request->search.'%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('title', 'LIKE', $searchTerm)
-                  ->orWhere('message', 'LIKE', $searchTerm);
+                    ->orWhere('message', 'LIKE', $searchTerm);
             });
         }
 
@@ -39,7 +39,7 @@ class NotificationController extends Controller
                 'total' => $notifications->total(),
                 'per_page' => $notifications->perPage(),
                 'has_more_pages' => $notifications->hasMorePages(),
-            ]
+            ],
         ]);
     }
 
@@ -81,7 +81,7 @@ class NotificationController extends Controller
         return response()->json([
             'count' => Notification::where('user_id', Auth::id())
                 ->where('is_read', false)
-                ->count()
+                ->count(),
         ]);
     }
 }

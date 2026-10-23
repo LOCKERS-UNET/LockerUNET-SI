@@ -17,7 +17,7 @@ class EmailVerificationController extends Controller
         $user = Auth::user();
 
         // Si no hay usuario o ya verificó su email
-        if (!$user || $user->email_verified_at !== null) {
+        if (! $user || $user->email_verified_at !== null) {
             return redirect('/');
         }
 
@@ -30,7 +30,7 @@ class EmailVerificationController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user || $user->email_verified_at !== null) {
+        if (! $user || $user->email_verified_at !== null) {
             return redirect('/');
         }
 
@@ -46,7 +46,7 @@ class EmailVerificationController extends Controller
         // Genera un código nuevo (invalida los anteriores) y lo envía por correo
         if (! EmailVerificationHelper::send($user)) {
             return back()->withErrors([
-                'email' => 'No se pudo enviar el correo de verificación.'
+                'email' => 'No se pudo enviar el correo de verificación.',
             ]);
         }
 
@@ -66,12 +66,12 @@ class EmailVerificationController extends Controller
             'code' => ['required', 'digits:6'],
         ], [
             'code.required' => 'Ingresa el código de verificación.',
-            'code.digits'   => 'El código debe tener 6 dígitos.',
+            'code.digits' => 'El código debe tener 6 dígitos.',
         ]);
 
         $user = Auth::user();
 
-        if (!$user || $user->email_verified_at !== null) {
+        if (! $user || $user->email_verified_at !== null) {
             return redirect('/');
         }
 
@@ -89,7 +89,7 @@ class EmailVerificationController extends Controller
             ->where('used', false)
             ->first();
 
-        if (!$record) {
+        if (! $record) {
             RateLimiter::hit($clave, 300);
 
             return back()->withErrors(['code' => 'El código es incorrecto.']);
@@ -97,6 +97,7 @@ class EmailVerificationController extends Controller
 
         if ($record->isExpired()) {
             $record->delete();
+
             return back()->withErrors(['code' => 'El código ha expirado. Solicita uno nuevo.']);
         }
 

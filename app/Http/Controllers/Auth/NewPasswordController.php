@@ -14,7 +14,7 @@ class NewPasswordController extends Controller
     public function show()
     {
         // Verificar que vino del flujo correcto
-        if (!session('reset_user_id') || !session('reset_code_verified')) {
+        if (! session('reset_user_id') || ! session('reset_code_verified')) {
             return redirect('/forgot-password');
         }
 
@@ -26,15 +26,15 @@ class NewPasswordController extends Controller
         $request->validate([
             'password' => ['required', 'min:8', 'max:72', 'confirmed'], // bcrypt ignora lo que pase de 72
         ], [
-            'password.required'  => 'La contraseña es obligatoria.',
-            'password.min'       => 'La contraseña debe tener al menos 8 caracteres.',
-            'password.max'       => 'La contraseña no puede tener más de 72 caracteres.',
+            'password.required' => 'La contraseña es obligatoria.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.max' => 'La contraseña no puede tener más de 72 caracteres.',
             'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
         $userId = session('reset_user_id');
 
-        if (!$userId || !session('reset_code_verified')) {
+        if (! $userId || ! session('reset_code_verified')) {
             return redirect('/forgot-password');
         }
 
@@ -43,7 +43,7 @@ class NewPasswordController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        if (!$updated) {
+        if (! $updated) {
             return back()->withErrors(['general' => 'No se pudo actualizar la contraseña. Intenta de nuevo.']);
         }
 

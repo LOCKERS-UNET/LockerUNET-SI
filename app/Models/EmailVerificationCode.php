@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class EmailVerificationCode extends Model
 {
     protected $table = 'email_verification_codes';
-    
+
     protected $fillable = [
         'user_id',
         'token',

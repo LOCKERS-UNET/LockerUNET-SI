@@ -15,9 +15,9 @@ return new class extends Migration
             $table->date('effective_from');
             $table->text('reason')->nullable();
             $table->unsignedBigInteger('created_by');
-            
+
             $table->timestamp('created_at')->useCurrent();
-            
+
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');
         });
     }
