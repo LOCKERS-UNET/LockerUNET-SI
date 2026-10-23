@@ -14,16 +14,16 @@ use Inertia\Inertia;
 
 class RegisterController extends Controller
 {
-        public function index()
+    public function index()
     {
         // Si ya está autenticado, redirigir al home
         if (Auth::check()) {
             return redirect('/');
         }
-        
+
         return Inertia::render('Auth/Register', ['carreras' => User::CARRERAS]);
     }
-    
+
     public function create()
     {
         return Inertia::render('Auth/Register');
@@ -48,7 +48,7 @@ class RegisterController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'lastname' => 'required|string|max:255',
-            'email' => ['required','email','unique:users','ends_with:@unet.edu.ve'],
+            'email' => ['required', 'email', 'unique:users', 'ends_with:@unet.edu.ve'],
             'card_code' => ['required', 'regex:/^\d{1,5}$/', 'unique:users'],
             'career' => ['required', Rule::in(User::CARRERAS)],
             // max:72: bcrypt ignora lo que pase de 72 caracteres
@@ -72,6 +72,7 @@ class RegisterController extends Controller
         if (! EmailVerificationHelper::send($user)) {
             // Si el envío del correo falla, eliminar el usuario creado
             $user->delete();
+
             return back()->withErrors(['email' => 'No se pudo enviar el código de verificación. Por favor, intenta nuevamente.']);
         }
 

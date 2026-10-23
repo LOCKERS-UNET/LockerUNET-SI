@@ -6,9 +6,9 @@ use App\Models\FeeRate;
 use App\Models\Payment;
 use App\Models\Semester;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Artisan;
 
 class FeeRateController extends Controller
 {
@@ -44,17 +44,17 @@ class FeeRateController extends Controller
         $request->merge(['monthly_amount' => self::montoConPunto($request->monthly_amount)]);
 
         $request->validate([
-            'locker_type'    => 'required|in:small,mid,large',
+            'locker_type' => 'required|in:small,mid,large',
             'monthly_amount' => 'required|numeric|gt:0|max:99999999.99',
-            'reason'         => 'required|string|max:500',
+            'reason' => 'required|string|max:500',
         ]);
 
         FeeRate::create([
-            'locker_type'    => $request->locker_type,
+            'locker_type' => $request->locker_type,
             'monthly_amount' => $request->monthly_amount,
             'effective_from' => today(),
-            'reason'         => $request->reason,
-            'created_by'     => Auth::id(),
+            'reason' => $request->reason,
+            'created_by' => Auth::id(),
         ]);
 
         return redirect()->back()->with('success', 'Nuevo arancel registrado correctamente.');
@@ -84,7 +84,7 @@ class FeeRateController extends Controller
             $antes = Payment::where('semester', $semesterName)->count();
 
             $codigo = Artisan::call('payments:generate-semester', [
-                'semester' => $semesterName
+                'semester' => $semesterName,
             ]);
 
             $creados = Payment::where('semester', $semesterName)->count() - $antes;
@@ -92,7 +92,7 @@ class FeeRateController extends Controller
             // Antes decía "generados exitosamente" aunque no se hubiera creado ningún pago
             if ($codigo !== 0) {
                 return redirect()->back()->withErrors([
-                    'error' => "Faltan aranceles para algunos tipos de locker. Se generaron {$creados} pagos: crea los aranceles que faltan y vuelve a generar."
+                    'error' => "Faltan aranceles para algunos tipos de locker. Se generaron {$creados} pagos: crea los aranceles que faltan y vuelve a generar.",
                 ]);
             }
 
@@ -103,7 +103,7 @@ class FeeRateController extends Controller
             report($e);
 
             return redirect()->back()->withErrors([
-                'error' => 'No se pudieron generar los pagos del semestre. Intenta de nuevo.'
+                'error' => 'No se pudieron generar los pagos del semestre. Intenta de nuevo.',
             ]);
         }
     }

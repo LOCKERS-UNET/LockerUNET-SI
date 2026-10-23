@@ -26,10 +26,10 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'lastname'=>fake()->name(),
-            'card_code'=>fake()->numberBetween(0,99999),
-            'career'=>fake()->name(),
-            'is_admin'=>fake()->boolean(50),
+            'lastname' => fake()->name(),
+            'card_code' => fake()->numberBetween(0, 99999),
+            'career' => fake()->name(),
+            'is_admin' => fake()->boolean(50),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

@@ -4,8 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Building;
 use App\Models\Locker;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class HomeController extends Controller

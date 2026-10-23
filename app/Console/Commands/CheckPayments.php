@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Payment;
 use App\Helpers\NotificationHelper;
+use App\Models\Payment;
+use Illuminate\Console\Command;
 
 class CheckPayments extends Command
 {
@@ -32,7 +32,7 @@ class CheckPayments extends Command
             ->where('payment_status', 'pending')
             ->each(function ($payment) {
                 $payment->update(['payment_status' => 'overdue']);
-                
+
                 NotificationHelper::send(
                     $payment->user_id,
                     'payment_overdue',

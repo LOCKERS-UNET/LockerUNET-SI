@@ -2,39 +2,43 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Sector;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Console\Command;
 
 class ImportSectors extends Command
 {
     protected $signature = 'import:sectors {file}';
+
     protected $description = 'Importar Sectores modo simple';
 
     public function handle()
     {
         $file = $this->argument('file');
 
-        if (!file_exists($file)) {
-            $this->error("¡Error! Archivo no encontrado.");
+        if (! file_exists($file)) {
+            $this->error('¡Error! Archivo no encontrado.');
+
             return Command::FAILURE;
         }
-        
+
         $header = null;
         $count = 0;
 
         try {
             if (($handle = fopen($file, 'r')) !== false) {
                 while (($row = fgetcsv($handle, 1000, ',')) !== false) {
-                    
-                    if (!$header) {
-                        $header = array_map(function($val) {
+
+                    if (! $header) {
+                        $header = array_map(function ($val) {
                             return trim(preg_replace('/[\xef\xbb\xbf]/', '', strtolower($val)));
                         }, $row);
+
                         continue;
                     }
 
-                    if(count($row) !== count($header)) continue;
+                    if (count($row) !== count($header)) {
+                        continue;
+                    }
 
                     $rowData = array_combine($header, $row);
 
@@ -51,7 +55,7 @@ class ImportSectors extends Command
                     );
 
                     $count++;
-                    $this->info("Sector importado: " . $name);
+                    $this->info('Sector importado: '.$name);
                 }
                 fclose($handle);
             }
@@ -59,7 +63,8 @@ class ImportSectors extends Command
             $this->info("¡Éxito! {$count} sectores listos.");
 
         } catch (\Throwable $e) {
-            $this->error("Error Fatal PHP: " . $e->getMessage() . " Línea: " . $e->getLine());
+            $this->error('Error Fatal PHP: '.$e->getMessage().' Línea: '.$e->getLine());
+
             return Command::FAILURE;
         }
 

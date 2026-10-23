@@ -169,12 +169,6 @@ const asignacionesFiltradas = computed(() =>
     soloVencidos.value ? asignacionesList.value.filter(tienePagoVencido) : asignacionesList.value
 );
 
-const tienePagosPendientes = computed(() => {
-    return usuarioSeleccionado.value?.locker_assignment?.payments?.some((p: any) => 
-        ['pending', 'overdue'].includes(p.payment_status)
-    ) ?? false;
-});
-
 const getLockerDisplay = (locker: any) => {
     if (!locker) return 'N/A';
     const sector = locker.sector || {};

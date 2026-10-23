@@ -15,9 +15,9 @@ return new class extends Migration
             $table->string('title', 200);
             $table->text('message');
             $table->boolean('is_read')->default(false);
-            
+
             $table->timestamp('created_at')->useCurrent();
-            
+
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }

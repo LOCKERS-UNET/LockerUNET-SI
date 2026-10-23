@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class Semester extends Model
@@ -22,12 +23,12 @@ class Semester extends Model
     // Obtener fecha de inicio como Carbon
     public function getStartDateAttribute()
     {
-        return \Carbon\Carbon::create($this->start_year, $this->start_month, 1);
+        return Carbon::create($this->start_year, $this->start_month, 1);
     }
 
     // Obtener fecha de fin como Carbon
     public function getEndDateAttribute()
     {
-        return \Carbon\Carbon::create($this->end_year, $this->end_month, 1)->endOfMonth();
+        return Carbon::create($this->end_year, $this->end_month, 1)->endOfMonth();
     }
 }

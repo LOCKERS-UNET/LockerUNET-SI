@@ -32,7 +32,7 @@ const filterType = ref(props.filters?.locker_type ?? '');
 const filterStatus = ref(props.filters?.status ?? '');
 
 // 👇🏼 Debounce para búsqueda (como en Usuarios)
-watch(searchQuery, debounce((value) => {
+watch(searchQuery, debounce(() => {
     aplicarFiltros();
 }, 300));
 

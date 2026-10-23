@@ -64,8 +64,8 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | `NotificationController.php` | Notificaciones en la app: listado, marcar leídas y contador. | `User/Notificaciones` |
 | `StatsController.php` | Estadísticas: la vista y los endpoints JSON para las gráficas. También gestiona los semestres. | `Admin/EstadisticasLockers` |
 | `UserController.php` | Listado, búsqueda y detalle de usuarios (admin). | `Admin/Usuarios`, `Admin/VistaUsuario` |
-| `ProfileController.php` | Ver y actualizar el perfil (`/profile`). | `User/Profile` |
-| `PerfilController.php` | Editar el perfil (`/edit-profile`): nombre, apellido, carrera (de `User::CARRERAS`) y foto, y cambiar la contraseña (`password`). El correo y el carnet no se editan. | `User/EditProfile` |
+| `ProfileController.php` | Ver el perfil (`/profile`). El perfil no se edita desde la app. | `User/Profile` |
+| `PerfilController.php` | Cambiar la contraseña (`/edit-profile`, `password`). Nombre, carrera, foto, correo y carnet no se editan: los cambia el Decanato. | `User/EditProfile` |
 | `Controller.php` | Clase base. | |
 | `MultaController.php` | **Legado.** Reemplazado por `FineController`. | |
 | `BuscarUsuarioController.php` | **Legado.** Reemplazado por `UserController`. | |
@@ -107,7 +107,7 @@ Cada página que se renderiza desde PHP debe existir en `resources/js/pages/`. L
 
 | Archivo | Qué hace |
 | --- | --- |
-| `app/Helpers/NotificationHelper.php` | `NotificationHelper::send($userId, $type, $title, $message)` crea una notificación en la app. |
+| `app/Helpers/NotificationHelper.php` | `NotificationHelper::send($userId, $type, $title, $message)` crea una notificación en la app; `sendToAdmins(...)` la manda a todos los admins (solicitud nueva o cancelada, devolución solicitada, incidencia). |
 | `app/Helpers/EmailVerificationHelper.php` | `EmailVerificationHelper::send($user)` genera un código de 6 dígitos (15 min), invalida los anteriores y lo envía. Lo usan el registro, el login y "Reenviar código". |
 | `app/Mail/EmailVerificationCodeMail.php` | Correo con el código de registro. |
 | `app/Mail/ResetCodeMail.php` | Correo con el código para recuperar la contraseña. |
@@ -188,7 +188,8 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 **`Layouts/`.** Cada página importa el suyo.
 
 - `Layout.vue`: layout del estudiante.
-- `LayoutAdmin.vue`: layout del admin.
+- `LayoutAdmin.vue`: layout del admin, con campanita de notificaciones; en escritorio el header tiene las mismas medidas que el del estudiante (Incidencias y Estadísticas van en el menú lateral y en el inicio).
+- `LayoutSegunRol.vue`: elige `Layout` o `LayoutAdmin` según el rol; lo usan `User/Notificaciones.vue`, `User/Profile.vue` y `User/EditProfile.vue`, que comparten estudiantes y admins.
 
 **`Components/`**
 
@@ -208,6 +209,8 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 
 **`Home.vue`**: inicio del estudiante (`/`).
 
+**`Privacidad.vue`**: política de privacidad (`/privacidad`), pública; se enlaza desde el registro y el menú lateral del estudiante. Pendiente de revisión por el Decanato.
+
 **`User/`**: páginas del estudiante.
 
 | Página | Ruta | Qué hace |
@@ -221,8 +224,8 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 | `ReporteIncidencia.vue` | `/reportes-user` | Reportar una incidencia. |
 | `DevolucionLocker.vue` | `/devolucion-locker` | Solicitar la devolución del locker; muestra "Devolución en proceso" hasta que el admin la confirme. |
 | `Notificaciones.vue` | `/notifications` | Notificaciones de la app. |
-| `Profile.vue` | `/profile` | Ver el perfil. |
-| `EditProfile.vue` | `/edit-profile` | Editar el perfil y cambiar la contraseña. |
+| `Profile.vue` | `/profile` | Ver el perfil (estudiantes y admins, con `LayoutSegunRol`). |
+| `EditProfile.vue` | `/edit-profile` | Cambiar la contraseña (estudiantes y admins, con `LayoutSegunRol`). |
 
 **`Admin/`**: páginas del administrador.
 
@@ -255,10 +258,11 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 | Ruta | Qué hace |
 | --- | --- |
 | `bootstrap/` | `app.php` (rutas, middleware y excepciones) y `providers.php`. |
-| `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. `app.locale` está fijo en `es`. |
+| `docs/DESPLIEGUE.md` | Guía para publicar la app en un servidor Ubuntu (Azure for Students): PHP 8.5, MySQL, Nginx, HTTPS, cron, respaldos y cómo publicar nuevas versiones. |
+| `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. `app.locale` está fijo en `es`. El SSR de Inertia se apaga con `INERTIA_SSR_ENABLED=false` (producción). |
 | `lang/es/validation.php` | Mensajes de validación en español y nombres de los campos (`card_code` → "carnet", etc.). |
 | `storage/` | Logs, caché y archivos subidos. En git solo están sus `.gitignore`. |
-| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/RecuperarContrasenaTest.php`: recuperar contraseña sin revelar cuentas y con límite de intentos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Feature/Admin/`: el panel admin. `PermisosAdminTest` recorre todas las rutas de admin (estudiante → inicio, invitado → login, el admin abre cada GET sin error 500); `LockersAdminTest`, `SolicitudesAsignacionesTest`, `PagosArancelesTest`, `MultasIncidenciasTest` y `UsuariosEstadisticasTest` cubren cada flujo.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
+| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/RecuperarContrasenaTest.php`: recuperar contraseña sin revelar cuentas y con límite de intentos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Feature/Admin/`: el panel admin. `PermisosAdminTest` recorre todas las rutas de admin (estudiante → inicio, invitado → login, el admin abre cada GET sin error 500); `LockersAdminTest`, `SolicitudesAsignacionesTest`, `PagosArancelesTest`, `MultasIncidenciasTest` y `UsuariosEstadisticasTest` cubren cada flujo; `NotificacionesAdminTest`, los avisos a los admins.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
 | `.github/workflows/` | CI: `lint.yml` y `tests.yml`. |
 | `scripts/actualizar-order.php` | Regenera el árbol de este archivo. |
 | `qa-reports/` | Reportes de las pruebas de usabilidad con subagentes (`RESUMEN.md`, uno por persona y por ronda). Las capturas están en el gitignore. |
@@ -390,6 +394,8 @@ LockerUNET-SI/
 │   │   ├── QaAdminSeeder.php
 │   │   └── UsersSeeder.php
 │   └── .gitignore
+├── docs/
+│   └── DESPLIEGUE.md
 ├── lang/
 │   └── es/
 │       └── validation.php
@@ -435,7 +441,8 @@ LockerUNET-SI/
 │   │   │   │   └── ModalComponent.vue
 │   │   │   ├── Layouts/
 │   │   │   │   ├── Layout.vue
-│   │   │   │   └── LayoutAdmin.vue
+│   │   │   │   ├── LayoutAdmin.vue
+│   │   │   │   └── LayoutSegunRol.vue
 │   │   │   ├── User/
 │   │   │   │   ├── BuscarLocker.vue
 │   │   │   │   ├── DevolucionLocker.vue
@@ -448,7 +455,8 @@ LockerUNET-SI/
 │   │   │   │   ├── Profile.vue
 │   │   │   │   ├── ReporteIncidencia.vue
 │   │   │   │   └── SolicitudLocker.vue
-│   │   │   └── Home.vue
+│   │   │   ├── Home.vue
+│   │   │   └── Privacidad.vue
 │   │   ├── types/
 │   │   │   ├── auth.ts
 │   │   │   ├── global.d.ts
@@ -480,6 +488,7 @@ LockerUNET-SI/
 │   │   ├── Admin/
 │   │   │   ├── LockersAdminTest.php
 │   │   │   ├── MultasIncidenciasTest.php
+│   │   │   ├── NotificacionesAdminTest.php
 │   │   │   ├── PagosArancelesTest.php
 │   │   │   ├── PermisosAdminTest.php
 │   │   │   ├── SolicitudesAsignacionesTest.php

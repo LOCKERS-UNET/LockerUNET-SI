@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\Building;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 class ImportBuildings extends Command
@@ -29,13 +29,14 @@ class ImportBuildings extends Command
     {
         $file = $this->argument('file');
 
-        if (!file_exists($file)) {
+        if (! file_exists($file)) {
             $this->error("¡Error! No se encontró el archivo en la ruta: {$file}");
+
             return Command::FAILURE;
         }
 
         $this->info("Leyendo archivo de edificios: {$file}");
-        
+
         $header = null;
         $count = 0;
 
@@ -44,24 +45,25 @@ class ImportBuildings extends Command
         try {
             if (($handle = fopen($file, 'r')) !== false) {
                 while (($row = fgetcsv($handle, 1000, ',')) !== false) {
-                    
-                    if (!$header) {
-                        $header = array_map(function($val) {
+
+                    if (! $header) {
+                        $header = array_map(function ($val) {
                             return trim(preg_replace('/[\xef\xbb\xbf]/', '', strtolower($val)));
                         }, $row);
+
                         continue;
                     }
 
-                    if(count($row) !== count($header)) {
+                    if (count($row) !== count($header)) {
                         continue;
                     }
 
                     $rowData = array_combine($header, $row);
 
                     $buildingName = trim($rowData['building_name']);
-                    
+
                     // Decodificar caracteres especiales por si acabo si viene de un Excel malo
-                    if (!mb_detect_encoding($buildingName, 'UTF-8', true)) {
+                    if (! mb_detect_encoding($buildingName, 'UTF-8', true)) {
                         $buildingName = utf8_encode($buildingName);
                     }
 
@@ -83,7 +85,8 @@ class ImportBuildings extends Command
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->error("Hubo un error al importar: " . $e->getMessage());
+            $this->error('Hubo un error al importar: '.$e->getMessage());
+
             return Command::FAILURE;
         }
 

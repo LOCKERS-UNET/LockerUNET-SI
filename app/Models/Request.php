@@ -10,6 +10,7 @@ class Request extends Model
     use HasFactory;
 
     protected $primaryKey = 'request_id';
+
     public $timestamps = false;
 
     protected $fillable = [

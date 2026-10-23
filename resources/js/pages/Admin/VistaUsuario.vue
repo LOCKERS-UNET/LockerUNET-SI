@@ -301,7 +301,7 @@ const formatDate = (dateString: string) => {
         <ModalComponent 
             :show="confirmingDeletion" 
             text="¡Multa Eliminada Correctamente!"
-            url="/inicio-admin""
+            url="/inicio-admin"
             title-button="Volver al inicio"
             @close="closeModal"
         >

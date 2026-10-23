@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\LockerAssignment;
 use App\Models\Fine;
+use App\Models\LockerAssignment;
 use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -21,43 +21,43 @@ class UserController extends Controller
 
         // Filtro de búsqueda textual
         if (is_string($request->search) && $request->search !== '') {
-            $searchTerm = '%' . $request->search . '%';
+            $searchTerm = '%'.$request->search.'%';
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'LIKE', $searchTerm)
-                  ->orWhere('lastname', 'LIKE', $searchTerm)
-                  ->orWhere('card_code', 'LIKE', $searchTerm)
-                  ->orWhere('email', 'LIKE', $searchTerm);
-                  
+                    ->orWhere('lastname', 'LIKE', $searchTerm)
+                    ->orWhere('card_code', 'LIKE', $searchTerm)
+                    ->orWhere('email', 'LIKE', $searchTerm);
+
             });
         }
 
         // Recuperamos los usuarios junto con la asignación activa (si tienen)
         $users = $query->with(['assignments' => function ($q) {
             $q->whereIn('assignment_status', LockerAssignment::VIGENTES)
-              ->with(['locker.sector.building']);
+                ->with(['locker.sector.building']);
         }])->get()->map(function ($user) {
             $activeAssignment = $user->assignments->first();
             $locker = $activeAssignment ? $activeAssignment->locker : null;
 
             return [
-                'id'            => $user->id,
-                'name'          => $user->name,
-                'lastname'      => $user->lastname,
-                'email'         => $user->email,
-                'card_code'     => $user->card_code,
-                'career'        => $user->career,
-                'is_admin'      => $user->is_admin,
+                'id' => $user->id,
+                'name' => $user->name,
+                'lastname' => $user->lastname,
+                'email' => $user->email,
+                'card_code' => $user->card_code,
+                'career' => $user->career,
+                'is_admin' => $user->is_admin,
                 'profile_photo' => $user->profile_photo,
                 // Flatten locker data if present
-                'locker_code'   => $locker ? $locker->locker_code : null,
+                'locker_code' => $locker ? $locker->locker_code : null,
                 'building_name' => ($locker && $locker->sector && $locker->sector->building) ? $locker->sector->building->building_name : null,
-                'sector_name'   => ($locker && $locker->sector) ? $locker->sector->sector_name : null,
+                'sector_name' => ($locker && $locker->sector) ? $locker->sector->sector_name : null,
             ];
         });
 
         return Inertia::render('Admin/Usuarios', [
             'users' => $users,
-            'filters' => $request->only(['search'])
+            'filters' => $request->only(['search']),
         ]);
     }
 
@@ -77,13 +77,13 @@ class UserController extends Controller
         // Solo estudiantes: a un admin no se le asigna locker
         $users = User::where('is_admin', false)
             ->where(function ($query) use ($searchTerm) {
-                $query->where('name', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('lastname', 'LIKE', '%' . $searchTerm . '%')
-                    ->orWhere('card_code', 'LIKE', '%' . $searchTerm . '%');
+                $query->where('name', 'LIKE', '%'.$searchTerm.'%')
+                    ->orWhere('lastname', 'LIKE', '%'.$searchTerm.'%')
+                    ->orWhere('card_code', 'LIKE', '%'.$searchTerm.'%');
             })
             ->with(['assignments' => function ($q) {
                 $q->whereIn('assignment_status', LockerAssignment::VIGENTES)
-                  ->with(['locker.sector.building']);
+                    ->with(['locker.sector.building']);
             }])
             ->get()
             ->map(function ($user) {
@@ -119,7 +119,7 @@ class UserController extends Controller
      * GET /admin/users/{id}
      * Muestra todo el perfil, historial y deudas de un usuario en concreto
      */
-   public function show($id)
+    public function show($id)
     {
         $user = User::findOrFail($id);
 
@@ -140,11 +140,10 @@ class UserController extends Controller
             ->get();
 
         return Inertia::render('Admin/VistaUsuario', [
-            'user'            => $user,
-            'assignment'      => $assignment,
-            'multa'           => $fines, // Array de multas
+            'user' => $user,
+            'assignment' => $assignment,
+            'multa' => $fines, // Array de multas
             'pendingPayments' => $pendingPayments,
         ]);
     }
-
 }

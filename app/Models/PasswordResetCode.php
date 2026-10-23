@@ -9,10 +9,10 @@ class PasswordResetCode extends Model
 {
     // La tabla real se llama 'password_reset_tokens'
     protected $table = 'password_reset_tokens';
-    
+
     // La primary key es 'id' por defecto, pero si usaste 'password_reset_code_id' ajústalo
     // protected $primaryKey = 'password_reset_code_id';
-    
+
     // Campos que se pueden llenar masivamente
     protected $fillable = [
         'user_id',      // 👈🏼 Usar user_id en lugar de email

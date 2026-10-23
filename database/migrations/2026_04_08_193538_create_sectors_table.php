@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id('sector_id');
             $table->unsignedBigInteger('building_id');
             $table->string('sector_name', 50)->comment('Ej: Piso 1, Planta Baja');
-            
+
             $table->foreign('building_id')->references('building_id')->on('buildings')->onDelete('cascade');
         });
     }

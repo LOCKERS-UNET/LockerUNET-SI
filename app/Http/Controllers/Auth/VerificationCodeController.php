@@ -13,7 +13,7 @@ class VerificationCodeController extends Controller
     public function show()
     {
         // Si no se pidió un código antes, redirigir al inicio del flujo
-        if (!session('reset_iniciado')) {
+        if (! session('reset_iniciado')) {
             return redirect('/forgot-password');
         }
 
@@ -31,10 +31,10 @@ class VerificationCodeController extends Controller
             'code' => ['required', 'digits:6'],
         ], [
             'code.required' => 'Ingresa el código de verificación.',
-            'code.digits'   => 'El código debe tener 6 dígitos.',
+            'code.digits' => 'El código debe tener 6 dígitos.',
         ]);
 
-        if (!session('reset_iniciado')) {
+        if (! session('reset_iniciado')) {
             return redirect('/forgot-password');
         }
 
@@ -54,7 +54,7 @@ class VerificationCodeController extends Controller
             ->where('used', false)            // 👈🏼 Solo códigos no usados
             ->first();
 
-        if (!$record) {
+        if (! $record) {
             RateLimiter::hit($clave, 300);
 
             return back()->withErrors(['code' => 'El código es incorrecto.']);
@@ -64,6 +64,7 @@ class VerificationCodeController extends Controller
 
         if ($record->isExpired()) {
             $record->delete();
+
             return back()->withErrors(['code' => 'El código ha expirado. Solicita uno nuevo.']);
         }
 

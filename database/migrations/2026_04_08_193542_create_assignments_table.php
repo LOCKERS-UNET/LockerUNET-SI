@@ -17,7 +17,7 @@ return new class extends Migration
             $table->date('end_date')->nullable()->comment('NULL mientras esté activo');
             $table->string('assignment_status', 20)->default('active')->comment('active | released');
             $table->unsignedBigInteger('created_by')->comment('Admin que asignó');
-            
+
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

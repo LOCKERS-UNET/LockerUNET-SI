@@ -74,30 +74,17 @@ class UsabilidadTest extends TestCase
             ->assertSessionHasErrors(['password' => 'El campo contraseña debe tener al menos 8 caracteres.']);
     }
 
-    public function test_el_perfil_no_cambia_el_correo_ni_el_carnet(): void
+    public function test_el_perfil_no_se_puede_editar(): void
     {
-        $estudiante = User::factory()->create(['is_admin' => false, 'email' => 'yo@unet.edu.ve', 'card_code' => '11111']);
+        $estudiante = User::factory()->create(['is_admin' => false, 'name' => 'Ana', 'email' => 'yo@unet.edu.ve', 'card_code' => '11111', 'career' => 'Civil']);
+        $datos = ['name' => 'Otro', 'lastname' => 'Nombre', 'career' => 'Arquitectura', 'email' => 'otra.persona@unet.edu.ve', 'card_code' => '22222'];
 
-        $this->actingAs($estudiante)->post('/edit-profile', [
-            'name' => 'Nuevo', 'lastname' => 'Nombre', 'career' => 'Civil',
-            'email' => 'otra.persona@unet.edu.ve', 'card_code' => '22222',
-        ])->assertSessionHasNoErrors();
+        // Ni la pantalla vieja ni PUT /profile (que cambiaba el correo y el carnet sin verificar) existen ya
+        $this->actingAs($estudiante)->post('/edit-profile', $datos)->assertStatus(405);
+        $this->actingAs($estudiante)->put('/profile', $datos)->assertStatus(405);
 
         $estudiante->refresh();
-        $this->assertSame('yo@unet.edu.ve', $estudiante->email);
-        $this->assertSame('11111', (string) $estudiante->card_code);
-        $this->assertSame('Nuevo', $estudiante->name);
-        $this->assertNotNull($estudiante->email_verified_at);
-    }
-
-    public function test_el_perfil_exige_nombre_y_una_carrera_valida(): void
-    {
-        $estudiante = User::factory()->create(['is_admin' => false, 'name' => 'Ana']);
-
-        $this->actingAs($estudiante)->post('/edit-profile', ['name' => '', 'lastname' => 'X', 'career' => 'Inventada'])
-            ->assertSessionHasErrors(['name', 'career']);
-
-        $this->assertSame('Ana', $estudiante->fresh()->name);
+        $this->assertSame(['Ana', 'yo@unet.edu.ve', '11111', 'Civil'], [$estudiante->name, $estudiante->email, (string) $estudiante->card_code, $estudiante->career]);
     }
 
     public function test_la_pagina_de_solicitud_usa_los_datos_del_locker_de_la_base(): void
@@ -370,5 +357,14 @@ class UsabilidadTest extends TestCase
             ->where('buildings.0.available_lockers', 1)
             ->where('buildings.0.total_lockers', 3));
         $this->actingAs($estudiante)->get('/lockers')->assertInertia(fn (Assert $page) => $page->where('lockers.total', 1));
+    }
+
+    public function test_la_politica_de_privacidad_es_publica(): void
+    {
+        $this->get('/privacidad')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Privacidad'));
+
+        $this->actingAs(User::factory()->create(['is_admin' => false]))->get('/privacidad')->assertOk();
     }
 }

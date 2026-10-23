@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Fine;
-use App\Models\User;
-use App\Models\LockerAssignment;
 use App\Helpers\NotificationHelper;
+use App\Models\Fine;
+use App\Models\LockerAssignment;
+use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use App\Models\Payment;
 
 class FineController extends Controller
 {
@@ -28,38 +28,38 @@ class FineController extends Controller
             ->get();
 
         return Inertia::render('User/MultasUser', [
-            'multa' => $fines
+            'multa' => $fines,
         ]);
     }
 
     // En UserController.php - método show()
-public function show($id)
-{
-    $user = User::findOrFail($id);
+    public function show($id)
+    {
+        $user = User::findOrFail($id);
 
-    $assignment = LockerAssignment::with(['locker.sector.building'])
-        ->where('user_id', $id)
-        ->whereIn('assignment_status', LockerAssignment::VIGENTES)
-        ->first();
+        $assignment = LockerAssignment::with(['locker.sector.building'])
+            ->where('user_id', $id)
+            ->whereIn('assignment_status', LockerAssignment::VIGENTES)
+            ->first();
 
-    // 👇🏼 OBTENER TODAS LAS MULTAS (no solo una)
-    $fines = Fine::with(['assignment.locker', 'admin'])
-        ->where('user_id', $id)
-        ->orderBy('created_at', 'desc')
-        ->get();
+        // 👇🏼 OBTENER TODAS LAS MULTAS (no solo una)
+        $fines = Fine::with(['assignment.locker', 'admin'])
+            ->where('user_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-    $pendingPayments = Payment::where('user_id', $id)
-        ->whereIn('payment_status', ['pending', 'overdue'])
-        ->orderBy('due_date', 'asc')
-        ->get();
+        $pendingPayments = Payment::where('user_id', $id)
+            ->whereIn('payment_status', ['pending', 'overdue'])
+            ->orderBy('due_date', 'asc')
+            ->get();
 
-    return Inertia::render('Admin/VistaUsuario', [
-        'user'            => $user,
-        'assignment'      => $assignment,
-        'multa'           => $fines, // 👈🏼 Pasar array de multas
-        'pendingPayments' => $pendingPayments,
-    ]);
-}
+        return Inertia::render('Admin/VistaUsuario', [
+            'user' => $user,
+            'assignment' => $assignment,
+            'multa' => $fines, // 👈🏼 Pasar array de multas
+            'pendingPayments' => $pendingPayments,
+        ]);
+    }
 
     // ==========================================
     // ADMIN
@@ -72,7 +72,7 @@ public function show($id)
     public function create(User $user)
     {
         return Inertia::render('Admin/CrearMulta', [
-            'user' => $user
+            'user' => $user,
         ]);
     }
 
@@ -86,8 +86,8 @@ public function show($id)
 
         $request->validate([
             'user_id' => 'required|exists:users,id',
-            'amount'  => 'required|numeric|min:0.01|max:99999999.99',
-            'reason'  => 'required|string|max:500',
+            'amount' => 'required|numeric|min:0.01|max:99999999.99',
+            'reason' => 'required|string|max:500',
         ]);
 
         // Buscamos la assignment activa del usuario a quien multan
@@ -95,23 +95,23 @@ public function show($id)
             ->whereIn('assignment_status', LockerAssignment::VIGENTES)
             ->first();
 
-        if (!$activeAssignment) {
+        if (! $activeAssignment) {
             return redirect()->back()->withErrors([
-                'user' => 'El usuario no tiene locker asignado actualmente. Las multas se asocian a un locker activo.'
+                'user' => 'El usuario no tiene locker asignado actualmente. Las multas se asocian a un locker activo.',
             ]);
         }
 
         Fine::create([
             'assignment_id' => $activeAssignment->assignment_id,
-            'user_id'       => $request->user_id,
-            'amount'        => $request->amount,
-            'reason'        => $request->reason,
-            'created_by'    => Auth::id(),
+            'user_id' => $request->user_id,
+            'amount' => $request->amount,
+            'reason' => $request->reason,
+            'created_by' => Auth::id(),
         ]);
 
         NotificationHelper::send(
-            $request->user_id, 
-            'fine_added', 
+            $request->user_id,
+            'fine_added',
             'Multa registrada',
             "Se te ha aplicado una multa de Bs.{$request->amount}. Dirígete al Decanato de Desarrollo Estudiantil."
         );
@@ -130,8 +130,8 @@ public function show($id)
         $fine->delete();
 
         NotificationHelper::send(
-            $userId, 
-            'fine_removed', 
+            $userId,
+            'fine_removed',
             'Multa eliminada',
             'Una multa ha sido eliminada de tu cuenta.'
         );

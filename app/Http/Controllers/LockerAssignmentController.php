@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LockerAssignment;
-use App\Models\Locker;
+use App\Helpers\NotificationHelper;
 use App\Models\FeeRate;
 use App\Models\Fine;
+use App\Models\Locker;
+use App\Models\LockerAssignment;
 use App\Models\Payment;
 use App\Models\User;
-use App\Helpers\NotificationHelper;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +21,7 @@ class LockerAssignmentController extends Controller
     // ==========================================
     // USUARIO (Auth)
     // ==========================================
-    
+
     /**
      * GET /assignments/my
      * Devuelve la actual asgnación activa + el pago pendiente
@@ -46,7 +46,7 @@ class LockerAssignmentController extends Controller
 
         return Inertia::render('User/MiLocker', [
             'asignacion' => $assignment,
-            'nextPayment' => $nextPayment
+            'nextPayment' => $nextPayment,
         ]);
     }
 
@@ -69,16 +69,16 @@ class LockerAssignmentController extends Controller
             $searchTerm = $request->search;
             $query->whereHas('user', function ($q) use ($searchTerm) {
                 // Asumiendo busqueda por nombre o apellido
-                $q->where('name', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('lastname', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('card_code', 'LIKE', '%' . $searchTerm . '%');
+                $q->where('name', 'LIKE', '%'.$searchTerm.'%')
+                    ->orWhere('lastname', 'LIKE', '%'.$searchTerm.'%')
+                    ->orWhere('card_code', 'LIKE', '%'.$searchTerm.'%');
             });
         }
 
         $assignments = $query->orderBy('start_date', 'desc')->get();
 
         return Inertia::render('Admin/Asignaciones', [
-            'asignaciones' => $assignments
+            'asignaciones' => $assignments,
         ]);
     }
 
@@ -97,16 +97,16 @@ class LockerAssignmentController extends Controller
         if (is_string($request->search) && $request->search !== '') {
             $searchTerm = $request->search;
             $query->whereHas('user', function ($q) use ($searchTerm) {
-                $q->where('name', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('lastname', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('card_code', 'LIKE', '%' . $searchTerm . '%');
+                $q->where('name', 'LIKE', '%'.$searchTerm.'%')
+                    ->orWhere('lastname', 'LIKE', '%'.$searchTerm.'%')
+                    ->orWhere('card_code', 'LIKE', '%'.$searchTerm.'%');
             });
         }
 
         $assignments = $query->orderBy('start_date', 'desc')->get();
 
         return response()->json([
-            'asignaciones' => $assignments
+            'asignaciones' => $assignments,
         ]);
     }
 
@@ -148,7 +148,7 @@ class LockerAssignmentController extends Controller
             $assignment = LockerAssignment::create([
                 'user_id' => $userId,
                 'locker_id' => $locker->locker_id,
-                'request_id' => null, 
+                'request_id' => null,
                 'start_date' => today(),
                 'assignment_status' => 'active',
                 'created_by' => Auth::id(),
@@ -158,8 +158,9 @@ class LockerAssignmentController extends Controller
 
             $feeRate = FeeRate::vigente($locker->locker_type);
 
-            if (!$feeRate) {
+            if (! $feeRate) {
                 DB::rollBack();
+
                 return redirect()->back()->withErrors(['fee_rate' => 'No hay arancel definido para este tipo de locker.']);
             }
 
@@ -177,8 +178,8 @@ class LockerAssignmentController extends Controller
             ]);
 
             NotificationHelper::send(
-                $userId, 
-                'locker_assigned', 
+                $userId,
+                'locker_assigned',
                 'Locker asignado',
                 'Se te ha asignado un locker. Dirígete al Decanato para completar el proceso.'
             );
@@ -252,6 +253,12 @@ class LockerAssignmentController extends Controller
                     'return_requested',
                     'Devolución solicitada',
                     'Entrega la llave en el Decanato. Tu locker quedará liberado cuando el administrador confirme la devolución.'
+                );
+
+                NotificationHelper::sendToAdmins(
+                    'admin_return_requested',
+                    'Devolución solicitada',
+                    NotificationHelper::nombreEstudiante($assignment->user)." quiere devolver el locker {$assignment->locker?->locker_code}. Confirma la entrega de la llave en Asignaciones."
                 );
 
                 return redirect()->back()->with('success', 'Devolución solicitada. Entrega la llave en el Decanato para completarla.');

@@ -16,7 +16,9 @@ return [
     */
 
     'ssr' => [
-        'enabled' => true,
+        // En producción no hay proceso SSR (no se compila el bundle de servidor): se apaga con
+        // INERTIA_SSR_ENABLED=false para que no intente conectarse en cada visita. En desarrollo lo atiende Vite.
+        'enabled' => (bool) env('INERTIA_SSR_ENABLED', true),
         'url' => 'http://127.0.0.1:13714',
         // 'bundle' => base_path('bootstrap/ssr/ssr.mjs'),
 

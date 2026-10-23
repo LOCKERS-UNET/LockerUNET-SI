@@ -16,7 +16,7 @@ return new class extends Migration
             $table->timestamp('requested_at')->useCurrent();
             $table->unsignedBigInteger('reviewed_by')->nullable()->comment('Admin que procesó');
             $table->timestamp('reviewed_at')->nullable();
-            
+
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('locker_id')->references('locker_id')->on('lockers')->onDelete('cascade');
             $table->foreign('reviewed_by')->references('id')->on('users')->onDelete('set null');

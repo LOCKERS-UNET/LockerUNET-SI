@@ -48,12 +48,6 @@ const estadoLabel: Record<string, string> = {
     overdue: 'Vencido',
 };
 
-const estadoColor: Record<string, string> = {
-    pending: 'text-orange-500',
-    paid:    'text-green-600',
-    overdue: 'text-red-500',
-};
-
 const tipoLabel: Record<string, string> = {
     small: 'Pequeño',
     mid:   'Mediano',

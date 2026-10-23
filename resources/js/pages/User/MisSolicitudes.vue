@@ -11,7 +11,7 @@ defineOptions({ layout: Layout });
 // El controlador LockerRequestController@misSolicitudes
 // devuelve las solicitudes del usuario logueado
 // ─────────────────────────────────────────────
-const props = defineProps<{
+defineProps<{
     solicitudes: Array<{
         request_id: number;
         request_status: string; // pending | approved | rejected | cancelled

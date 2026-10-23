@@ -184,6 +184,7 @@
     <p class="text-xs text-gray-500 leading-relaxed">
         Tus datos (correo institucional, carnet y carrera) se usan solo para identificarte al solicitar, pagar y devolver tu locker.
         Los ven únicamente los administradores del Decanato de Desarrollo Estudiantil. Tu contraseña se guarda cifrada.
+        <Link href="/privacidad" class="text-blue-600 font-semibold underline">Lee la política de privacidad</Link>.
     </p>
 
     <div class="pt-2">

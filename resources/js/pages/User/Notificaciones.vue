@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
-import Layout from '../Layouts/Layout.vue';
+import LayoutSegunRol from '../Layouts/LayoutSegunRol.vue';
 
-defineOptions({ layout: Layout });
+// La usan estudiantes y admins: el layout depende del rol
+defineOptions({ layout: LayoutSegunRol });
 
 const props = defineProps<{
     notificaciones: Array<{

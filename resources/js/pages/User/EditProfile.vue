@@ -1,52 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useForm, usePage } from '@inertiajs/vue3';
-import ModalComponent from '../Components/ModalComponent.vue';
-import Layout from '../Layouts/Layout.vue';
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import LayoutSegunRol from '../Layouts/LayoutSegunRol.vue';
 
-defineOptions({ layout: Layout });
+// La usan estudiantes y admins. El perfil no se edita desde la app (nombre, carrera, foto, correo y
+// carnet los cambia el Decanato): aquí solo se cambia la contraseña. El aviso de éxito lo muestra el layout.
+defineOptions({ layout: LayoutSegunRol });
 
-const props = defineProps<{
-    errors: Record<string, string>;
-    carreras: string[];
-}>();
-
-// Obtenemos los datos actuales del usuario desde las props globales
-const user = usePage().props.auth.user;
-
-const confirmingDeletion = ref(false);
-const photoPreview = ref<string | null>(null);
-
-// Usamos useForm para manejar el envío de datos y archivos de forma sencilla
-const form = useForm({
-    name: user.name || '',
-    lastname: user.lastname || '',
-    career: user.career || '',
-    profile_photo: null as File | null,
-});
-
-const openModal = () => {
-    confirmingDeletion.value = true;
-};
-
-const closeModal = () => {
-    confirmingDeletion.value = false;
-};
-
-const handlePhotoChange = (e: any) => {
-    const file = e.target.files[0];
-    if (file) {
-        form.profile_photo = file;
-        photoPreview.value = URL.createObjectURL(file);
-    }
-};
-
-// Cambiar contraseña (formulario aparte)
 const formClave = useForm({
     current_password: '',
     password: '',
     password_confirmation: '',
 });
+
+const campos = [
+    { id: 'current_password', label: 'Contraseña actual', auto: 'current-password' },
+    { id: 'password', label: 'Nueva contraseña (mínimo 8 caracteres)', auto: 'new-password' },
+    { id: 'password_confirmation', label: 'Confirmar nueva contraseña', auto: 'new-password' },
+] as const;
 
 const cambiarClave = () => {
     formClave.post('/edit-profile/password', {
@@ -55,113 +25,19 @@ const cambiarClave = () => {
         onError: () => formClave.reset('password', 'password_confirmation'),
     });
 };
-
-const submit = () => {
-    // IMPORTANTE: Se usa post con forceFormData para que Laravel reciba el archivo correctamente
-    form.post('/edit-profile', {
-        forceFormData: true,
-        onSuccess: () => {
-            openModal();
-        },
-    });
-};
 </script>
 
-<template> 
+<template>
+    <Head title="Cambiar contraseña" />
     <div class="flex flex-col items-center justify-center min-h-screen py-5">
         <section class="w-full max-w-3xl flex flex-col items-center p-5">
-            <h1 class="text-4xl text-center font-bold mb-8">Editar Perfil</h1>
+            <h1 class="text-4xl text-center font-bold mb-3">Cambiar contraseña</h1>
+            <p class="text-gray-500 text-sm text-center mb-8">
+                Para cambiar tu nombre, carrera, correo o carnet, dirígete al Decanato de Desarrollo Estudiantil.
+            </p>
 
-            <form @submit.prevent="submit" class="flex flex-col gap-5 w-full">
-                
-                <div class="flex flex-col items-center mb-6">
-                    <div class="relative group">
-                        <img v-if="photoPreview || user.profile_photo" 
-                             :src="photoPreview || `/storage/${user.profile_photo}`" 
-                             class="size-32 rounded-full object-cover border-4 border-[#22397A] shadow-md">
-                        
-                        <div v-else class="size-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="size-16 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                            </svg>
-                        </div>
-
-                        <label class="absolute bottom-0 right-0 bg-[#22397A] p-2 rounded-full cursor-pointer text-white hover:scale-110 transition shadow-lg">
-                            <input type="file" class="hidden" @change="handlePhotoChange" accept="image/*">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                            </svg>
-                        </label>
-                    </div>
-                    <p class="text-xs font-bold text-gray-400 mt-2">Haz clic en el icono para cambiar tu foto</p>
-                    <small v-if="errors?.profile_photo" class="text-red-500 font-bold">{{ errors.profile_photo }}</small>
-                </div>
-
-                <div class="space-y-2 min-h-16">
-                    <label for="name" class="block text-[#404040] font-semibold ml-1">Nombre</label>
-                    <input type="text" id="name" placeholder="Ingresa tu Nombre"
-                        class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
-                        :class="errors?.name ? 'border-[#DC2626] bg-[#FEE2E2]' : 'border-[#E5E5E5] focus:border-[#22397A]'"
-                        v-model="form.name" maxlength="30">
-                    <small v-if="errors?.name" class="text-red-500 font-bold ml-4">{{ errors.name }}</small>
-                </div>
-
-                <div class="space-y-2 min-h-16">
-                    <label for="lastname" class="block text-[#404040] font-semibold ml-1">Apellido</label>
-                    <input type="text" id="lastname" placeholder="Ingresa tu Apellido"
-                        class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200 placeholder:font-bold placeholder:text-[#A3A3A3] placeholder:text-sm"
-                        :class="errors?.lastname ? 'border-[#DC2626] bg-[#FEE2E2]' : 'border-[#E5E5E5] focus:border-[#22397A]'"
-                        v-model="form.lastname" maxlength="30">
-                    <small v-if="errors?.lastname" class="text-red-500 font-bold ml-4">{{ errors.lastname }}</small>
-                </div>
-
-                <div class="space-y-2 min-h-16">
-                    <label for="email" class="block text-[#404040] font-semibold ml-1">Correo</label>
-                    <!-- Solo lectura: el correo verificado y el carnet los cambia el Decanato -->
-                    <input type="email" id="email" :value="user.email" readonly
-                        class="w-full h-10 px-5 rounded-full bg-gray-200 border-2 border-[#E5E5E5] text-gray-500 cursor-not-allowed">
-                </div>
-
-                <div class="space-y-2 min-h-16">
-                    <label for="card_code" class="block text-[#404040] font-semibold ml-1">Código Carnet</label>
-                    <input type="text" id="card_code" :value="user.card_code" readonly
-                        class="w-full h-10 px-5 rounded-full bg-gray-200 border-2 border-[#E5E5E5] text-gray-500 cursor-not-allowed">
-                    <small class="text-gray-500 text-xs ml-4">Para cambiar tu correo o tu carnet, dirígete al Decanato de Desarrollo Estudiantil.</small>
-                </div>
-
-                <div class="space-y-2 min-h-16">
-                    <label for="career" class="block text-[#404040] font-semibold ml-1">Carrera</label>
-                    <select id="career"
-                        class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200"
-                        :class="errors?.career ? 'border-[#DC2626] bg-[#FEE2E2]' : 'border-[#E5E5E5] focus:border-[#22397A]'"
-                        v-model="form.career">
-                        <option value="" disabled>Selecciona tu carrera</option>
-                        <option v-for="carrera in carreras" :key="carrera" :value="carrera">{{ carrera }}</option>
-                    </select>
-                    <small v-if="errors?.career" class="text-red-500 font-bold ml-4">{{ errors.career }}</small>
-                </div>
-
-                <div class="pt-4 flex justify-center">
-                    <button 
-                        type="submit"
-                        :disabled="form.processing"
-                        class="w-1/2 py-3 bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95 disabled:opacity-50"
-                    >
-                        {{ form.processing ? 'Guardando...' : 'Guardar Cambios' }}
-                    </button>
-                </div>
-
-            </form>
-
-            <!-- Cambiar contraseña -->
-            <form @submit.prevent="cambiarClave" class="flex flex-col gap-5 w-full mt-12 pt-8 border-t border-gray-200">
-                <h2 class="text-2xl font-bold text-center">Cambiar contraseña</h2>
-
-                <div v-for="campo in [
-                        { id: 'current_password', label: 'Contraseña actual', auto: 'current-password' },
-                        { id: 'password', label: 'Nueva contraseña (mínimo 8 caracteres)', auto: 'new-password' },
-                        { id: 'password_confirmation', label: 'Confirmar nueva contraseña', auto: 'new-password' },
-                    ] as const" :key="campo.id" class="space-y-2">
+            <form @submit.prevent="cambiarClave" class="flex flex-col gap-5 w-full">
+                <div v-for="campo in campos" :key="campo.id" class="space-y-2">
                     <label :for="campo.id" class="block text-[#404040] font-semibold ml-1">{{ campo.label }}</label>
                     <input type="password" :id="campo.id" :autocomplete="campo.auto"
                         class="w-full h-10 px-5 rounded-full bg-gray-100 border-2 focus:bg-white focus:outline-none text-[#404040] transition duration-200"
@@ -170,21 +46,17 @@ const submit = () => {
                     <small v-if="formClave.errors[campo.id]" class="text-red-500 font-bold ml-4">{{ formClave.errors[campo.id] }}</small>
                 </div>
 
-                <div class="pt-2 flex justify-center">
+                <div class="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+                    <Link href="/profile"
+                        class="sm:w-1/3 min-h-[44px] flex items-center justify-center border-2 border-gray-300 text-gray-700 font-bold rounded-xl transition hover:bg-gray-50">
+                        Volver al perfil
+                    </Link>
                     <button type="submit" :disabled="formClave.processing"
-                        class="w-1/2 py-3 bg-white border-2 border-[#213779] text-[#213779] font-bold rounded-xl transition duration-300 hover:bg-[#f3f5fb] active:scale-95 disabled:opacity-50">
+                        class="sm:w-1/3 min-h-[44px] bg-[#213779] hover:bg-[#1a2b5f] text-white font-bold rounded-xl transition duration-300 shadow-md active:scale-95 disabled:opacity-50">
                         {{ formClave.processing ? 'Cambiando…' : 'Cambiar contraseña' }}
                     </button>
                 </div>
             </form>
         </section>
-
-        <ModalComponent 
-            :show="confirmingDeletion" 
-            text="¡Cambios Guardados Correctamente!"
-            url="/profile"
-            title-button="Volver al perfil"
-            @close="closeModal">
-        </ModalComponent>
     </div>
 </template>

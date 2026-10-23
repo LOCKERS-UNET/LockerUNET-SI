@@ -17,6 +17,6 @@ class Multa extends Model
         'user_id',
         'amount', // Antes 'monto'
         'reason', // Antes 'descripcion'
-        'status'
+        'status',
     ];
 }

@@ -15,9 +15,9 @@ return new class extends Migration
             $table->decimal('amount', 10, 2);
             $table->text('reason');
             $table->unsignedBigInteger('created_by');
-            
+
             $table->timestamp('created_at')->useCurrent();
-            
+
             $table->foreign('assignment_id')->references('assignment_id')->on('locker_assignments')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('cascade');

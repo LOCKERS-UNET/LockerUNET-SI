@@ -7,8 +7,8 @@ use App\Mail\ResetCodeMail;
 use App\Models\PasswordResetCode;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 
 class ForgotPasswordController extends Controller
@@ -25,7 +25,7 @@ class ForgotPasswordController extends Controller
             'email' => ['required', 'email', 'ends_with:@unet.edu.ve'],
         ], [
             'email.required' => 'El correo es obligatorio.',
-            'email.email'    => 'Ingresa un correo válido.',
+            'email.email' => 'Ingresa un correo válido.',
             'email.ends_with' => 'Usa tu correo institucional (termina en @unet.edu.ve).',
         ]);
 
@@ -58,10 +58,10 @@ class ForgotPasswordController extends Controller
 
         // Guardar en BD con expiración de 15 minutos
         PasswordResetCode::create([
-            'user_id'    => $user->id,      // 👈🏼 Usar user_id
-            'token'      => $code,          // 👈🏼 Usar 'token' (nombre real de la columna)
+            'user_id' => $user->id,      // 👈🏼 Usar user_id
+            'token' => $code,          // 👈🏼 Usar 'token' (nombre real de la columna)
             'expires_at' => now()->addMinutes(15),
-            'used'       => false,
+            'used' => false,
         ]);
 
         // Enviar el código por correo
@@ -70,12 +70,12 @@ class ForgotPasswordController extends Controller
         } catch (\Exception $e) {
             // En desarrollo, mostrar el código en consola para pruebas
             if (app()->environment('local')) {
-                logger()->error('Error al enviar correo: ' . $e->getMessage());
+                logger()->error('Error al enviar correo: '.$e->getMessage());
                 logger()->info("Código de verificación para {$user->email}: $code");
             }
-            
+
             return back()->withErrors([
-                'email' => 'No se pudo enviar el correo. Revisa la configuración de mail.'
+                'email' => 'No se pudo enviar el correo. Revisa la configuración de mail.',
             ]);
         }
 

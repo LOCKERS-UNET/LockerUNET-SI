@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Link, usePage } from '@inertiajs/vue3';
-import Layout from '../Layouts/Layout.vue';
+import LayoutSegunRol from '../Layouts/LayoutSegunRol.vue';
 
-defineOptions({ layout: Layout });
+// La abren estudiantes y admins (desde el menú de perfil): cada uno con su layout
+defineOptions({ layout: LayoutSegunRol });
 
 // ─────────────────────────────────────────────
 // DATOS REALES DEL BACKEND
@@ -10,7 +11,7 @@ defineOptions({ layout: Layout });
 // del usuario logueado y nos la pasa aquí.
 // Si "asignacion" es null = no tiene locker asignado.
 // ─────────────────────────────────────────────
-const props = defineProps<{
+defineProps<{
     asignacion: {
         assignment_id: number;
         start_date: string;
@@ -81,7 +82,7 @@ const user = usePage().props.auth.user as any;
                     </div>
 
                     <Link href="/edit-profile" class="self-end bg-[#22397A] text-white px-6 py-2 rounded-md hover:bg-blue-800 transition duration-200 shadow-md text-sm font-bold">
-                        Editar Perfil
+                        Cambiar contraseña
                     </Link> 
                 </section>
             </div>
