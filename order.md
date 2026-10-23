@@ -64,8 +64,8 @@ Mapa de cómo están distribuidos los archivos de Lockers UNET y qué hace cada 
 | `NotificationController.php` | Notificaciones en la app: listado, marcar leídas y contador. | `User/Notificaciones` |
 | `StatsController.php` | Estadísticas: la vista y los endpoints JSON para las gráficas. También gestiona los semestres. | `Admin/EstadisticasLockers` |
 | `UserController.php` | Listado, búsqueda y detalle de usuarios (admin). | `Admin/Usuarios`, `Admin/VistaUsuario` |
-| `ProfileController.php` | Ver y actualizar el perfil (`/profile`). | `User/Profile` |
-| `PerfilController.php` | Editar el perfil (`/edit-profile`): nombre, apellido, carrera (de `User::CARRERAS`) y foto, y cambiar la contraseña (`password`). El correo y el carnet no se editan. | `User/EditProfile` |
+| `ProfileController.php` | Ver el perfil (`/profile`). El perfil no se edita desde la app. | `User/Profile` |
+| `PerfilController.php` | Cambiar la contraseña (`/edit-profile`, `password`). Nombre, carrera, foto, correo y carnet no se editan: los cambia el Decanato. | `User/EditProfile` |
 | `Controller.php` | Clase base. | |
 | `MultaController.php` | **Legado.** Reemplazado por `FineController`. | |
 | `BuscarUsuarioController.php` | **Legado.** Reemplazado por `UserController`. | |
@@ -189,7 +189,7 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 
 - `Layout.vue`: layout del estudiante.
 - `LayoutAdmin.vue`: layout del admin, con campanita de notificaciones; en escritorio el header tiene las mismas medidas que el del estudiante (Incidencias y Estadísticas van en el menú lateral y en el inicio).
-- `LayoutSegunRol.vue`: elige `Layout` o `LayoutAdmin` según el rol; lo usa `User/Notificaciones.vue`, que comparten estudiantes y admins.
+- `LayoutSegunRol.vue`: elige `Layout` o `LayoutAdmin` según el rol; lo usan `User/Notificaciones.vue`, `User/Profile.vue` y `User/EditProfile.vue`, que comparten estudiantes y admins.
 
 **`Components/`**
 
@@ -222,8 +222,8 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 | `ReporteIncidencia.vue` | `/reportes-user` | Reportar una incidencia. |
 | `DevolucionLocker.vue` | `/devolucion-locker` | Solicitar la devolución del locker; muestra "Devolución en proceso" hasta que el admin la confirme. |
 | `Notificaciones.vue` | `/notifications` | Notificaciones de la app. |
-| `Profile.vue` | `/profile` | Ver el perfil. |
-| `EditProfile.vue` | `/edit-profile` | Editar el perfil y cambiar la contraseña. |
+| `Profile.vue` | `/profile` | Ver el perfil (estudiantes y admins, con `LayoutSegunRol`). |
+| `EditProfile.vue` | `/edit-profile` | Cambiar la contraseña (estudiantes y admins, con `LayoutSegunRol`). |
 
 **`Admin/`**: páginas del administrador.
 

@@ -41,9 +41,9 @@ Route::middleware(['auth', 'auth.session', 'verified', CifrarHistorial::class])-
 
     // Perfil
 Route::get('/profile', [ProfileController::class, 'show'])->name('user-profile');
-Route::get('/edit-profile', [PerfilController::class, 'index'])->name('edit-profile'); // 👈🏼 AGREGAR ESTO
-Route::put('/profile', [ProfileController::class, 'update']);
-Route::post('/edit-profile', [PerfilController::class, 'store']); // 👈🏼 Para guardar cambios
+// El perfil no se edita: nombre, carrera, foto, correo y carnet los cambia el Decanato.
+// Solo se cambia la contraseña. (PUT /profile permitía cambiar el correo y el carnet sin verificar)
+Route::get('/edit-profile', [PerfilController::class, 'index'])->name('edit-profile');
 Route::post('/edit-profile/password', [PerfilController::class, 'password']);
 
     // --------------------------------------------------------
