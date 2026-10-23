@@ -358,4 +358,13 @@ class UsabilidadTest extends TestCase
             ->where('buildings.0.total_lockers', 3));
         $this->actingAs($estudiante)->get('/lockers')->assertInertia(fn (Assert $page) => $page->where('lockers.total', 1));
     }
+
+    public function test_la_politica_de_privacidad_es_publica(): void
+    {
+        $this->get('/privacidad')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->component('Privacidad'));
+
+        $this->actingAs(User::factory()->create(['is_admin' => false]))->get('/privacidad')->assertOk();
+    }
 }

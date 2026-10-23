@@ -165,6 +165,9 @@ Route::get('/login', [LoginController::class, 'index'])->name('login');
 Route::post('/login', [LoginController::class, 'store']);
 Route::post('/logout', [LoginController::class, 'logout']);
 
+// Política de privacidad: pública, con o sin sesión (se enlaza desde el registro)
+Route::inertia('/privacidad', 'Privacidad')->name('privacidad');
+
 Route::get('/register', [RegisterController::class, 'index']);
 Route::post('/register', [RegisterController::class, 'store']);
 

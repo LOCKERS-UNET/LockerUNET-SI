@@ -140,6 +140,8 @@ onUnmounted(() => {
                 </div>
                 
                 <div class="flex flex-col gap-4">
+                    <Link href="/privacidad" @click="isMenuOpen = false" class="text-sm text-gray-600 underline min-h-[44px] flex items-center justify-center">Política de privacidad</Link>
+
                     <!-- 👇🏼 Mensaje de reporte de errores (sutil en menú hamburguesa) -->
                     <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
                         <p class="text-xs text-gray-600 leading-relaxed text-center">

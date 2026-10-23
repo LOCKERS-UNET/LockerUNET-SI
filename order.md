@@ -209,6 +209,8 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 
 **`Home.vue`**: inicio del estudiante (`/`).
 
+**`Privacidad.vue`**: política de privacidad (`/privacidad`), pública; se enlaza desde el registro y el menú lateral del estudiante. Pendiente de revisión por el Decanato.
+
 **`User/`**: páginas del estudiante.
 
 | Página | Ruta | Qué hace |
@@ -450,7 +452,8 @@ LockerUNET-SI/
 │   │   │   │   ├── Profile.vue
 │   │   │   │   ├── ReporteIncidencia.vue
 │   │   │   │   └── SolicitudLocker.vue
-│   │   │   └── Home.vue
+│   │   │   ├── Home.vue
+│   │   │   └── Privacidad.vue
 │   │   ├── types/
 │   │   │   ├── auth.ts
 │   │   │   ├── global.d.ts
