@@ -94,6 +94,12 @@ class LockerRequestController extends Controller
 
         $lockerReq->update(['request_status' => 'cancelled']);
 
+        NotificationHelper::sendToAdmins(
+            'admin_request_cancelled',
+            'Solicitud cancelada',
+            NotificationHelper::nombreEstudiante(Auth::user())." canceló su solicitud del locker {$lockerReq->locker?->locker_code}."
+        );
+
         return redirect()->back()->with('success', 'Solicitud cancelada. Puedes solicitar otro locker cuando quieras.');
     }
 
@@ -127,7 +133,8 @@ class LockerRequestController extends Controller
 
         // Regla 3: Solo se puede solicitar un locker disponible y sin solicitud pendiente de otra persona.
         // La fila del locker se bloquea para que dos solicitudes simultáneas no pasen las dos.
-        $creada = DB::transaction(function () use ($request, $userId) {
+        // Devuelve el locker pedido, o false si ya no se podía pedir
+        $lockerPedido = DB::transaction(function () use ($request, $userId) {
             $locker = Locker::whereKey($request->locker_id)->lockForUpdate()->first();
 
             if (! $locker || ! Locker::solicitables()->whereKey($locker->locker_id)->exists()) {
@@ -141,10 +148,10 @@ class LockerRequestController extends Controller
                 'requested_at' => now(),
             ]);
 
-            return true;
+            return $locker;
         });
 
-        if (! $creada) {
+        if (! $lockerPedido) {
             return redirect()->route('buscar-locker')->withErrors(['locker' => 'Ese locker ya no está disponible o alguien más lo solicitó. Elige otro.']);
         }
 
@@ -153,6 +160,12 @@ class LockerRequestController extends Controller
             'request_sent', 
             'Solicitud enviada',
             'Tu solicitud de locker fue enviada. Dirígete al Decanato de Desarrollo Estudiantil.'
+        );
+
+        NotificationHelper::sendToAdmins(
+            'admin_request_new',
+            'Nueva solicitud de locker',
+            NotificationHelper::nombreEstudiante(Auth::user())." pidió el locker {$lockerPedido->locker_code}. Revísala en Solicitudes."
         );
 
         // A 'Mis Solicitudes' para que vea su solicitud en estado Pendiente junto al aviso

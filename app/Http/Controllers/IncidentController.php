@@ -25,13 +25,19 @@ class IncidentController extends Controller
             'description' => 'required|string|max:1000',
         ]);
 
-        Incident::create([
+        $incident = Incident::create([
             'user_id'     => Auth::id(),
             'locker_id'   => $request->locker_id,
             'description' => $request->description,
             'status'      => 'pending',
             'created_at'  => now()
         ]);
+
+        NotificationHelper::sendToAdmins(
+            'admin_incident_new',
+            'Nueva incidencia',
+            NotificationHelper::nombreEstudiante(Auth::user())." reportó un problema en el locker {$incident->locker?->locker_code}. Revísala en Incidencias."
+        );
 
         return redirect()->back()->with('success', 'Reporte enviado correctamente.');
     }

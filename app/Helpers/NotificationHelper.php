@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Models\Notification;
+use App\Models\User;
 
 class NotificationHelper
 {
@@ -24,5 +25,21 @@ class NotificationHelper
             'message' => $message,
             'is_read' => false,
         ]);
+    }
+
+    /**
+     * Envía la misma notificación a todos los administradores
+     * (solicitudes nuevas, devoluciones, incidencias...).
+     */
+    public static function sendToAdmins(?string $type, string $title, string $message): void
+    {
+        User::where('is_admin', true)->pluck('id')
+            ->each(fn ($adminId) => self::send($adminId, $type, $title, $message));
+    }
+
+    /** "Ana Pérez (30001)", para los avisos a los admins. */
+    public static function nombreEstudiante(User $user): string
+    {
+        return trim("{$user->name} {$user->lastname}").($user->card_code ? " ({$user->card_code})" : '');
     }
 }

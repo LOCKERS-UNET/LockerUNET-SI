@@ -107,7 +107,7 @@ Cada página que se renderiza desde PHP debe existir en `resources/js/pages/`. L
 
 | Archivo | Qué hace |
 | --- | --- |
-| `app/Helpers/NotificationHelper.php` | `NotificationHelper::send($userId, $type, $title, $message)` crea una notificación en la app. |
+| `app/Helpers/NotificationHelper.php` | `NotificationHelper::send($userId, $type, $title, $message)` crea una notificación en la app; `sendToAdmins(...)` la manda a todos los admins (solicitud nueva o cancelada, devolución solicitada, incidencia). |
 | `app/Helpers/EmailVerificationHelper.php` | `EmailVerificationHelper::send($user)` genera un código de 6 dígitos (15 min), invalida los anteriores y lo envía. Lo usan el registro, el login y "Reenviar código". |
 | `app/Mail/EmailVerificationCodeMail.php` | Correo con el código de registro. |
 | `app/Mail/ResetCodeMail.php` | Correo con el código para recuperar la contraseña. |
@@ -188,7 +188,8 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 **`Layouts/`.** Cada página importa el suyo.
 
 - `Layout.vue`: layout del estudiante.
-- `LayoutAdmin.vue`: layout del admin.
+- `LayoutAdmin.vue`: layout del admin, con campanita de notificaciones.
+- `LayoutSegunRol.vue`: elige `Layout` o `LayoutAdmin` según el rol; lo usa `User/Notificaciones.vue`, que comparten estudiantes y admins.
 
 **`Components/`**
 
@@ -258,7 +259,7 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 | `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. `app.locale` está fijo en `es`. |
 | `lang/es/validation.php` | Mensajes de validación en español y nombres de los campos (`card_code` → "carnet", etc.). |
 | `storage/` | Logs, caché y archivos subidos. En git solo están sus `.gitignore`. |
-| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/RecuperarContrasenaTest.php`: recuperar contraseña sin revelar cuentas y con límite de intentos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Feature/Admin/`: el panel admin. `PermisosAdminTest` recorre todas las rutas de admin (estudiante → inicio, invitado → login, el admin abre cada GET sin error 500); `LockersAdminTest`, `SolicitudesAsignacionesTest`, `PagosArancelesTest`, `MultasIncidenciasTest` y `UsuariosEstadisticasTest` cubren cada flujo.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
+| `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/RecuperarContrasenaTest.php`: recuperar contraseña sin revelar cuentas y con límite de intentos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Feature/Admin/`: el panel admin. `PermisosAdminTest` recorre todas las rutas de admin (estudiante → inicio, invitado → login, el admin abre cada GET sin error 500); `LockersAdminTest`, `SolicitudesAsignacionesTest`, `PagosArancelesTest`, `MultasIncidenciasTest` y `UsuariosEstadisticasTest` cubren cada flujo; `NotificacionesAdminTest`, los avisos a los admins.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
 | `.github/workflows/` | CI: `lint.yml` y `tests.yml`. |
 | `scripts/actualizar-order.php` | Regenera el árbol de este archivo. |
 | `qa-reports/` | Reportes de las pruebas de usabilidad con subagentes (`RESUMEN.md`, uno por persona y por ronda). Las capturas están en el gitignore. |
@@ -435,7 +436,8 @@ LockerUNET-SI/
 │   │   │   │   └── ModalComponent.vue
 │   │   │   ├── Layouts/
 │   │   │   │   ├── Layout.vue
-│   │   │   │   └── LayoutAdmin.vue
+│   │   │   │   ├── LayoutAdmin.vue
+│   │   │   │   └── LayoutSegunRol.vue
 │   │   │   ├── User/
 │   │   │   │   ├── BuscarLocker.vue
 │   │   │   │   ├── DevolucionLocker.vue
@@ -480,6 +482,7 @@ LockerUNET-SI/
 │   │   ├── Admin/
 │   │   │   ├── LockersAdminTest.php
 │   │   │   ├── MultasIncidenciasTest.php
+│   │   │   ├── NotificacionesAdminTest.php
 │   │   │   ├── PagosArancelesTest.php
 │   │   │   ├── PermisosAdminTest.php
 │   │   │   ├── SolicitudesAsignacionesTest.php

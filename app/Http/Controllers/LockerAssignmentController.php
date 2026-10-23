@@ -254,6 +254,12 @@ class LockerAssignmentController extends Controller
                     'Entrega la llave en el Decanato. Tu locker quedará liberado cuando el administrador confirme la devolución.'
                 );
 
+                NotificationHelper::sendToAdmins(
+                    'admin_return_requested',
+                    'Devolución solicitada',
+                    NotificationHelper::nombreEstudiante($assignment->user)." quiere devolver el locker {$assignment->locker?->locker_code}. Confirma la entrega de la llave en Asignaciones."
+                );
+
                 return redirect()->back()->with('success', 'Devolución solicitada. Entrega la llave en el Decanato para completarla.');
             });
         } catch (HttpExceptionInterface|ModelNotFoundException $e) {
