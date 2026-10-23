@@ -11,7 +11,7 @@ defineOptions({ layout: LayoutSegunRol });
 // del usuario logueado y nos la pasa aquí.
 // Si "asignacion" es null = no tiene locker asignado.
 // ─────────────────────────────────────────────
-const props = defineProps<{
+defineProps<{
     asignacion: {
         assignment_id: number;
         start_date: string;

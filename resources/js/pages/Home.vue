@@ -5,7 +5,7 @@ import Layout from './Layouts/Layout.vue';
 defineOptions({ layout: Layout });
 
 // Props dinámicos desde el backend
-const props = defineProps<{
+defineProps<{
     buildings?: Array<{
         building_id: number;
         building_code: string;
