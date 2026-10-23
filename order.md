@@ -188,7 +188,7 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 **`Layouts/`.** Cada página importa el suyo.
 
 - `Layout.vue`: layout del estudiante.
-- `LayoutAdmin.vue`: layout del admin, con campanita de notificaciones.
+- `LayoutAdmin.vue`: layout del admin, con campanita de notificaciones; en escritorio el header tiene las mismas medidas que el del estudiante (Incidencias y Estadísticas van en el menú lateral y en el inicio).
 - `LayoutSegunRol.vue`: elige `Layout` o `LayoutAdmin` según el rol; lo usa `User/Notificaciones.vue`, que comparten estudiantes y admins.
 
 **`Components/`**

@@ -61,49 +61,38 @@
     <div>
 
         <header class="bg-[#1C2F5E] text-white">
-            <nav class=" flex items-center justify-between p-4 max-w-screen-lg lg:max-w-screen-xl lg:gap-8 lg:px-8 mx-auto ">
-                
-                <div class="flex flex-row gap-2 sm:gap-5">
-                    <button @click="openMenu" class=" block lg:hidden cursor-pointer mx-5">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+            <!-- Mismas medidas que el header del estudiante (Layout.vue) -->
+            <nav class="flex items-center justify-between p-4 max-w-screen-lg mx-auto">
+
+                <div class="flex flex-row items-center gap-2 sm:gap-5">
+                    <button @click="openMenu"
+                            class="flex lg:hidden cursor-pointer min-w-[44px] min-h-[44px] items-center justify-center"
+                            aria-label="Abrir menú de navegación lateral">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6" aria-hidden="true">
                             <path fill-rule="evenodd" d="M3 6.75A.75.75 0 0 1 3.75 6h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 6.75ZM3 12a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 12Zm0 5.25a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clip-rule="evenodd" />
                         </svg>
                     </button>
 
-                
-                    <Link href="/inicio-admin">
-
-                        <img src="/img/Logo_Minimal.webp" 
+                    <!-- lg:ml-16: en escritorio el logo queda a la misma distancia del borde que la campanita -->
+                    <Link href="/inicio-admin" class="lg:ml-16">
+                        <img src="/img/Logo_Minimal.webp"
                             alt="Logo Minimalista Lockers"
                             class="w-auto h-12 sm:h-15 object-contain"
                         >
-
                     </Link>
                 </div>
 
-                
-
-                <div class=" hidden lg:flex lg:flex-row md:text-xs md:gap-5 lg:gap-6 xl:gap-10  lg:text-base">
-                    <Link 
-                        href="/admin/assignments"
-                        class=""
-                    >Asignaciones</Link>
-                    <Link href="/admin/requests">Solicitudes</Link>
-                    <Link href="/admin/lockers">Gestion Lockers</Link>
-                    <Link href="/admin/users">Usuarios</Link>
-                    <Link href="/admin/incidents">Incidencias</Link>
-                    <Link href="/estadisticas-lockers">Estadisticas</Link>
-                    <Link href="/fee-rates">Aranceles</Link>
-                    
+                <!-- Incidencias y Estadísticas siguen en el menú lateral y en los accesos rápidos del inicio -->
+                <div class="hidden lg:flex lg:flex-row md:gap-5 lg:gap-10 lg:text-base font-medium">
+                    <Link href="/admin/assignments" class="hover:text-[#2E7AC0] transition">Asignaciones</Link>
+                    <Link href="/admin/requests" class="hover:text-[#2E7AC0] transition">Solicitudes</Link>
+                    <Link href="/admin/lockers" class="hover:text-[#2E7AC0] transition">Gestion Lockers</Link>
+                    <Link href="/admin/users" class="hover:text-[#2E7AC0] transition">Usuarios</Link>
+                    <Link href="/fee-rates" class="hover:text-[#2E7AC0] transition">Aranceles</Link>
                 </div>
 
-                
+                <!-- Sin saludo, como en el header del estudiante -->
                 <div class="flex flex-row gap-5 items-center">
-                    <p class=" text-white font-bold text-xs md:text-base hidden lg:block lg:mr-3">
-                        ¡Hola, <span class=" text-[#2E7AC0]">{{ $page.props.auth.user.name }}</span>!
-                    </p>
-
-
                     <!-- Campanita con aviso de no leídas, como en el layout del estudiante -->
                     <Link href="/notifications" aria-label="Ver notificaciones" class="relative min-w-[44px] min-h-[44px] flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="sm:size-8 size-5" aria-hidden="true">
@@ -118,7 +107,7 @@
 
                     <div class="relative profile-dropdown-container">
                         <button @click="toggleProfileMenu" 
-                                class="flex items-center cursor-pointer focus:outline-none"
+                                class="min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer focus:outline-none"
                                 aria-haspopup="true"
                                 :aria-expanded="isProfileOpen"
                                 aria-label="Abrir opciones de perfil">
