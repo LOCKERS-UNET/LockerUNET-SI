@@ -258,7 +258,8 @@ Las factories de `factories/` se usan en las pruebas: `UserFactory.php`, `Buildi
 | Ruta | Qué hace |
 | --- | --- |
 | `bootstrap/` | `app.php` (rutas, middleware y excepciones) y `providers.php`. |
-| `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. `app.locale` está fijo en `es`. |
+| `docs/DESPLIEGUE.md` | Guía para publicar la app en un servidor Ubuntu (Azure for Students): PHP 8.5, MySQL, Nginx, HTTPS, cron, respaldos y cómo publicar nuevas versiones. |
+| `config/` | Configuración de Laravel: `app`, `auth`, `database`, `mail`, `inertia`, etc. `app.locale` está fijo en `es`. El SSR de Inertia se apaga con `INERTIA_SSR_ENABLED=false` (producción). |
 | `lang/es/validation.php` | Mensajes de validación en español y nombres de los campos (`card_code` → "carnet", etc.). |
 | `storage/` | Logs, caché y archivos subidos. En git solo están sus `.gitignore`. |
 | `tests/` | `TestCase.php`, los `ExampleTest.php` y:<br>• `Feature/RutasProtegidasTest.php`: aranceles y la liberación de lockers solo los usan el admin o el dueño, y no se devuelve un locker con pagos pendientes o vencidos.<br>• `Feature/RecuperarContrasenaTest.php`: recuperar contraseña sin revelar cuentas y con límite de intentos.<br>• `Feature/GestionSolicitudesTest.php`: aprobar o rechazar solicitudes.<br>• `Feature/UsabilidadTest.php`: arreglos de la prueba de usabilidad (`qa-reports/`).<br>• `Feature/DevolucionLockerTest.php`: devolución en dos pasos y multas que la bloquean.<br>• `Feature/VerificacionCorreoTest.php`: sin correo verificado no se entra, el login reenvía el código, el código verifica.<br>• `Feature/Admin/`: el panel admin. `PermisosAdminTest` recorre todas las rutas de admin (estudiante → inicio, invitado → login, el admin abre cada GET sin error 500); `LockersAdminTest`, `SolicitudesAsignacionesTest`, `PagosArancelesTest`, `MultasIncidenciasTest` y `UsuariosEstadisticasTest` cubren cada flujo; `NotificacionesAdminTest`, los avisos a los admins.<br>• `Unit/PaginasInertiaExistenTest.php`: cada página renderizada existe. |
@@ -393,6 +394,8 @@ LockerUNET-SI/
 │   │   ├── QaAdminSeeder.php
 │   │   └── UsersSeeder.php
 │   └── .gitignore
+├── docs/
+│   └── DESPLIEGUE.md
 ├── lang/
 │   └── es/
 │       └── validation.php
